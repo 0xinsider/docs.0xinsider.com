@@ -1,0 +1,56 @@
+---
+title: "Errors"
+description: "Error codes, formats, and troubleshooting."
+---
+
+## Error format
+
+All errors follow a consistent envelope (RFC 7807-inspired):
+
+```json
+{
+  "object": "error",
+  "error": {
+    "code": "invalid_api_key",
+    "message": "Invalid or missing API key.",
+    "doc_url": "https://0xinsider.com/docs/api#authentication",
+    "param": null
+  },
+  "meta": {
+    "request_id": "req_550e8400"
+  }
+}
+```
+
+## Error codes
+
+| HTTP Status | Code | Description |
+|-------------|------|-------------|
+| `400` | `bad_request` | Invalid parameter — check the `param` field for which one |
+| `401` | `invalid_api_key` | Missing, malformed, or revoked API key |
+| `402` | `subscription_required` | Valid key but no active Insider subscription |
+| `403` | `forbidden` | Account has been deleted |
+| `404` | `not_found` | Resource doesn't exist |
+| `423` | `account_locked` | Account is suspended |
+| `429` | `rate_limited` | Exceeded 100 req/min — check `Retry-After` header |
+| `500` | `internal_error` | Something went wrong on our end |
+
+## Troubleshooting
+
+### "Invalid or missing API key"
+
+- Verify the `Authorization` header format: `Bearer oxi_sk_test_...`
+- Check that the key hasn't been revoked at [0xinsider.com/developers](https://0xinsider.com/developers)
+- Keys are 76 characters total — ensure you copied the full key
+
+### "Active Insider subscription required"
+
+Your API key is valid but your subscription has expired or you're on the free tier. Subscribe at [0xinsider.com/pricing](https://0xinsider.com/pricing).
+
+### "Rate limit exceeded"
+
+Wait for the number of seconds in the `Retry-After` response header, then retry. See [Rate Limits](/rate-limits) for best practices.
+
+### 500 errors
+
+These are bugs on our end. Include the `request_id` from the response when contacting [support@0xinsider.com](mailto:support@0xinsider.com).

@@ -1,0 +1,60 @@
+---
+title: "Authentication"
+description: "API key management and security."
+---
+
+## API keys
+
+All authenticated endpoints require a Bearer token in the `Authorization` header:
+
+```bash
+Authorization: Bearer oxi_sk_test_...
+```
+
+### Key format
+
+Keys follow the format `oxi_sk_live_` followed by 64 hex characters (76 characters total). Example:
+
+```
+<YOUR_API_KEY>
+```
+
+### Generating a key
+
+1. Log in at [0xinsider.com](https://0xinsider.com)
+2. Go to [Developers](https://0xinsider.com/developers)
+3. Click **Generate Key**
+4. Copy the key immediately — it's shown only once
+
+### Key security
+
+- Keys are hashed (HMAC-SHA256) before storage. We never store plaintext keys.
+- Only the key prefix (`oxi_sk_live_XXXX`) is stored for display.
+- One active key per account. Regenerating revokes the previous key.
+- If compromised, regenerate immediately at [0xinsider.com/developers](https://0xinsider.com/developers).
+
+### Key management endpoints
+
+| Action | Method | Endpoint |
+|--------|--------|----------|
+| Create key | `POST` | `/api/keys` |
+| List keys | `GET` | `/api/keys` |
+| Revoke key | `DELETE` | `/api/keys/{id}` |
+| Regenerate | `POST` | `/api/keys/regenerate` |
+
+These endpoints use JWT authentication (session cookies), not API key auth.
+
+## Subscription requirement
+
+API access is bundled with the **Insider** subscription ($89/mo). Requests with a valid key but no active subscription return:
+
+```json
+{
+  "object": "error",
+  "error": {
+    "code": "subscription_required",
+    "message": "Active Insider subscription required.",
+    "doc_url": "https://0xinsider.com/docs/api#authentication"
+  }
+}
+```

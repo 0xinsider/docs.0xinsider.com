@@ -1,0 +1,56 @@
+---
+title: "Pagination"
+description: "Cursor-based pagination for list endpoints."
+---
+
+All list endpoints use **cursor-based pagination**. This is more reliable than offset pagination for real-time data.
+
+## How it works
+
+1. Make your first request with a `limit`:
+
+```bash
+curl -H "Authorization: Bearer oxi_sk_test_..." \
+  "https://api.0xinsider.com/api/v1/leaderboard?limit=20"
+```
+
+2. Check `has_more` and `next_cursor` in the response:
+
+```json
+{
+  "object": "list",
+  "data": [...],
+  "has_more": true,
+  "next_cursor": "95.85_0x885783760858e1bd5dd09a3c3f916cfa251ac270"
+}
+```
+
+3. Pass `next_cursor` as the `cursor` param for the next page:
+
+```bash
+curl -H "Authorization: Bearer oxi_sk_test_..." \
+  "https://api.0xinsider.com/api/v1/leaderboard?limit=20&cursor=95.85_0x885..."
+```
+
+4. Repeat until `has_more` is `false`.
+
+## Parameters
+
+| Parameter | Type | Default | Max |
+|-----------|------|---------|-----|
+| `limit` | integer | 20 | 100 |
+| `cursor` | string | — | — |
+
+## Cursor format
+
+Cursors are opaque strings — don't parse or construct them. Always use the `next_cursor` value from the previous response.
+
+Different endpoints use different cursor formats internally:
+- **Leaderboard**: `{score}_{address}`
+- **Whale trades**: `{timestamp}_{id}` (ISO 8601)
+- **Insider radar**: `{score}_{id}`
+
+## Tips
+
+- Cursors are stable for the current sort order. Don't mix cursors between different filter combinations.
+- If you get a `400` with `"Invalid cursor format"`, you're using a cursor from a different endpoint or an expired cursor.

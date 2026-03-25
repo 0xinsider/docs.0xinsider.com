@@ -1,33 +1,71 @@
 ---
-title: 'Introduction'
-description: 'Example section for showcasing API endpoints'
+title: "API Reference"
+sidebarTitle: "Overview"
+description: "Complete reference for all 0xinsider API endpoints."
 ---
 
-<Note>
-  If you're not looking to build API reference documentation, you can delete
-  this section by removing the api-reference folder.
-</Note>
+## Base URL
 
-## Welcome
-
-There are two ways to build API documentation: [OpenAPI](https://mintlify.com/docs/api-playground/openapi/setup) and [MDX components](https://mintlify.com/docs/api-playground/mdx/configuration). For the starter kit, we are using the following OpenAPI specification.
-
-<Card
-  title="Plant Store Endpoints"
-  icon="leaf"
-  href="https://github.com/mintlify/starter/blob/main/api-reference/openapi.json"
->
-  View the OpenAPI specification file
-</Card>
+```
+https://api.0xinsider.com/api/v1/
+```
 
 ## Authentication
 
-All API endpoints are authenticated using Bearer tokens and picked up from the specification file.
+All endpoints (except `/health`) require a Bearer token:
+
+```bash
+Authorization: Bearer oxi_sk_test_...
+```
+
+Generate your key at [0xinsider.com/developers](https://0xinsider.com/developers).
+
+## Response format
+
+Every response follows a consistent envelope:
 
 ```json
-"security": [
-  {
-    "bearerAuth": []
+{
+  "object": "trader",
+  "data": { ... },
+  "meta": {
+    "request_id": "req_550e8400",
+    "cached": false
   }
-]
+}
 ```
+
+List endpoints include pagination:
+
+```json
+{
+  "object": "list",
+  "data": [...],
+  "has_more": true,
+  "next_cursor": "97.94_0x863...",
+  "meta": { ... }
+}
+```
+
+## Prefixed IDs
+
+Every entity has a type-prefixed ID for easy identification:
+
+| Entity | Prefix | Example |
+|--------|--------|---------|
+| Trader | `trd_` | `trd_0xabc123def456` |
+| Market | `mkt_` | `mkt_0x789condition` |
+| Whale trade | `wt_` | `wt_12345` |
+| Radar flag | `rf_` | `rf_67890` |
+| Request | `req_` | `req_550e8400` |
+
+## Rate limits
+
+100 requests per minute per user (sliding window). Check response headers:
+
+| Header | Description |
+|--------|-------------|
+| `X-RateLimit-Limit` | Max requests per window |
+| `X-RateLimit-Remaining` | Requests remaining |
+| `X-RateLimit-Reset` | Unix timestamp when window resets |
+| `Retry-After` | Seconds to wait (only on 429) |

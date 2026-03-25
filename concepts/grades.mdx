@@ -1,0 +1,47 @@
+---
+title: "Trader Grades"
+description: "How 0xinsider grades traders from S to F."
+---
+
+Every trader synced by 0xinsider receives a grade from **S** (best) to **F** (worst). Grades appear in trader profiles, leaderboard entries, and whale trade objects.
+
+## Grade scale
+
+| Grade | Meaning | Leaderboard eligible |
+|-------|---------|---------------------|
+| **S** | Elite — top performers with exceptional track records | Yes |
+| **A** | Strong — consistently profitable with good win rates | Yes |
+| **B** | Above average — solid performance | Yes |
+| **C** | Average | No |
+| **D** | Below average | No |
+| **F** | Poor track record | No |
+
+## How grades are calculated
+
+Grades are computed from a composite score (0-100) that factors in:
+
+- **Realized P&L** — actual profit from closed positions
+- **Win rate** — percentage of profitable markets
+- **Volume** — total trading volume (higher volume = more signal)
+- **Market count** — number of markets traded (diversification)
+- **Recency** — how recently the trader was active
+
+The leaderboard only includes traders with grades S, A, or B.
+
+## Using grades in the API
+
+### Filter whale trades by grade
+
+```bash
+curl -H "Authorization: Bearer oxi_sk_test_..." \
+  "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&limit=10"
+```
+
+This returns only trades from traders with grade A or better (S and A).
+
+### Filter leaderboard by strategy
+
+```bash
+curl -H "Authorization: Bearer oxi_sk_test_..." \
+  "https://api.0xinsider.com/api/v1/leaderboard?strategy=swing_trader"
+```

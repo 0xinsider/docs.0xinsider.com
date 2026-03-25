@@ -1,0 +1,58 @@
+---
+title: "Rate Limits"
+description: "Request limits and how to handle them."
+---
+
+## Limits
+
+| Metric | Value |
+|--------|-------|
+| Requests per minute | **100** |
+| Window type | Sliding window |
+| Scope | Per user (not per key) |
+
+The rate limit is shared across all endpoints and all keys belonging to the same user.
+
+## Response headers
+
+Every authenticated response includes rate limit headers:
+
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 87
+X-RateLimit-Reset: 1774450631
+```
+
+| Header | Description |
+|--------|-------------|
+| `X-RateLimit-Limit` | Maximum requests per minute |
+| `X-RateLimit-Remaining` | Requests remaining in current window |
+| `X-RateLimit-Reset` | Unix timestamp when the window resets |
+
+## Rate limit exceeded
+
+When you exceed the limit, you'll receive a `429` response:
+
+```json
+{
+  "object": "error",
+  "error": {
+    "code": "rate_limited",
+    "message": "Rate limit exceeded. Retry after 12s.",
+    "doc_url": "https://0xinsider.com/docs/api#rate-limits"
+  }
+}
+```
+
+The `Retry-After` header tells you how many seconds to wait:
+
+```
+Retry-After: 12
+```
+
+## Best practices
+
+- **Cache responses** — most data updates every 30-120 seconds
+- **Use cursor pagination** instead of re-fetching full lists
+- **Backoff on 429** — respect the `Retry-After` header
+- **Batch your reads** — fetch what you need in fewer, larger requests (higher `limit`)

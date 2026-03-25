@@ -1,0 +1,27 @@
+---
+title: "Number Formatting"
+description: "How floating-point values are formatted in API responses."
+---
+
+All floating-point values are **truncated** (not rounded) at the API boundary for clean, predictable output.
+
+## Precision rules
+
+| Field type | Decimal places | Example |
+|-----------|---------------|---------|
+| Money (PnL, volume, size_usd) | 2 | `7532409.67` |
+| Scores (score, suspicion_score) | 2 | `97.94` |
+| Rates (win_rate, daily_win_rate) | 4 | `0.4545` |
+| Prices | 4 | `0.8899` |
+
+## Truncation, not rounding
+
+Values are truncated toward zero. `97.9488...` becomes `97.94`, not `97.95`. This ensures the displayed value never overstates the actual value.
+
+## Integer fields
+
+These fields are always exact integers with no decimal component:
+
+- `markets_traded`
+- `rank`
+- `whale_trade_count`

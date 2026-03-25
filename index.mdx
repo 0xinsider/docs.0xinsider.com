@@ -1,97 +1,76 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "0xinsider API"
+sidebarTitle: "Introduction"
+description: "Prediction market intelligence for AI agents, trading bots, and research tools."
 ---
 
-## Setting up
+The 0xinsider API gives you programmatic access to the same intelligence powering the [0xinsider terminal](https://0xinsider.com) — trader grades, whale trade signals, smart money flow, and insider detection across Polymarket and Kalshi.
 
-Get your documentation site up and running in minutes.
+## What you can build
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+- **Trading bots** that react to whale trades and smart money signals in real-time
+- **AI agents** that analyze trader performance and market intelligence
+- **Research tools** that pull leaderboard data and historical patterns
+- **Dashboards** that visualize smart money flow across prediction markets
 
-## Make it yours
+## Endpoints
 
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Get Trader" icon="user" href="/api-reference/endpoint/get-trader">
+    Trader grades (S through F), P&L, win rate, strategy detection
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Whale Trades" icon="whale" href="/api-reference/endpoint/get-whale-trades">
+    Large trades with signal scoring, filterable by grade and category
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Market Intel" icon="chart-mixed" href="/api-reference/endpoint/get-market-intel">
+    Smart money flow direction, buy/sell volumes, top positions
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Leaderboard" icon="ranking-star" href="/api-reference/endpoint/get-leaderboard">
+    Top traders ranked by score with cursor pagination
   </Card>
-</Columns>
+  <Card title="Search Markets" icon="magnifying-glass" href="/api-reference/endpoint/search-markets">
+    Find markets by keyword with category and status filters
+  </Card>
+  <Card title="Insider Radar" icon="radar" href="/api-reference/endpoint/get-insider-radar">
+    Suspicious trading patterns — pre-resolution accumulation, unusual timing
+  </Card>
+</CardGroup>
 
-## Create beautiful pages
+## Quick example
 
-Everything you need to create world-class documentation.
+```bash
+curl -H "Authorization: Bearer oxi_sk_test_..." \
+  https://api.0xinsider.com/api/v1/leaderboard?limit=3
+```
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "trd_0x863...",
+      "username": "RepTrump",
+      "grade": "S",
+      "score": 97.94,
+      "pnl": 7532409.67,
+      "win_rate": 1.0
+    }
+  ],
+  "has_more": true,
+  "next_cursor": "97.94_0x863..."
+}
+```
 
-## Need inspiration?
+## Base URL
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
+```
+https://api.0xinsider.com/api/v1/
+```
+
+## Authentication
+
+API access is bundled with the [Insider subscription](https://0xinsider.com/pricing) ($89/mo). Generate your API key at [0xinsider.com/developers](https://0xinsider.com/developers).
+
+<Card title="Get started" icon="rocket" href="/quickstart">
+  Generate a key and make your first request in 2 minutes
 </Card>
