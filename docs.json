@@ -30,6 +30,12 @@
               "concepts/pagination",
               "concepts/number-formatting"
             ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "mcp"
+            ]
           }
         ]
       },

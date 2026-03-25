@@ -1,0 +1,133 @@
+---
+title: "MCP Server"
+description: "Connect AI agents to 0xinsider with the Model Context Protocol."
+---
+
+The `@0xinsider/mcp` server lets AI agents (Claude, Cursor, and other MCP-compatible clients) access prediction market intelligence directly — trader grades, whale trades, smart money signals, and insider detection.
+
+## Install
+
+<Tabs>
+  <Tab title="Claude Code">
+    Run the interactive setup:
+
+    ```bash
+    npx @0xinsider/mcp init
+    ```
+
+    This detects your Claude Code config and writes the MCP server block automatically.
+
+    Or add manually to `~/.claude/settings.json`:
+
+    ```json
+    {
+      "mcpServers": {
+        "0xinsider": {
+          "command": "npx",
+          "args": ["-y", "@0xinsider/mcp"],
+          "env": {
+            "OXINSIDER_API_KEY": "oxi_sk_live_..."
+          }
+        }
+      }
+    }
+    ```
+  </Tab>
+  <Tab title="Cursor">
+    Add to `~/.cursor/mcp.json`:
+
+    ```json
+    {
+      "mcpServers": {
+        "0xinsider": {
+          "command": "npx",
+          "args": ["-y", "@0xinsider/mcp"],
+          "env": {
+            "OXINSIDER_API_KEY": "oxi_sk_live_..."
+          }
+        }
+      }
+    }
+    ```
+
+    Restart Cursor after saving.
+  </Tab>
+  <Tab title="Other Clients">
+    Any MCP client that supports stdio transport:
+
+    ```bash
+    OXINSIDER_API_KEY=oxi_sk_live_... npx @0xinsider/mcp
+    ```
+  </Tab>
+</Tabs>
+
+## Tools
+
+The server exposes 6 read-only tools:
+
+| Tool | Description |
+|------|-------------|
+| `get_trader` | Look up a trader by wallet address — grade, P&L, win rate, strategy, quant metrics |
+| `get_whale_trades` | Recent large trades with signal scoring, filterable by size/category/grade |
+| `get_leaderboard` | Top-ranked traders (S/A/B grades) with optional category/strategy filters |
+| `search_markets` | Search prediction markets by keyword |
+| `get_market_intel` | Smart money flow analysis for a specific market |
+| `get_insider_radar` | Suspicious trading pattern detection |
+
+All tools have `readOnlyHint: true` — they never modify data.
+
+## Resources
+
+Static and live data available as MCP resources:
+
+| Resource | URI | Description |
+|----------|-----|-------------|
+| API Docs | `oxinsider://docs/api` | Complete API reference |
+| Agent Instructions | `oxinsider://docs/agents` | Decision tree for AI agents |
+| Leaderboard | `oxinsider://data/leaderboard` | Current top 20 traders |
+| Whale Trades | `oxinsider://data/whale-trades` | Latest 20 whale trades |
+
+## Prompts
+
+Pre-built prompt templates for common workflows:
+
+| Prompt | Description |
+|--------|-------------|
+| `analyze_trader` | Deep analysis of a trader — performance, risk profile, category strengths |
+| `market_report` | Smart money flow report for a market topic |
+| `trading_signals` | Scan for high-conviction signals across markets |
+
+## Example Usage
+
+Once configured, ask your AI agent:
+
+```
+Who are the top prediction market traders right now?
+```
+
+```
+What are whales buying in crypto markets?
+```
+
+```
+Analyze trader 0x1234... — is their strategy worth following?
+```
+
+```
+Are there any suspicious trading patterns on the Trump election market?
+```
+
+```
+Generate a smart money report for AI markets
+```
+
+## Environment Variables
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `OXINSIDER_API_KEY` | Yes | Your API key (`oxi_sk_live_...`) |
+| `OXINSIDER_API_URL` | No | Override API base URL |
+
+<Note>
+  The MCP server uses the same API key and rate limits (100 req/min) as direct API access. Get your key at [0xinsider.com/developers](https://0xinsider.com/developers).
+</Note>
