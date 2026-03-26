@@ -1,5 +1,15 @@
 /* Monochrome theme overrides — both light and dark mode */
 
+/* Smooth transitions for interactive elements */
+[data-active],
+[data-active] a,
+[role="tab"],
+[class*="playground"] button,
+[class*="try-it"],
+.bg-primary-dark {
+  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease, opacity 150ms ease;
+}
+
 /* GET/POST/PUT/DELETE method badges → monochrome */
 [class*="badge"],
 [data-testid*="badge"] {
