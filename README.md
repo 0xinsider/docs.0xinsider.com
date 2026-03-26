@@ -1,55 +1,51 @@
-# Mintlify Starter Kit
+# 0xinsider API Documentation
 
-Use the starter kit to get your docs deployed and ready to customize.
+Documentation for the [0xinsider API](https://docs.0xinsider.com) — prediction market intelligence for AI agents, trading bots, and research tools.
 
-Click the green **Use this template** button at the top of this repo to copy the Mintlify starter kit. The starter kit contains examples with
+## What is 0xinsider?
 
-- Guide pages
-- Navigation
-- Customizations
-- API reference pages
-- Use of popular components
+0xinsider provides trader grades, whale trade signals, smart money flow analysis, and insider detection across Polymarket and Kalshi.
 
-**[Follow the full quickstart guide](https://starter.mintlify.com/quickstart)**
+The API gives you programmatic access to the same intelligence powering the [0xinsider terminal](https://0xinsider.com).
 
-## AI-assisted writing
+## API endpoints
 
-Set up your AI coding tool to work with Mintlify:
+- **Trader** — grades (S through F), P&L, win rate, strategy detection
+- **Leaderboard** — top traders ranked by score with cursor pagination
+- **Whale Trades** — large trades with signal scoring, filterable by grade and category
+- **Market Intel** — smart money flow direction, buy/sell volumes, top positions
+- **Search Markets** — find markets by keyword with category and status filters
+- **Insider Radar** — suspicious trading patterns and pre-resolution accumulation
+
+## MCP Server
+
+Connect AI agents (Claude, Cursor, etc.) to 0xinsider via the Model Context Protocol:
 
 ```bash
-npx skills add https://mintlify.com/docs
+npx @0xinsider/mcp init
 ```
 
-This command installs Mintlify's documentation skill for your configured AI tools like Claude Code, Cursor, Windsurf, and others. The skill includes component reference, writing standards, and workflow guidance.
+See the [MCP docs](https://docs.0xinsider.com/mcp) for setup details.
 
-See the [AI tools guides](/ai-tools) for tool-specific setup.
+## Local development
 
-## Development
+Install [Mintlify CLI](https://www.npmjs.com/package/mint):
 
-Install the [Mintlify CLI](https://www.npmjs.com/package/mint) to preview your documentation changes locally. To install, use the following command:
-
-```
+```bash
 npm i -g mint
 ```
 
-Run the following command at the root of your documentation, where your `docs.json` is located:
+Preview locally:
 
-```
+```bash
 mint dev
 ```
 
-View your local preview at `http://localhost:3000`.
+Open `http://localhost:3000`.
 
-## Publishing changes
+## Links
 
-Install our GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app) to propagate changes from your repo to your deployment. Changes are deployed to production automatically after pushing to the default branch.
-
-## Need help?
-
-### Troubleshooting
-
-- If your dev environment isn't running: Run `mint update` to ensure you have the most recent version of the CLI.
-- If a page loads as a 404: Make sure you are running in a folder with a valid `docs.json`.
-
-### Resources
-- [Mintlify documentation](https://mintlify.com/docs)
+- [API docs](https://docs.0xinsider.com)
+- [Terminal](https://0xinsider.com)
+- [Changelog](https://0xinsider.com/changelog)
+- [Support](mailto:support@0xinsider.com)
