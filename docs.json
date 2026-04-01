@@ -59,6 +59,7 @@
             "group": "Markets",
             "pages": [
               "api-reference/endpoint/search-markets",
+              "api-reference/endpoint/explore-markets",
               "api-reference/endpoint/get-market-intel"
             ]
           },
@@ -119,9 +120,9 @@
     "baseUrl": "https://api.0xinsider.com",
     "auth": {
       "method": "bearer"
-    }
+    },
+    "openapi": "api-reference/openapi.json"
   },
-  "openapi": "/api-reference/openapi.json",
   "chat": {
     "enabled": false
   },

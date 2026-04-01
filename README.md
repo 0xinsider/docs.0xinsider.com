@@ -13,6 +13,7 @@ The API gives you programmatic access to the same intelligence powering the [0xi
 - **Trader** — grades (S through F), P&L, win rate, strategy detection
 - **Leaderboard** — top traders ranked by score with cursor pagination
 - **Whale Trades** — large trades with signal scoring, filterable by grade and category
+- **Explore Markets** — browse whale-active markets by category, platform, status, and sort order
 - **Market Intel** — smart money flow direction, buy/sell volumes, top positions
 - **Search Markets** — find markets by keyword with category and status filters
 - **Insider Radar** — suspicious trading patterns and pre-resolution accumulation
