@@ -250,7 +250,7 @@
       "get": {
         "operationId": "explore_markets",
         "summary": "Explore markets",
-        "description": "Browse whale-active markets with category, platform, status, and keyword filters. Returns a grouped discovery feed where entries are either standalone markets or event groups.",
+        "description": "Browse whale-active titled markets with category, platform, status, and keyword filters. Returns a grouped discovery feed where entries are either standalone markets or event groups.",
         "tags": ["Markets"],
         "parameters": [
           {
@@ -619,7 +619,7 @@
         "properties": {
           "id": { "type": "string" },
           "condition_id": { "type": "string" },
-          "title": { "type": "string" },
+          "title": { "type": "string", "minLength": 1, "description": "Non-empty market title." },
           "slug": { "type": "string", "nullable": true, "description": "Provider-native market slug." },
           "url_slug": { "type": "string", "nullable": true, "description": "First-party market page slug used for internal links." },
           "image": { "type": "string", "nullable": true },
