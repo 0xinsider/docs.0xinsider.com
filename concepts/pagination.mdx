@@ -10,7 +10,7 @@ All list endpoints use **cursor-based pagination**. This is more reliable than o
 1. Make your first request with a `limit`:
 
 ```bash
-curl -H "Authorization: Bearer oxi_sk_test_..." \
+curl -H "Authorization: Bearer oxi_sk_live_..." \
   "https://api.0xinsider.com/api/v1/leaderboard?limit=20"
 ```
 
@@ -28,7 +28,7 @@ curl -H "Authorization: Bearer oxi_sk_test_..." \
 3. Pass `next_cursor` as the `cursor` param for the next page:
 
 ```bash
-curl -H "Authorization: Bearer oxi_sk_test_..." \
+curl -H "Authorization: Bearer oxi_sk_live_..." \
   "https://api.0xinsider.com/api/v1/leaderboard?limit=20&cursor=95.85_0x885..."
 ```
 

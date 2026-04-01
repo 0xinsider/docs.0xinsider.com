@@ -33,7 +33,7 @@ The leaderboard only includes traders with grades S, A, or B.
 ### Filter whale trades by grade
 
 ```bash
-curl -H "Authorization: Bearer oxi_sk_test_..." \
+curl -H "Authorization: Bearer oxi_sk_live_..." \
   "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&limit=10"
 ```
 
@@ -42,6 +42,6 @@ This returns only trades from traders with grade A or better (S and A).
 ### Filter leaderboard by strategy
 
 ```bash
-curl -H "Authorization: Bearer oxi_sk_test_..." \
+curl -H "Authorization: Bearer oxi_sk_live_..." \
   "https://api.0xinsider.com/api/v1/leaderboard?strategy=swing_trader"
 ```
