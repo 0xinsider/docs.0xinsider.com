@@ -31,3 +31,11 @@
 
 {/* Define what should and shouldn't be documented */}
 {/* Example: Don't document internal admin features */}
+
+## API changelog policy
+
+- Treat `changelog.mdx` as required follow-through for externally visible API changes.
+- If the REST API changes, update `changelog.mdx` in the same branch before merging.
+- API changes include new endpoints, removed endpoints, request or response contract changes, auth changes, pagination changes, header changes, enum changes, and semantic behavior changes that affect API consumers.
+- Do not add docs-only edits, copy tweaks, or navigation changes to the API changelog unless they correspond to a shipped API change.
+- Use exact dates and describe the user-visible API impact, not internal implementation details.
