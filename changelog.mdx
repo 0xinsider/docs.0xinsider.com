@@ -1,0 +1,52 @@
+---
+title: "API changelog"
+sidebarTitle: "API changelog"
+description: "Externally visible changes to the 0xinsider REST API."
+rss: true
+---
+
+This changelog tracks externally visible REST API changes only. Documentation-only edits are intentionally excluded.
+
+<Update label="April 2, 2026" description="Leaderboard strategy fields can be null">
+  [`GET /api/v1/leaderboard`](/api-reference/endpoint/get-leaderboard) now safely returns traders without a classified strategy.
+
+  Clients should treat `strategy_type` as nullable for ranked traders without a strategy classification.
+</Update>
+
+<Update label="April 1, 2026" description="Explore Markets excludes untitled rows">
+  [`GET /api/v1/markets/explore`](/api-reference/endpoint/explore-markets) no longer returns untitled markets.
+
+  This tightens the response set to titled, user-facing markets only.
+</Update>
+
+<Update label="March 28, 2026" description="Trader realized P&L corrected">
+  [`GET /api/v1/trader/{address}`](/api-reference/endpoint/get-trader) now returns the canonical realized P&L from the `realized_pnl` source-of-truth field.
+
+  The `pnl.realized` field stopped deriving realized P&L from an inconsistent approximation.
+</Update>
+
+<Update label="March 26, 2026" description="Explore Markets endpoint launched">
+  Added [`GET /api/v1/markets/explore`](/api-reference/endpoint/explore-markets) for cursor-paginated market discovery.
+
+  The endpoint supports category, status, platform, and text filters, plus primary-market injection so grouped events include a main market when one exists.
+</Update>
+
+<Update label="March 25, 2026" description="Initial V1 launch">
+  Launched the first public developer API:
+
+  - [`GET /api/v1/trader/{address}`](/api-reference/endpoint/get-trader)
+  - [`GET /api/v1/whale-trades`](/api-reference/endpoint/get-whale-trades)
+  - [`GET /api/v1/leaderboard`](/api-reference/endpoint/get-leaderboard)
+  - [`GET /api/v1/markets/search`](/api-reference/endpoint/search-markets)
+  - [`GET /api/v1/market/{condition_id}/intel`](/api-reference/endpoint/get-market-intel)
+  - [`GET /api/v1/insider-radar`](/api-reference/endpoint/get-insider-radar)
+  - [`GET /api/v1/health`](/api-reference/endpoint/health)
+
+  The initial contract shipped with Bearer auth, `expand[]`, cursor pagination, prefixed IDs, and rate-limit headers.
+</Update>
+
+<Update label="March 25, 2026" description="Numeric precision standardized">
+  Money values and scores are truncated to 2 decimal places across V1 responses.
+
+  Prices and rates are truncated to 4 decimal places.
+</Update>
