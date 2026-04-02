@@ -47,6 +47,7 @@ Open `http://localhost:3000`.
 ## Links
 
 - [API docs](https://docs.0xinsider.com)
+- [API changelog](https://docs.0xinsider.com/changelog)
 - [Terminal](https://0xinsider.com)
-- [Changelog](https://0xinsider.com/changelog)
+- [Product changelog](https://0xinsider.com/changelog)
 - [Support](mailto:support@0xinsider.com)

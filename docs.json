@@ -82,6 +82,17 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Changelog",
+        "groups": [
+          {
+            "group": "API updates",
+            "pages": [
+              "changelog"
+            ]
+          }
+        ]
       }
     ],
     "global": {
@@ -92,7 +103,7 @@
           "icon": "chart-line"
         },
         {
-          "anchor": "Changelog",
+          "anchor": "Product Changelog",
           "href": "https://0xinsider.com/changelog",
           "icon": "list"
         }
