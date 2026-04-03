@@ -18,6 +18,7 @@
             "pages": [
               "index",
               "quickstart",
+              "mcp",
               "authentication",
               "rate-limits",
               "errors"
@@ -29,12 +30,6 @@
               "concepts/grades",
               "concepts/pagination",
               "concepts/number-formatting"
-            ]
-          },
-          {
-            "group": "Integrations",
-            "pages": [
-              "mcp"
             ]
           }
         ]

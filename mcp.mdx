@@ -3,7 +3,11 @@ title: "MCP Server"
 description: "Connect AI agents to 0xinsider with the Model Context Protocol."
 ---
 
-The `@0xinsider/mcp` server lets AI agents (Claude, Cursor, and other MCP-compatible clients) access prediction market intelligence directly — trader grades, whale trades, smart money signals, and insider detection.
+The `@0xinsider/mcp` server lets AI agents access prediction market intelligence directly — trader grades, whale trades, smart money signals, and insider detection.
+
+The package is live on npm: [`@0xinsider/mcp`](https://www.npmjs.com/package/@0xinsider/mcp).
+
+It works with Claude Code, Cursor, Codex, Gemini CLI, and other stdio-compatible MCP clients.
 
 ## Install
 
@@ -12,10 +16,10 @@ The `@0xinsider/mcp` server lets AI agents (Claude, Cursor, and other MCP-compat
     Run the interactive setup:
 
     ```bash
-    npx @0xinsider/mcp init
+    npx -y @0xinsider/mcp init
     ```
 
-    This detects your Claude Code config and writes the MCP server block automatically.
+    This detects Claude Code and writes the MCP server block automatically.
 
     Or add manually to `~/.claude/settings.json`:
 
@@ -34,7 +38,15 @@ The `@0xinsider/mcp` server lets AI agents (Claude, Cursor, and other MCP-compat
     ```
   </Tab>
   <Tab title="Cursor">
-    Add to `~/.cursor/mcp.json`:
+    Run the interactive setup:
+
+    ```bash
+    npx -y @0xinsider/mcp init
+    ```
+
+    This detects Cursor and writes the MCP server block automatically.
+
+    Or add manually to `~/.cursor/mcp.json`:
 
     ```json
     {
@@ -52,11 +64,56 @@ The `@0xinsider/mcp` server lets AI agents (Claude, Cursor, and other MCP-compat
 
     Restart Cursor after saving.
   </Tab>
+  <Tab title="Codex">
+    Run the interactive setup:
+
+    ```bash
+    npx -y @0xinsider/mcp init
+    ```
+
+    This detects Codex and runs `codex mcp add` for you.
+
+    Or add manually to `~/.codex/config.toml`:
+
+    ```toml
+    [mcp_servers."0xinsider"]
+    command = "npx"
+    args = ["-y", "@0xinsider/mcp"]
+
+    [mcp_servers."0xinsider".env]
+    OXINSIDER_API_KEY = "oxi_sk_live_..."
+    ```
+  </Tab>
+  <Tab title="Gemini CLI">
+    Add to `~/.gemini/settings.json`:
+
+    ```json
+    {
+      "mcpServers": {
+        "0xinsider": {
+          "command": "npx",
+          "args": ["-y", "@0xinsider/mcp"],
+          "env": {
+            "OXINSIDER_API_KEY": "oxi_sk_live_..."
+          }
+        }
+      }
+    }
+    ```
+
+    Gemini CLI discovers MCP servers from `settings.json` and exposes the tools through `/mcp`.
+  </Tab>
   <Tab title="Other Clients">
     Any MCP client that supports stdio transport:
 
     ```bash
-    OXINSIDER_API_KEY=oxi_sk_live_... npx @0xinsider/mcp
+    OXINSIDER_API_KEY=oxi_sk_live_... npx -y @0xinsider/mcp
+    ```
+
+    Need the command list?
+
+    ```bash
+    npx -y @0xinsider/mcp --help
     ```
   </Tab>
 </Tabs>

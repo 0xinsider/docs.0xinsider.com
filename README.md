@@ -20,13 +20,15 @@ The API gives you programmatic access to the same intelligence powering the [0xi
 
 ## MCP Server
 
-Connect AI agents (Claude, Cursor, etc.) to 0xinsider via the Model Context Protocol:
+Connect AI agents to 0xinsider via the Model Context Protocol:
 
 ```bash
-npx @0xinsider/mcp init
+npx -y @0xinsider/mcp init
 ```
 
-See the [MCP docs](https://docs.0xinsider.com/mcp) for setup details.
+Supports Claude Code, Cursor, Codex, Gemini CLI, and other stdio-compatible MCP clients.
+
+See the [MCP docs](https://docs.0xinsider.com/mcp) and the [npm package](https://www.npmjs.com/package/@0xinsider/mcp) for setup details.
 
 ## Local development
 
