@@ -15,16 +15,14 @@ The API gives you programmatic access to the same intelligence powering the [0xi
 - **Whale Trades** — large trades with signal scoring, filterable by grade and category
 - **Explore Markets** — browse whale-active titled markets by category, platform, status, and sort order
 - **Market Intel** — smart money flow direction, buy/sell volumes, top positions
-- **Search Markets** — find markets by keyword with category and status filters
+- **Search Markets** — find markets by keyword with category/status filters and real cursor pagination
 - **Insider Radar** — suspicious trading patterns and pre-resolution accumulation
 
 ## MCP Server
 
 Connect AI agents (Claude, Cursor, etc.) to 0xinsider via the Model Context Protocol:
 
-```bash
-npx @0xinsider/mcp init
-```
+Clone the main repo and run the MCP server from `mcp/dist/index.js`. The npm package is not published yet.
 
 See the [MCP docs](https://docs.0xinsider.com/mcp) for setup details.
 

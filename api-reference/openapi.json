@@ -65,6 +65,8 @@
           },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "423": { "$ref": "#/components/responses/Locked" },
           "429": { "$ref": "#/components/responses/RateLimited" },
           "500": { "$ref": "#/components/responses/InternalError" }
         }
@@ -74,7 +76,7 @@
       "get": {
         "operationId": "get_whale_trades",
         "summary": "List whale trades",
-        "description": "Returns recent large trades with signal scoring. Filter by size, category, or trader grade. Cursor-paginated, newest first.",
+        "description": "Returns recent large trades with signal scoring. Filter by size, category, or trader grade. Cursor-paginated, newest first. Market categories use the effective market category fallback derived from stored market metadata when inferred_category is still null.",
         "tags": ["Whale Trades"],
         "parameters": [
           {
@@ -97,7 +99,7 @@
           {
             "name": "category",
             "in": "query",
-            "description": "Filter by market category (case-insensitive).",
+            "description": "Filter by effective market category (case-insensitive). Falls back to stored provider category metadata when inferred_category is null.",
             "schema": { "type": "string" }
           },
           {
@@ -129,6 +131,8 @@
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "423": { "$ref": "#/components/responses/Locked" },
           "429": { "$ref": "#/components/responses/RateLimited" }
         }
       }
@@ -185,6 +189,8 @@
           },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "423": { "$ref": "#/components/responses/Locked" },
           "429": { "$ref": "#/components/responses/RateLimited" }
         }
       }
@@ -193,7 +199,7 @@
       "get": {
         "operationId": "search_markets",
         "summary": "Search markets",
-        "description": "Search prediction markets by keyword. Returns matching markets with status and category.",
+        "description": "Search prediction markets by keyword. Returns representative market matches with status, category, and platform metadata. Cursor pagination advances over grouped market results rather than raw sub-market rows.",
         "tags": ["Markets"],
         "parameters": [
           {
@@ -207,6 +213,12 @@
             "name": "limit",
             "in": "query",
             "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Pagination cursor from previous response's next_cursor.",
+            "schema": { "type": "string" }
           },
           {
             "name": "status",
@@ -233,6 +245,7 @@
                     "object": { "type": "string", "const": "list" },
                     "data": { "type": "array", "items": { "$ref": "#/components/schemas/MarketSearchResult" } },
                     "has_more": { "type": "boolean" },
+                    "next_cursor": { "type": "string", "nullable": true },
                     "meta": { "$ref": "#/components/schemas/ResponseMeta" }
                   }
                 }
@@ -242,6 +255,8 @@
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "423": { "$ref": "#/components/responses/Locked" },
           "429": { "$ref": "#/components/responses/RateLimited" }
         }
       }
@@ -250,7 +265,7 @@
       "get": {
         "operationId": "explore_markets",
         "summary": "Explore markets",
-        "description": "Browse whale-active titled markets with category, platform, status, and keyword filters. Returns a grouped discovery feed where entries are either standalone markets or event groups.",
+        "description": "Browse whale-active titled markets with category, platform, status, and keyword filters. Paginates visible discovery entries rather than raw market rows and returns live category/platform facets alongside grouped event clusters or standalone markets.",
         "tags": ["Markets"],
         "parameters": [
           {
@@ -303,13 +318,14 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["object", "data", "has_more", "meta"],
+                  "required": ["object", "data", "has_more", "facets", "meta"],
                   "properties": {
                     "object": { "type": "string", "const": "list" },
                     "data": { "type": "array", "items": { "$ref": "#/components/schemas/ExploreEntry" } },
                     "has_more": { "type": "boolean" },
                     "next_cursor": { "type": "string", "nullable": true },
                     "total": { "type": "integer", "nullable": true },
+                    "facets": { "$ref": "#/components/schemas/ExploreFacets" },
                     "meta": { "$ref": "#/components/schemas/ResponseMeta" }
                   }
                 }
@@ -319,6 +335,8 @@
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "423": { "$ref": "#/components/responses/Locked" },
           "429": { "$ref": "#/components/responses/RateLimited" }
         }
       }
@@ -363,7 +381,9 @@
           },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
           "404": { "$ref": "#/components/responses/NotFound" },
+          "423": { "$ref": "#/components/responses/Locked" },
           "429": { "$ref": "#/components/responses/RateLimited" }
         }
       }
@@ -421,6 +441,8 @@
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "423": { "$ref": "#/components/responses/Locked" },
           "429": { "$ref": "#/components/responses/RateLimited" }
         }
       }
@@ -577,7 +599,7 @@
               "condition_id": { "type": "string" },
               "title": { "type": "string" },
               "slug": { "type": "string", "nullable": true },
-              "category": { "type": "string", "nullable": true }
+              "category": { "type": "string", "nullable": true, "description": "Effective market category. Falls back to stored provider category metadata when inferred_category is null." }
             }
           }
         }
@@ -610,7 +632,7 @@
           "slug": { "type": "string", "nullable": true },
           "category": { "type": "string", "nullable": true },
           "platform": { "type": "string", "nullable": true },
-          "status": { "type": "string", "enum": ["active", "resolved"] }
+          "status": { "type": "string", "enum": ["active", "closed"] }
         }
       },
       "ExploreMarket": {
@@ -626,7 +648,7 @@
           "icon": { "type": "string", "nullable": true },
           "category": { "type": "string", "nullable": true },
           "platform": { "type": "string", "nullable": true },
-          "status": { "type": "string", "enum": ["active", "resolved"] },
+          "status": { "type": "string", "enum": ["active", "closed"] },
           "volume": { "type": "number", "nullable": true },
           "liquidity": { "type": "number", "nullable": true },
           "whale_trade_count": { "type": "integer", "nullable": true },
@@ -677,6 +699,23 @@
         "properties": {
           "type": { "type": "string", "const": "standalone" },
           "market": { "$ref": "#/components/schemas/ExploreMarket" }
+        }
+      },
+      "ExploreFacetValue": {
+        "type": "object",
+        "required": ["value", "label", "count"],
+        "properties": {
+          "value": { "type": "string" },
+          "label": { "type": "string" },
+          "count": { "type": "integer" }
+        }
+      },
+      "ExploreFacets": {
+        "type": "object",
+        "required": ["categories", "platforms"],
+        "properties": {
+          "categories": { "type": "array", "items": { "$ref": "#/components/schemas/ExploreFacetValue" } },
+          "platforms": { "type": "array", "items": { "$ref": "#/components/schemas/ExploreFacetValue" } }
         }
       },
       "ExploreEntry": {
@@ -819,6 +858,22 @@
           }
         }
       },
+      "Forbidden": {
+        "description": "Account access denied",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiError" }
+          }
+        }
+      },
+      "Locked": {
+        "description": "Account is locked",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiError" }
+          }
+        }
+      },
       "NotFound": {
         "description": "Resource not found",
         "content": {
@@ -842,6 +897,9 @@
           },
           "X-RateLimit-Reset": {
             "schema": { "type": "integer" }
+          },
+          "X-Request-Id": {
+            "schema": { "type": "string" }
           }
         },
         "content": {
