@@ -85,7 +85,15 @@ It works with Claude Code, Cursor, Codex, Gemini CLI, and other stdio-compatible
     ```
   </Tab>
   <Tab title="Gemini CLI">
-    Add to `~/.gemini/settings.json`:
+    Run the interactive setup:
+
+    ```bash
+    npx -y @0xinsider/mcp init
+    ```
+
+    This detects Gemini CLI when the `gemini` command is installed and runs `gemini mcp add --scope user` for you.
+
+    Or add manually to `~/.gemini/settings.json`:
 
     ```json
     {
