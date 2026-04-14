@@ -26,22 +26,37 @@
       "get": {
         "operationId": "get_trader",
         "summary": "Get trader intelligence",
-        "description": "Returns a trader's grade (S through F), P&L, win rate, and optional strategy/category data. Unknown addresses return sync_status \"unknown\" instead of 404.",
+        "description": "Returns a trader's grade (S through F), P&L, win rate, and optional strategy/category data. The path accepts either an Ethereum wallet address or a known trader username. Unknown lookups return sync_status \"unknown\" instead of 404.",
         "tags": ["Traders"],
         "parameters": [
           {
             "name": "address",
             "in": "path",
             "required": true,
-            "description": "Ethereum wallet address (0x...)",
+            "description": "Ethereum wallet address (0x...) or known trader username",
             "schema": { "type": "string" }
           },
           {
             "name": "expand[]",
             "in": "query",
             "required": false,
+            "description": "Backward-compatible alias for expand. Repeatable: strategy, categories, quant_metrics.",
+            "schema": {
+              "type": "array",
+              "items": { "type": "string", "enum": ["strategy", "categories", "quant_metrics"] }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "expand",
+            "in": "query",
+            "required": false,
             "description": "Include heavy fields. Repeatable: strategy, categories, quant_metrics.",
-            "schema": { "type": "string", "enum": ["strategy", "categories", "quant_metrics"] },
+            "schema": {
+              "type": "array",
+              "items": { "type": "string", "enum": ["strategy", "categories", "quant_metrics"] }
+            },
             "style": "form",
             "explode": true
           }
@@ -541,7 +556,7 @@
           "category_strengths": {
             "type": "array",
             "nullable": true,
-            "description": "Category performance breakdown (expand[]=categories). Null unless expanded.",
+            "description": "Category performance breakdown (expand=categories or expand[]=categories). Null unless expanded.",
             "items": {
               "type": "object",
               "properties": {
@@ -556,7 +571,7 @@
           "quant_metrics": {
             "type": "object",
             "nullable": true,
-            "description": "Advanced risk/performance metrics (expand[]=quant_metrics). Null unless expanded.",
+            "description": "Advanced risk/performance metrics (expand=quant_metrics or expand[]=quant_metrics). Null unless expanded.",
             "properties": {
               "sharpe_ratio": { "type": "number", "nullable": true, "description": "Risk-adjusted return (annualized)" },
               "sortino_ratio": { "type": "number", "nullable": true, "description": "Downside risk-adjusted return" },

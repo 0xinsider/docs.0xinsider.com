@@ -7,6 +7,12 @@ rss: true
 
 This changelog tracks externally visible REST API changes only. Documentation-only edits are intentionally excluded.
 
+<Update label="April 14, 2026" description="Trader lookup accepts usernames and plain expand params">
+  [`GET /api/v1/trader/{address}`](/api-reference/endpoint/get-trader) now accepts a known trader username in the path in addition to an Ethereum wallet address.
+
+  Heavy trader fields can be requested with repeated `expand` query params, and the legacy `expand[]` form remains supported for existing clients.
+</Update>
+
 <Update label="April 2, 2026" description="Leaderboard strategy fields can be null">
   [`GET /api/v1/leaderboard`](/api-reference/endpoint/get-leaderboard) now safely returns traders without a classified strategy.
 

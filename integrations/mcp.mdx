@@ -132,7 +132,7 @@ The server exposes 6 read-only tools:
 
 | Tool | Description |
 |------|-------------|
-| `get_trader` | Look up a trader by wallet address — grade, P&L, win rate, strategy, quant metrics |
+| `get_trader` | Look up a trader by wallet address or username — grade, P&L, win rate, strategy, quant metrics |
 | `get_whale_trades` | Recent large trades with signal scoring, filterable by size/category/grade |
 | `get_leaderboard` | Top-ranked traders (S/A/B grades) with optional category/strategy filters |
 | `search_markets` | Search prediction markets by keyword |
@@ -140,6 +140,8 @@ The server exposes 6 read-only tools:
 | `get_insider_radar` | Suspicious trading pattern detection |
 
 All tools have `readOnlyHint: true` — they never modify data.
+
+`get_trader` accepts either an Ethereum wallet address or a known trader username like `swisstony`.
 
 ## Resources
 
@@ -176,6 +178,10 @@ What are whales buying in crypto markets?
 
 ```
 Analyze trader 0x1234... — is their strategy worth following?
+```
+
+```
+Analyze trader swisstony — is their strategy worth following?
 ```
 
 ```
