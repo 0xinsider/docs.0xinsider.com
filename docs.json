@@ -47,7 +47,15 @@
             "group": "Traders",
             "pages": [
               "api-reference/endpoint/get-trader",
+              "api-reference/endpoint/get-position-timeline",
+              "api-reference/endpoint/get-position-timeline-by-id",
               "api-reference/endpoint/get-leaderboard"
+            ]
+          },
+          {
+            "group": "Positions",
+            "pages": [
+              "api-reference/endpoint/get-positions"
             ]
           },
           {
@@ -73,7 +81,9 @@
           {
             "group": "System",
             "pages": [
-              "api-reference/endpoint/health"
+              "api-reference/endpoint/health",
+              "api-reference/endpoint/remote-mcp",
+              "api-reference/endpoint/remote-mcp-stream"
             ]
           }
         ]

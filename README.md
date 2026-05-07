@@ -46,6 +46,13 @@ mint dev
 
 Open `http://localhost:3000`.
 
+Check that every OpenAPI operation has a Mintlify endpoint page and navigation
+entry:
+
+```bash
+python3 scripts/check-openapi-parity.py
+```
+
 ## Links
 
 - [API docs](https://docs.0xinsider.com)

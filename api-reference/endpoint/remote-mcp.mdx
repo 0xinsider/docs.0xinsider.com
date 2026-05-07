@@ -1,0 +1,11 @@
+---
+title: "Remote MCP"
+sidebarTitle: "Remote MCP"
+openapi: "POST /api/v1/mcp"
+---
+
+Use `Authorization: Bearer <token>` for remote MCP clients that support custom
+headers. The `?token=` query parameter remains available only as legacy
+compatibility for URL-only clients; prefer headers because URL secrets can be
+stored in shell history, browser history, proxies, and logs.
+

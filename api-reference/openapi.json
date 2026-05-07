@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "0xinsider API",
-    "description": "Prediction market intelligence API — trader grades, whale trades, smart money signals, and insider detection. For AI agents, trading bots, and research tools.",
+    "description": "Find your edge on Polymarket and Kalshi. Every wallet graded, every trade scored, every outlier flagged. API exposes trader grades, whale trades, smart money signals, and insider detection for AI agents, trading bots, and research tools. Normal API requests use a 30-second server timeout that returns HTTP 408 Request Timeout with an empty body when exceeded. Successful browser CORS preflight responses advertise Access-Control-Max-Age: 86400.",
     "version": "1.0.0",
     "contact": {
       "name": "0xinsider",
@@ -81,9 +81,220 @@
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/SubscriptionRequired" },
           "403": { "$ref": "#/components/responses/Forbidden" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
           "423": { "$ref": "#/components/responses/Locked" },
           "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" },
           "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/trader/{address}/position-timeline": {
+      "get": {
+        "operationId": "get_position_timeline",
+        "summary": "Get a trader's position timeline for one market",
+        "description": "Returns every Polymarket fill for one trader in one market, newest first, with server-computed running_amount and running_avg_price. Only HOT and WARM tier traders are tracked; other traders return 404. running_avg_price is a buy-weighted entry basis (sells do not change the running average) matching Polymarket /positions avgPrice semantics. Cursor-paginated. An id-keyed alias exists at GET /api/v1/traders/{id}/position-timeline.",
+        "tags": ["Traders"],
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "required": true,
+            "description": "Trader wallet address (0x...). Case-insensitive — addresses are lowercased server-side.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "condition_id",
+            "in": "query",
+            "required": true,
+            "description": "Market condition_id. One timeline per (trader, market).",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Pagination cursor from previous response's next_cursor.",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Position timeline page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["object", "data", "has_more", "meta"],
+                  "properties": {
+                    "object": { "type": "string", "const": "list" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/PositionTimelineEvent" }
+                    },
+                    "has_more": { "type": "boolean" },
+                    "next_cursor": { "type": "string", "nullable": true },
+                    "meta": { "$ref": "#/components/schemas/ResponseMeta" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
+          "423": { "$ref": "#/components/responses/Locked" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/traders/{id}/position-timeline": {
+      "get": {
+        "operationId": "get_position_timeline_by_id",
+        "summary": "Get a trader's position timeline by integer id",
+        "description": "Id-keyed alias of GET /api/v1/trader/{address}/position-timeline. Response body is byte-identical for the same underlying trader. Useful for worker tasks and agent clients already holding a numeric traders.id.",
+        "tags": ["Traders"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Internal traders.id (integer). Returns 404 when the trader is not HOT or WARM tier, identical to the address-keyed route.",
+            "schema": { "type": "integer", "format": "int32" }
+          },
+          {
+            "name": "condition_id",
+            "in": "query",
+            "required": true,
+            "description": "Market condition_id. One timeline per (trader, market).",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Pagination cursor from previous response's next_cursor.",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Position timeline page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["object", "data", "has_more", "meta"],
+                  "properties": {
+                    "object": { "type": "string", "const": "list" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/PositionTimelineEvent" }
+                    },
+                    "has_more": { "type": "boolean" },
+                    "next_cursor": { "type": "string", "nullable": true },
+                    "meta": { "$ref": "#/components/schemas/ResponseMeta" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
+          "423": { "$ref": "#/components/responses/Locked" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/positions": {
+      "get": {
+        "operationId": "get_positions",
+        "summary": "List current positions (positions-board feed)",
+        "description": "Returns the current positions-board feed backed by the wallet_positions mirror. Ordered by current_value_usd DESC with deterministic (wallet, condition_id, outcome_index) tiebreakers. Pre-reconcile rows (current_value_usd IS NULL) are excluded. Cursor-paginated. Every filter pushes into SQL.",
+        "tags": ["Positions"],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Pagination cursor from previous response's next_cursor.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "min_size",
+            "in": "query",
+            "description": "Minimum current position value in USD.",
+            "schema": { "type": "number", "default": 100 }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Exact match against provider-backed market_canonical.category.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "min_grade",
+            "in": "query",
+            "description": "Minimum trader grade allowlist. `A` matches S and A; `B` matches S, A, B; etc.",
+            "schema": { "type": "string", "enum": ["S", "A", "B", "C", "D", "F"] }
+          },
+          {
+            "name": "side",
+            "in": "query",
+            "description": "Filter by the binary outcome side. `yes` maps to outcome_index=0, `no` to outcome_index=1.",
+            "schema": { "type": "string", "enum": ["yes", "no"] }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Page of positions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["object", "data", "has_more", "meta"],
+                  "properties": {
+                    "object": { "type": "string", "const": "list" },
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Position" } },
+                    "has_more": { "type": "boolean" },
+                    "next_cursor": { "type": "string", "nullable": true },
+                    "meta": { "$ref": "#/components/schemas/ResponseMeta" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
+          "423": { "$ref": "#/components/responses/Locked" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" }
         }
       }
     },
@@ -91,7 +302,7 @@
       "get": {
         "operationId": "get_whale_trades",
         "summary": "List whale trades",
-        "description": "Returns recent large trades with signal scoring. Filter by size, category, or trader grade. Cursor-paginated, newest first. Market categories use the effective market category fallback derived from stored market metadata when inferred_category is still null.",
+        "description": "Returns recent large trades with signal scoring. Filter by size, category, or trader grade. Filters are applied before pagination, and every request uses SQL-backed limit + 1 pagination so has_more and next_cursor reflect the filtered result set. Cursor-paginated, newest first. Market categories come from provider-backed market_canonical identity.",
         "tags": ["Whale Trades"],
         "parameters": [
           {
@@ -114,7 +325,7 @@
           {
             "name": "category",
             "in": "query",
-            "description": "Filter by effective market category (case-insensitive). Falls back to stored provider category metadata when inferred_category is null.",
+            "description": "Filter by provider-backed market_canonical category (case-insensitive).",
             "schema": { "type": "string" }
           },
           {
@@ -147,8 +358,10 @@
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/SubscriptionRequired" },
           "403": { "$ref": "#/components/responses/Forbidden" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
           "423": { "$ref": "#/components/responses/Locked" },
-          "429": { "$ref": "#/components/responses/RateLimited" }
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" }
         }
       }
     },
@@ -179,13 +392,40 @@
           {
             "name": "strategy",
             "in": "query",
-            "description": "Filter by strategy type.",
+            "description": "Filter by ML-detected strategy type. Values come from backend/src/trader_analysis/classification/decision_tree.rs and are matched exactly against trader_classifications.primary_type. Unknown values currently match zero rows; the handler does not return HTTP 400.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "accumulator",
+                "algo_trader",
+                "arbitrageur",
+                "directional",
+                "event_driven",
+                "market_maker",
+                "momentum",
+                "scalper",
+                "speculator",
+                "swing_trader"
+              ]
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "required": false,
+            "description": "Conditional GET validator from a previous ETag. Matching values return 304 Not Modified with an empty body.",
             "schema": { "type": "string" }
           }
         ],
         "responses": {
           "200": {
             "description": "Ranked trader list",
+            "headers": {
+              "ETag": {
+                "description": "Stable validator for the current leaderboard payload. Re-send it via If-None-Match for conditional GETs.",
+                "schema": { "type": "string" }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -202,11 +442,22 @@
               }
             }
           },
+          "304": {
+            "description": "Not Modified. Returned when If-None-Match matches the current leaderboard payload.",
+            "headers": {
+              "ETag": {
+                "description": "Validator for the unchanged leaderboard payload.",
+                "schema": { "type": "string" }
+              }
+            }
+          },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/SubscriptionRequired" },
           "403": { "$ref": "#/components/responses/Forbidden" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
           "423": { "$ref": "#/components/responses/Locked" },
-          "429": { "$ref": "#/components/responses/RateLimited" }
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" }
         }
       }
     },
@@ -221,8 +472,8 @@
             "name": "q",
             "in": "query",
             "required": true,
-            "description": "Search query.",
-            "schema": { "type": "string" }
+            "description": "Search query. Must be 1-512 characters before whitespace trimming and non-empty after trimming.",
+            "schema": { "type": "string", "minLength": 1, "maxLength": 512 }
           },
           {
             "name": "limit",
@@ -271,8 +522,10 @@
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/SubscriptionRequired" },
           "403": { "$ref": "#/components/responses/Forbidden" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
           "423": { "$ref": "#/components/responses/Locked" },
-          "429": { "$ref": "#/components/responses/RateLimited" }
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" }
         }
       }
     },
@@ -280,13 +533,13 @@
       "get": {
         "operationId": "explore_markets",
         "summary": "Explore markets",
-        "description": "Browse whale-active titled markets with category, platform, status, and keyword filters. Paginates visible discovery entries rather than raw market rows and returns live category/platform facets alongside grouped event clusters or standalone markets.",
+        "description": "Browse whale-active titled markets with category, platform, status, and keyword filters. Paginates visible discovery entries rather than raw market rows, returns live category/platform facets alongside grouped event clusters or standalone markets, and includes total on the first page only. Categories come straight from provider metadata (Polymarket Gamma, Kalshi) and facets are flat value/label/count rows.",
         "tags": ["Markets"],
         "parameters": [
           {
             "name": "category",
             "in": "query",
-            "description": "Filter by inferred market category.",
+            "description": "Filter by provider-native market category (case-insensitive, no parent/child expansion).",
             "schema": { "type": "string" }
           },
           {
@@ -324,11 +577,24 @@
             "in": "query",
             "description": "Keyword search against market titles.",
             "schema": { "type": "string" }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "required": false,
+            "description": "Conditional GET validator from a previous ETag. Matching values return 304 Not Modified with an empty body.",
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
           "200": {
             "description": "Grouped market discovery results",
+            "headers": {
+              "ETag": {
+                "description": "Stable validator for the current explore payload. Re-send it via If-None-Match for conditional GETs.",
+                "schema": { "type": "string" }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -339,7 +605,11 @@
                     "data": { "type": "array", "items": { "$ref": "#/components/schemas/ExploreEntry" } },
                     "has_more": { "type": "boolean" },
                     "next_cursor": { "type": "string", "nullable": true },
-                    "total": { "type": "integer", "nullable": true },
+                    "total": {
+                      "type": "integer",
+                      "nullable": true,
+                      "description": "Total matching visible entries after grouping. Present on the first page and omitted on cursor pages."
+                    },
                     "facets": { "$ref": "#/components/schemas/ExploreFacets" },
                     "meta": { "$ref": "#/components/schemas/ResponseMeta" }
                   }
@@ -347,12 +617,23 @@
               }
             }
           },
+          "304": {
+            "description": "Not Modified. Returned when If-None-Match matches the current explore payload.",
+            "headers": {
+              "ETag": {
+                "description": "Validator for the unchanged explore payload.",
+                "schema": { "type": "string" }
+              }
+            }
+          },
           "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/SubscriptionRequired" },
           "403": { "$ref": "#/components/responses/Forbidden" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
           "423": { "$ref": "#/components/responses/Locked" },
-          "429": { "$ref": "#/components/responses/RateLimited" }
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" }
         }
       }
     },
@@ -367,7 +648,7 @@
             "name": "condition_id",
             "in": "path",
             "required": true,
-            "description": "Market condition ID.",
+            "description": "Market condition ID. Use the condition_id returned by /api/v1/markets/search, not the prefixed market.id value (mkt_...).",
             "schema": { "type": "string" }
           },
           {
@@ -394,12 +675,15 @@
               }
             }
           },
+          "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/SubscriptionRequired" },
           "403": { "$ref": "#/components/responses/Forbidden" },
           "404": { "$ref": "#/components/responses/NotFound" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
           "423": { "$ref": "#/components/responses/Locked" },
-          "429": { "$ref": "#/components/responses/RateLimited" }
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" }
         }
       }
     },
@@ -457,8 +741,10 @@
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/SubscriptionRequired" },
           "403": { "$ref": "#/components/responses/Forbidden" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
           "423": { "$ref": "#/components/responses/Locked" },
-          "429": { "$ref": "#/components/responses/RateLimited" }
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" }
         }
       }
     },
@@ -466,12 +752,27 @@
       "get": {
         "operationId": "health",
         "summary": "Health check",
-        "description": "Returns API health status. No authentication required.",
+        "description": "Returns API health status. No authentication required. Limited to 60 requests per minute per IP.",
         "tags": ["System"],
         "security": [],
+        "parameters": [
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "required": false,
+            "description": "Conditional GET validator from a previous ETag. Matching values return 304 Not Modified with an empty body.",
+            "schema": { "type": "string" }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Health status",
+            "headers": {
+              "ETag": {
+                "description": "Stable validator for the current health payload. Re-send it via If-None-Match for conditional GETs.",
+                "schema": { "type": "string" }
+              }
+            },
             "content": {
               "application/json": {
                 "schema": {
@@ -484,7 +785,28 @@
                       "properties": {
                         "status": { "type": "string", "enum": ["ok", "degraded", "down", "maintenance"] },
                         "db": { "type": "boolean" },
-                        "cache": { "type": "boolean" }
+                        "cache": { "type": "boolean" },
+                        "subsystems": {
+                          "type": "object",
+                          "required": ["background_jobs"],
+                          "properties": {
+                            "background_jobs": {
+                              "type": "object",
+                              "required": ["status", "checked", "total", "healthy", "stale", "missing", "invalid", "unconfigured"],
+                              "description": "Public-safe aggregate status for expected background job successful-completion heartbeats. Does not expose Redis keys, job names, raw errors, provider payloads, wallet addresses, or condition IDs.",
+                              "properties": {
+                                "status": { "type": "string", "enum": ["ok", "degraded", "down", "not_checked"] },
+                                "checked": { "type": "boolean" },
+                                "total": { "type": "integer", "minimum": 0 },
+                                "healthy": { "type": "integer", "minimum": 0 },
+                                "stale": { "type": "integer", "minimum": 0 },
+                                "missing": { "type": "integer", "minimum": 0 },
+                                "invalid": { "type": "integer", "minimum": 0 },
+                                "unconfigured": { "type": "integer", "minimum": 0 }
+                              }
+                            }
+                          }
+                        }
                       }
                     },
                     "meta": { "$ref": "#/components/schemas/ResponseMeta" }
@@ -492,7 +814,127 @@
                 }
               }
             }
+          },
+          "304": {
+            "description": "Not Modified. Returned when If-None-Match matches the current health payload.",
+            "headers": {
+              "ETag": {
+                "description": "Validator for the unchanged health payload.",
+                "schema": { "type": "string" }
+              }
+            }
+          },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/api/v1/mcp": {
+      "post": {
+        "operationId": "mcp_post",
+        "summary": "Remote MCP endpoint (JSON-RPC)",
+        "description": "Model Context Protocol (MCP) Streamable HTTP transport. Accepts a JSON-RPC 2.0 request and returns a JSON-RPC response. Supported methods: initialize, notifications/initialized, ping, tools/list, tools/call. Six tools are exposed: get_leaderboard, get_trader, get_whale_trades, get_market_intel, get_insider_radar, search_markets — each dispatches to the matching /api/v1/* handler in-process so auth, rate limits, and payload shape match. Auth should use Authorization: Bearer <token>. ?token=<token> remains a legacy compatibility path for URL-only MCP clients, but URL secrets can land in shell history, browser history, and logs, so prefer headers or the stdio package. Mcp-Session-Id is minted on initialize and echoed on every response. Origin header, when present, is validated against the 0xinsider + localhost allowlist.",
+        "tags": ["MCP"],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": false,
+            "description": "Deprecated compatibility API-key query parameter for remote MCP clients that cannot send Authorization headers. Prefer Authorization: Bearer <token> or the stdio package because URL secrets are easier to leak through logs and history.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "Mcp-Session-Id",
+            "in": "header",
+            "required": false,
+            "description": "Session ID minted by the server on initialize; echoed on every subsequent request.",
+            "schema": { "type": "string" }
           }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["jsonrpc", "method"],
+                "properties": {
+                  "jsonrpc": { "type": "string", "const": "2.0" },
+                  "id": { "oneOf": [{ "type": "string" }, { "type": "number" }, { "type": "null" }] },
+                  "method": { "type": "string", "enum": ["initialize", "notifications/initialized", "ping", "tools/list", "tools/call"] },
+                  "params": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSON-RPC response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["jsonrpc", "id"],
+                  "properties": {
+                    "jsonrpc": { "type": "string", "const": "2.0" },
+                    "id": { "oneOf": [{ "type": "string" }, { "type": "number" }, { "type": "null" }] },
+                    "result": { "type": "object" },
+                    "error": {
+                      "type": "object",
+                      "required": ["code", "message"],
+                      "properties": {
+                        "code": { "type": "integer" },
+                        "message": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "202": { "description": "Notification acknowledged (no body)" },
+          "400": { "description": "JSON-RPC parse or invalid-request error" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "description": "Origin rejected or tier forbidden" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "get": {
+        "operationId": "mcp_get",
+        "summary": "Open MCP server-to-client stream",
+        "description": "Opens a text/event-stream connection for server-initiated notifications as described in the MCP Streamable HTTP transport. The endpoint currently sends no notifications — clients that only care about request/response use POST.",
+        "tags": ["MCP"],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "query",
+            "required": false,
+            "description": "API key as query parameter (same contract as POST).",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "Mcp-Session-Id",
+            "in": "header",
+            "required": false,
+            "description": "Session ID minted by the server on initialize.",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SSE stream",
+            "content": {
+              "text/event-stream": {
+                "schema": { "type": "string" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "403": { "description": "Origin rejected" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
         }
       }
     }
@@ -513,6 +955,22 @@
           "request_id": { "type": "string", "description": "Unique request ID (req_ prefix)." },
           "cached": { "type": "boolean" },
           "cache_age_s": { "type": "integer", "nullable": true, "description": "Cache age in seconds, null if not cached." }
+        }
+      },
+      "PositionTimelineEvent": {
+        "type": "object",
+        "required": ["id", "event_timestamp", "action", "outcome_side", "amount_delta", "price", "usdc_notional", "tx_hash", "running_amount", "running_avg_price"],
+        "properties": {
+          "id": { "type": "string", "description": "Prefixed ID (pe_...)." },
+          "event_timestamp": { "type": "string", "format": "date-time", "description": "ISO 8601 timestamp of the on-chain fill." },
+          "action": { "type": "string", "enum": ["buy", "sell"], "description": "From the taker's perspective." },
+          "outcome_side": { "type": "string", "enum": ["yes", "no"] },
+          "amount_delta": { "type": "number", "description": "Signed share delta (+ on buy, − on sell)." },
+          "price": { "type": "number", "description": "Fill price in USDC per share, in [0,1]." },
+          "usdc_notional": { "type": "number", "description": "Positive USDC notional of the fill." },
+          "tx_hash": { "type": "string", "description": "Polygon transaction hash of the fill." },
+          "running_amount": { "type": "number", "description": "Cumulative signed share balance after this fill." },
+          "running_avg_price": { "type": "number", "description": "Buy-weighted entry basis (matches Polymarket /positions avgPrice semantics). Sells do not change this value. 0 when no buys have occurred yet." }
         }
       },
       "Trader": {
@@ -586,6 +1044,53 @@
           "sync_status": { "type": "string", "nullable": true, "description": "synced, unknown, or pending." }
         }
       },
+      "Position": {
+        "type": "object",
+        "required": ["id", "platform", "wallet", "side", "shares", "current_value_usd", "freshness", "trader", "market"],
+        "properties": {
+          "id": { "type": "string", "description": "Composite prefixed ID `pos_<wallet>:<condition_id>:<outcome_index>`." },
+          "platform": { "type": "string", "enum": ["polymarket", "kalshi"], "description": "Provider discriminator. Slice 5 ships Polymarket only; the field stays in the response shape so Kalshi positions can land without a breaking change." },
+          "wallet": { "type": "string", "description": "Lowercased proxy wallet address." },
+          "side": { "type": "string", "enum": ["YES", "NO"], "description": "Binary outcome side. Non-binary positions are not surfaced on V1." },
+          "shares": { "type": "number", "description": "Live share count from the wallet_positions mirror." },
+          "avg_price": { "type": "number", "nullable": true, "description": "Volume-weighted entry price for this leg." },
+          "current_value_usd": { "type": "number", "description": "Current mark-to-market value in USD (always non-null on V1 — pre-reconcile rows are excluded)." },
+          "initial_value_usd": { "type": "number", "nullable": true },
+          "cash_pnl": { "type": "number", "nullable": true, "description": "Unrealized P&L for the open position (Polymarket `cashPnl`)." },
+          "realized_pnl": { "type": "number", "nullable": true, "description": "Closed-leg P&L rolled up (Polymarket `realizedPnl`)." },
+          "last_reconciled_at": { "type": "string", "format": "date-time", "nullable": true, "description": "Max updated_at across mirror legs for this pair." },
+          "freshness": { "type": "string", "enum": ["fresh", "refreshing", "stale", "unknown"], "description": "Backend-computed staleness bucket derived from last_reconciled_at." },
+          "trader": {
+            "type": "object",
+            "required": ["id", "address", "is_new_wallet"],
+            "properties": {
+              "id": { "type": "string", "description": "Prefixed ID (`trd_0x...`)." },
+              "address": { "type": "string" },
+              "username": { "type": "string", "nullable": true },
+              "grade": { "type": "string", "enum": ["S", "A", "B", "C", "D", "F"], "nullable": true },
+              "win_rate": { "type": "number", "nullable": true, "description": "Percentage 0-100." },
+              "pnl": { "type": "number", "nullable": true },
+              "markets": { "type": "integer", "nullable": true },
+              "wallet_age_days": { "type": "number", "nullable": true },
+              "is_new_wallet": { "type": "boolean", "description": "Wallet is younger than the new-wallet threshold (30 days)." }
+            }
+          },
+          "market": {
+            "type": "object",
+            "required": ["id", "condition_id", "title"],
+            "properties": {
+              "id": { "type": "string", "description": "Prefixed ID (`mkt_...`)." },
+              "condition_id": { "type": "string" },
+              "title": { "type": "string" },
+              "slug": { "type": "string", "nullable": true },
+              "event_slug": { "type": "string", "nullable": true },
+              "category": { "type": "string", "nullable": true, "description": "Provider-backed market_canonical category." },
+              "outcome_label": { "type": "string", "nullable": true, "description": "Provider-reported outcome label (e.g. team name for sports). Separate from `side` because provider labels can diverge from the binary Yes/No axis." },
+              "end_date": { "type": "string", "format": "date-time", "nullable": true }
+            }
+          }
+        }
+      },
       "WhaleTrade": {
         "type": "object",
         "required": ["id", "traded_at", "size_usd", "side", "price", "signal_score", "trader", "market"],
@@ -614,7 +1119,7 @@
               "condition_id": { "type": "string" },
               "title": { "type": "string" },
               "slug": { "type": "string", "nullable": true },
-              "category": { "type": "string", "nullable": true, "description": "Effective market category. Falls back to stored provider category metadata when inferred_category is null." }
+              "category": { "type": "string", "nullable": true, "description": "Provider-backed market_canonical category." }
             }
           }
         }
@@ -897,6 +1402,9 @@
           }
         }
       },
+      "RequestTimeout": {
+        "description": "Request exceeded the server's 30-second transport timeout. The timeout response has an empty body because it is generated before handler-level JSON error shaping."
+      },
       "RateLimited": {
         "description": "Rate limit exceeded (100 req/min)",
         "headers": {
@@ -911,6 +1419,23 @@
             "schema": { "type": "integer" }
           },
           "X-RateLimit-Reset": {
+            "schema": { "type": "integer" }
+          },
+          "X-Request-Id": {
+            "schema": { "type": "string" }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ApiError" }
+          }
+        }
+      },
+      "RateLimitUnavailable": {
+        "description": "Redis-backed authenticated rate limiter unavailable; retry after the per-process outage cooldown",
+        "headers": {
+          "Retry-After": {
+            "description": "Seconds until the middleware will probe the Redis-backed rate limiter again.",
             "schema": { "type": "integer" }
           },
           "X-Request-Id": {
