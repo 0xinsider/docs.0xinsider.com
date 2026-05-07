@@ -7,6 +7,12 @@ rss: true
 
 This changelog tracks externally visible REST API changes only. Documentation-only edits are intentionally excluded.
 
+<Update label="May 7, 2026" description="Market Intel rejects prefixed market IDs">
+  [`GET /api/v1/market/{condition_id}/intel`](/api-reference/endpoint/get-market-intel) now returns a clearer `400 bad_request` when callers pass a prefixed `market.id` value such as `mkt_...` instead of the raw `condition_id`.
+
+  Use [`GET /api/v1/markets/search`](/api-reference/endpoint/search-markets) first, then pass the returned `condition_id` into the Market Intel path.
+</Update>
+
 <Update label="April 14, 2026" description="Trader lookup accepts usernames and plain expand params">
   [`GET /api/v1/trader/{address}`](/api-reference/endpoint/get-trader) now accepts a known trader username in the path in addition to an Ethereum wallet address.
 
