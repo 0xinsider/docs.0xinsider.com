@@ -7,6 +7,12 @@ rss: true
 
 This changelog tracks externally visible REST API changes only. Documentation-only edits are intentionally excluded.
 
+<Update label="May 8, 2026" description="Remote MCP exposes position and market discovery tools">
+  [`POST /api/v1/mcp`](/api-reference/endpoint/remote-mcp) now exposes nine read-only tools through `tools/list`.
+
+  The new tools are `get_positions`, `get_position_timeline`, and `explore_markets`. Each dispatches to the existing public REST handler, so MCP clients receive the same auth, pagination, and payload contracts as direct REST callers.
+</Update>
+
 <Update label="May 7, 2026" description="Market Intel rejects prefixed market IDs">
   [`GET /api/v1/market/{condition_id}/intel`](/api-reference/endpoint/get-market-intel) now returns a clearer `400 bad_request` when callers pass a prefixed `market.id` value such as `mkt_...` instead of the raw `condition_id`.
 
