@@ -128,7 +128,7 @@ It works with Claude Code, Cursor, Codex, Gemini CLI, and other stdio-compatible
 
 ## Tools
 
-The server exposes 6 read-only tools:
+The server exposes 9 read-only tools:
 
 | Tool | Description |
 |------|-------------|
@@ -136,7 +136,10 @@ The server exposes 6 read-only tools:
 | `get_whale_trades` | Recent large trades with signal scoring, filterable by size/category/grade |
 | `get_leaderboard` | Top-ranked traders (S/A/B grades) with optional category/strategy filters |
 | `search_markets` | Search prediction markets by keyword |
+| `explore_markets` | Browse whale-active markets with facets and grouped discovery entries |
 | `get_market_intel` | Smart money flow analysis for a specific market |
+| `get_positions` | Current positions with trader, market, value, side, P&L, and freshness context |
+| `get_position_timeline` | Per-market trader fills with running amount and average entry price |
 | `get_insider_radar` | Suspicious trading pattern detection |
 
 All tools have `readOnlyHint: true` — they never modify data.
