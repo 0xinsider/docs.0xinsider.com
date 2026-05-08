@@ -19,6 +19,7 @@
               "index",
               "quickstart",
               "integrations/mcp",
+              "integrations/typescript-client",
               "authentication",
               "rate-limits",
               "errors"
@@ -47,8 +48,10 @@
             "group": "Traders",
             "pages": [
               "api-reference/endpoint/get-trader",
+              "api-reference/endpoint/batch-get-traders",
               "api-reference/endpoint/get-position-timeline",
               "api-reference/endpoint/get-position-timeline-by-id",
+              "api-reference/endpoint/get-trader-export-snapshot",
               "api-reference/endpoint/get-leaderboard"
             ]
           },
@@ -63,19 +66,48 @@
             "pages": [
               "api-reference/endpoint/search-markets",
               "api-reference/endpoint/explore-markets",
-              "api-reference/endpoint/get-market-intel"
+              "api-reference/endpoint/get-market-intel",
+              "api-reference/endpoint/batch-get-market-intel",
+              "api-reference/endpoint/get-market-snapshot"
             ]
           },
           {
             "group": "Whale Trades",
             "pages": [
-              "api-reference/endpoint/get-whale-trades"
+              "api-reference/endpoint/get-whale-trades",
+              "api-reference/endpoint/get-whale-trades-history"
             ]
           },
           {
             "group": "Insider Radar",
             "pages": [
               "api-reference/endpoint/get-insider-radar"
+            ]
+          },
+          {
+            "group": "Events",
+            "pages": [
+              "api-reference/endpoint/get-event-replay-since"
+            ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "api-reference/endpoint/list-webhooks",
+              "api-reference/endpoint/create-webhook",
+              "api-reference/endpoint/get-webhook",
+              "api-reference/endpoint/update-webhook",
+              "api-reference/endpoint/delete-webhook",
+              "api-reference/endpoint/verify-webhook",
+              "api-reference/endpoint/rotate-webhook-secret"
+            ]
+          },
+          {
+            "group": "Reports",
+            "pages": [
+              "api-reference/endpoint/get-daily-report-snapshot",
+              "api-reference/endpoint/get-weekly-report-snapshot",
+              "api-reference/endpoint/get-monthly-report-snapshot"
             ]
           },
           {

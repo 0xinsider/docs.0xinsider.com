@@ -69,3 +69,17 @@ Every entity has a type-prefixed ID for easy identification:
 | `X-RateLimit-Remaining` | Requests remaining |
 | `X-RateLimit-Reset` | Unix timestamp when window resets |
 | `Retry-After` | Seconds to wait (only on 429) |
+
+Batch endpoints also expose `X-Request-Cost` and `X-Batch-RateLimit-*`
+headers. A batch item costs one item unit, so a 25-item batch reserves 25
+batch units before execution.
+
+## Trust metadata
+
+Newer builder endpoints document source, freshness, reconciliation, and
+completeness metadata for values that can be cached, stale, partial, computed,
+or provider-unavailable.
+
+Do not convert unavailable provider-owned values into `0`, empty arrays, or
+empty objects. Treat explicit `unavailable` or `partial` metadata as part of the
+result.

@@ -34,7 +34,9 @@
             "in": "path",
             "required": true,
             "description": "Ethereum wallet address (0x...) or known trader username",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "expand[]",
@@ -43,7 +45,10 @@
             "description": "Backward-compatible alias for expand. Repeatable: strategy, categories, quant_metrics.",
             "schema": {
               "type": "array",
-              "items": { "type": "string", "enum": ["strategy", "categories", "quant_metrics"] }
+              "items": {
+                "type": "string",
+                "enum": ["strategy", "categories", "quant_metrics"]
+              }
             },
             "style": "form",
             "explode": true
@@ -55,7 +60,10 @@
             "description": "Include heavy fields. Repeatable: strategy, categories, quant_metrics.",
             "schema": {
               "type": "array",
-              "items": { "type": "string", "enum": ["strategy", "categories", "quant_metrics"] }
+              "items": {
+                "type": "string",
+                "enum": ["strategy", "categories", "quant_metrics"]
+              }
             },
             "style": "form",
             "explode": true
@@ -70,14 +78,109 @@
                   "type": "object",
                   "required": ["object", "data", "meta"],
                   "properties": {
-                    "object": { "type": "string", "const": "trader" },
-                    "data": { "$ref": "#/components/schemas/Trader" },
-                    "meta": { "$ref": "#/components/schemas/ResponseMeta" }
+                    "object": {
+                      "type": "string",
+                      "const": "trader"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Trader"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
                   }
                 }
               }
             }
           },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/traders/batch": {
+      "post": {
+        "operationId": "batch_get_traders",
+        "summary": "Batch trader intelligence",
+        "description": "Returns trader intelligence for 1-25 wallet addresses or known usernames. Results preserve request order, duplicate inputs return duplicate rows, and each item is charged one batch item unit before execution. Unknown trader lookups return data with sync_status \"unknown\" matching the single trader endpoint.",
+        "tags": ["Traders"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["traders"],
+                "properties": {
+                  "traders": { "type": "array", "minItems": 1, "maxItems": 25, "items": { "type": "string" } },
+                  "expand": {
+                    "type": "array",
+                    "items": { "type": "string", "enum": ["strategy", "categories", "quant_metrics"] },
+                    "description": "Shared expand flags applied to every trader item."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ordered batch trader results",
+            "headers": {
+              "X-Request-Cost": {
+                "schema": { "type": "integer" },
+                "description": "Number of batch item units charged for this request."
+              },
+              "X-Batch-RateLimit-Limit": {
+                "schema": { "type": "integer" },
+                "description": "Batch item units allowed per minute."
+              },
+              "X-Batch-RateLimit-Remaining": {
+                "schema": { "type": "integer" },
+                "description": "Batch item units remaining in the current sliding window."
+              },
+              "X-Batch-RateLimit-Reset": {
+                "schema": { "type": "integer" },
+                "description": "Unix timestamp when the batch item window resets."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["object", "data", "meta"],
+                  "properties": {
+                    "object": { "type": "string", "const": "trader_batch" },
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/BatchTraderItem" } },
+                    "meta": { "$ref": "#/components/schemas/BatchResponseMeta" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "402": { "$ref": "#/components/responses/SubscriptionRequired" },
           "403": { "$ref": "#/components/responses/Forbidden" },
@@ -101,25 +204,36 @@
             "in": "path",
             "required": true,
             "description": "Trader wallet address (0x...). Case-insensitive — addresses are lowercased server-side.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "condition_id",
             "in": "query",
             "required": true,
             "description": "Market condition_id. One timeline per (trader, market).",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "limit",
             "in": "query",
-            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
           },
           {
             "name": "cursor",
             "in": "query",
             "description": "Pagination cursor from previous response's next_cursor.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -131,29 +245,61 @@
                   "type": "object",
                   "required": ["object", "data", "has_more", "meta"],
                   "properties": {
-                    "object": { "type": "string", "const": "list" },
+                    "object": {
+                      "type": "string",
+                      "const": "list"
+                    },
                     "data": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/PositionTimelineEvent" }
+                      "items": {
+                        "$ref": "#/components/schemas/PositionTimelineEvent"
+                      }
                     },
-                    "has_more": { "type": "boolean" },
-                    "next_cursor": { "type": "string", "nullable": true },
-                    "meta": { "$ref": "#/components/schemas/ResponseMeta" }
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "408": { "$ref": "#/components/responses/RequestTimeout" },
-          "423": { "$ref": "#/components/responses/Locked" },
-          "429": { "$ref": "#/components/responses/RateLimited" },
-          "503": { "$ref": "#/components/responses/RateLimitUnavailable" },
-          "500": { "$ref": "#/components/responses/InternalError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
         }
       }
     },
@@ -169,25 +315,37 @@
             "in": "path",
             "required": true,
             "description": "Internal traders.id (integer). Returns 404 when the trader is not HOT or WARM tier, identical to the address-keyed route.",
-            "schema": { "type": "integer", "format": "int32" }
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
           },
           {
             "name": "condition_id",
             "in": "query",
             "required": true,
             "description": "Market condition_id. One timeline per (trader, market).",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "limit",
             "in": "query",
-            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
           },
           {
             "name": "cursor",
             "in": "query",
             "description": "Pagination cursor from previous response's next_cursor.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -199,29 +357,61 @@
                   "type": "object",
                   "required": ["object", "data", "has_more", "meta"],
                   "properties": {
-                    "object": { "type": "string", "const": "list" },
+                    "object": {
+                      "type": "string",
+                      "const": "list"
+                    },
                     "data": {
                       "type": "array",
-                      "items": { "$ref": "#/components/schemas/PositionTimelineEvent" }
+                      "items": {
+                        "$ref": "#/components/schemas/PositionTimelineEvent"
+                      }
                     },
-                    "has_more": { "type": "boolean" },
-                    "next_cursor": { "type": "string", "nullable": true },
-                    "meta": { "$ref": "#/components/schemas/ResponseMeta" }
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "404": { "$ref": "#/components/responses/NotFound" },
-          "408": { "$ref": "#/components/responses/RequestTimeout" },
-          "423": { "$ref": "#/components/responses/Locked" },
-          "429": { "$ref": "#/components/responses/RateLimited" },
-          "503": { "$ref": "#/components/responses/RateLimitUnavailable" },
-          "500": { "$ref": "#/components/responses/InternalError" }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
         }
       }
     },
@@ -235,37 +425,55 @@
           {
             "name": "limit",
             "in": "query",
-            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
           },
           {
             "name": "cursor",
             "in": "query",
             "description": "Pagination cursor from previous response's next_cursor.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "min_size",
             "in": "query",
             "description": "Minimum current position value in USD.",
-            "schema": { "type": "number", "default": 100 }
+            "schema": {
+              "type": "number",
+              "default": 100
+            }
           },
           {
             "name": "category",
             "in": "query",
             "description": "Exact match against provider-backed market_canonical.category.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "min_grade",
             "in": "query",
             "description": "Minimum trader grade allowlist. `A` matches S and A; `B` matches S, A, B; etc.",
-            "schema": { "type": "string", "enum": ["S", "A", "B", "C", "D", "F"] }
+            "schema": {
+              "type": "string",
+              "enum": ["S", "A", "B", "C", "D", "F"]
+            }
           },
           {
             "name": "side",
             "in": "query",
             "description": "Filter by the binary outcome side. `yes` maps to outcome_index=0, `no` to outcome_index=1.",
-            "schema": { "type": "string", "enum": ["yes", "no"] }
+            "schema": {
+              "type": "string",
+              "enum": ["yes", "no"]
+            }
           }
         ],
         "responses": {
@@ -277,24 +485,55 @@
                   "type": "object",
                   "required": ["object", "data", "has_more", "meta"],
                   "properties": {
-                    "object": { "type": "string", "const": "list" },
-                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/Position" } },
-                    "has_more": { "type": "boolean" },
-                    "next_cursor": { "type": "string", "nullable": true },
-                    "meta": { "$ref": "#/components/schemas/ResponseMeta" }
+                    "object": {
+                      "type": "string",
+                      "const": "list"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Position"
+                      }
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "408": { "$ref": "#/components/responses/RequestTimeout" },
-          "423": { "$ref": "#/components/responses/Locked" },
-          "429": { "$ref": "#/components/responses/RateLimited" },
-          "503": { "$ref": "#/components/responses/RateLimitUnavailable" }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
         }
       }
     },
@@ -308,12 +547,125 @@
           {
             "name": "limit",
             "in": "query",
-            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
           },
           {
             "name": "cursor",
             "in": "query",
             "description": "Pagination cursor from previous response's next_cursor.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_size",
+            "in": "query",
+            "description": "Minimum trade size in USD.",
+            "schema": {
+              "type": "number",
+              "default": 5000
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Filter by provider-backed market_canonical category (case-insensitive).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_grade",
+            "in": "query",
+            "description": "Minimum trader grade.",
+            "schema": {
+              "type": "string",
+              "enum": ["S", "A", "B", "C", "D", "F"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of whale trades",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["object", "data", "has_more", "meta"],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "list"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/WhaleTrade"
+                      }
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/whale-trades/history": {
+      "get": {
+        "operationId": "get_whale_trades_history",
+        "summary": "Replay historical whale trades",
+        "description": "Returns historical whale trades from local whale_alerts rows, not request-time provider fetches. Filter by condition_id, trader, category, minimum grade, platform, and RFC3339 from/to windows. All filters are pushed into SQL before LIMIT, every request uses SQL-backed limit + 1 pagination, and results are ordered newest first by traded_at desc, id desc. Metadata exposes local_replay source and best_effort completeness.",
+        "tags": ["Whale Trades"],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Pagination cursor from previous response's next_cursor. Prefix: wth_. URL-encode when replaying as a query parameter.",
             "schema": { "type": "string" }
           },
           {
@@ -321,6 +673,18 @@
             "in": "query",
             "description": "Minimum trade size in USD.",
             "schema": { "type": "number", "default": 5000 }
+          },
+          {
+            "name": "condition_id",
+            "in": "query",
+            "description": "Exact raw provider condition_id. Unknown markets return an empty list.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "trader",
+            "in": "query",
+            "description": "Trader wallet address, timestamp-suffixed wallet alias, or username resolved against the traders table. Unknown traders return an empty list.",
+            "schema": { "type": "string" }
           },
           {
             "name": "category",
@@ -333,11 +697,29 @@
             "in": "query",
             "description": "Minimum trader grade.",
             "schema": { "type": "string", "enum": ["S", "A", "B", "C", "D", "F"] }
+          },
+          {
+            "name": "platform",
+            "in": "query",
+            "description": "Filter by whale_alerts.platform. all is equivalent to omitted.",
+            "schema": { "type": "string", "enum": ["polymarket", "kalshi", "all"] }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "description": "Inclusive RFC3339 lower bound on whale_alerts.traded_at.",
+            "schema": { "type": "string", "format": "date-time" }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "description": "Exclusive RFC3339 upper bound on whale_alerts.traded_at. Must be after from when both are present.",
+            "schema": { "type": "string", "format": "date-time" }
           }
         ],
         "responses": {
           "200": {
-            "description": "List of whale trades",
+            "description": "Historical whale trade replay",
             "content": {
               "application/json": {
                 "schema": {
@@ -348,7 +730,7 @@
                     "data": { "type": "array", "items": { "$ref": "#/components/schemas/WhaleTrade" } },
                     "has_more": { "type": "boolean" },
                     "next_cursor": { "type": "string", "nullable": true },
-                    "meta": { "$ref": "#/components/schemas/ResponseMeta" }
+                    "meta": { "$ref": "#/components/schemas/WhaleTradeHistoryMeta" }
                   }
                 }
               }
@@ -375,19 +757,28 @@
           {
             "name": "limit",
             "in": "query",
-            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
           },
           {
             "name": "cursor",
             "in": "query",
             "description": "Pagination cursor (score_address format).",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "category",
             "in": "query",
             "description": "Filter by category slug.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "strategy",
@@ -414,7 +805,9 @@
             "in": "header",
             "required": false,
             "description": "Conditional GET validator from a previous ETag. Matching values return 304 Not Modified with an empty body.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -423,7 +816,9 @@
             "headers": {
               "ETag": {
                 "description": "Stable validator for the current leaderboard payload. Re-send it via If-None-Match for conditional GETs.",
-                "schema": { "type": "string" }
+                "schema": {
+                  "type": "string"
+                }
               }
             },
             "content": {
@@ -432,11 +827,26 @@
                   "type": "object",
                   "required": ["object", "data", "has_more", "meta"],
                   "properties": {
-                    "object": { "type": "string", "const": "list" },
-                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/LeaderboardEntry" } },
-                    "has_more": { "type": "boolean" },
-                    "next_cursor": { "type": "string", "nullable": true },
-                    "meta": { "$ref": "#/components/schemas/ResponseMeta" }
+                    "object": {
+                      "type": "string",
+                      "const": "list"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LeaderboardEntry"
+                      }
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
                   }
                 }
               }
@@ -447,17 +857,33 @@
             "headers": {
               "ETag": {
                 "description": "Validator for the unchanged leaderboard payload.",
-                "schema": { "type": "string" }
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "408": { "$ref": "#/components/responses/RequestTimeout" },
-          "423": { "$ref": "#/components/responses/Locked" },
-          "429": { "$ref": "#/components/responses/RateLimited" },
-          "503": { "$ref": "#/components/responses/RateLimitUnavailable" }
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
         }
       }
     },
@@ -473,30 +899,47 @@
             "in": "query",
             "required": true,
             "description": "Search query. Must be 1-512 characters before whitespace trimming and non-empty after trimming.",
-            "schema": { "type": "string", "minLength": 1, "maxLength": 512 }
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 512
+            }
           },
           {
             "name": "limit",
             "in": "query",
-            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
           },
           {
             "name": "cursor",
             "in": "query",
             "description": "Pagination cursor from previous response's next_cursor.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "status",
             "in": "query",
             "description": "Filter by market status.",
-            "schema": { "type": "string", "enum": ["active", "closed", "all"], "default": "all" }
+            "schema": {
+              "type": "string",
+              "enum": ["active", "closed", "all"],
+              "default": "all"
+            }
           },
           {
             "name": "category",
             "in": "query",
             "description": "Filter by category.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -508,24 +951,55 @@
                   "type": "object",
                   "required": ["object", "data", "has_more", "meta"],
                   "properties": {
-                    "object": { "type": "string", "const": "list" },
-                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/MarketSearchResult" } },
-                    "has_more": { "type": "boolean" },
-                    "next_cursor": { "type": "string", "nullable": true },
-                    "meta": { "$ref": "#/components/schemas/ResponseMeta" }
+                    "object": {
+                      "type": "string",
+                      "const": "list"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/MarketSearchResult"
+                      }
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "408": { "$ref": "#/components/responses/RequestTimeout" },
-          "423": { "$ref": "#/components/responses/Locked" },
-          "429": { "$ref": "#/components/responses/RateLimited" },
-          "503": { "$ref": "#/components/responses/RateLimitUnavailable" }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
         }
       }
     },
@@ -540,50 +1014,75 @@
             "name": "category",
             "in": "query",
             "description": "Filter by provider-native market category (case-insensitive, no parent/child expansion).",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "status",
             "in": "query",
             "description": "Filter by market status.",
-            "schema": { "type": "string", "enum": ["active", "closed", "all"], "default": "all" }
+            "schema": {
+              "type": "string",
+              "enum": ["active", "closed", "all"],
+              "default": "all"
+            }
           },
           {
             "name": "platform",
             "in": "query",
             "description": "Filter by source platform.",
-            "schema": { "type": "string", "enum": ["polymarket", "kalshi", "all"], "default": "all" }
+            "schema": {
+              "type": "string",
+              "enum": ["polymarket", "kalshi", "all"],
+              "default": "all"
+            }
           },
           {
             "name": "sort",
             "in": "query",
             "description": "Sort order for the discovery feed.",
-            "schema": { "type": "string", "enum": ["trending", "whales", "volume", "newest"], "default": "trending" }
+            "schema": {
+              "type": "string",
+              "enum": ["trending", "whales", "volume", "newest"],
+              "default": "trending"
+            }
           },
           {
             "name": "cursor",
             "in": "query",
             "description": "Opaque pagination cursor from the previous response.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "limit",
             "in": "query",
             "description": "Page size.",
-            "schema": { "type": "integer", "minimum": 1, "maximum": 48, "default": 24 }
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 48,
+              "default": 24
+            }
           },
           {
             "name": "q",
             "in": "query",
             "description": "Keyword search against market titles.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "If-None-Match",
             "in": "header",
             "required": false,
             "description": "Conditional GET validator from a previous ETag. Matching values return 304 Not Modified with an empty body.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -592,7 +1091,9 @@
             "headers": {
               "ETag": {
                 "description": "Stable validator for the current explore payload. Re-send it via If-None-Match for conditional GETs.",
-                "schema": { "type": "string" }
+                "schema": {
+                  "type": "string"
+                }
               }
             },
             "content": {
@@ -601,17 +1102,34 @@
                   "type": "object",
                   "required": ["object", "data", "has_more", "facets", "meta"],
                   "properties": {
-                    "object": { "type": "string", "const": "list" },
-                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/ExploreEntry" } },
-                    "has_more": { "type": "boolean" },
-                    "next_cursor": { "type": "string", "nullable": true },
+                    "object": {
+                      "type": "string",
+                      "const": "list"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ExploreEntry"
+                      }
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    },
                     "total": {
                       "type": "integer",
                       "nullable": true,
                       "description": "Total matching visible entries after grouping. Present on the first page and omitted on cursor pages."
                     },
-                    "facets": { "$ref": "#/components/schemas/ExploreFacets" },
-                    "meta": { "$ref": "#/components/schemas/ResponseMeta" }
+                    "facets": {
+                      "$ref": "#/components/schemas/ExploreFacets"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
                   }
                 }
               }
@@ -622,18 +1140,36 @@
             "headers": {
               "ETag": {
                 "description": "Validator for the unchanged explore payload.",
-                "schema": { "type": "string" }
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
-          "400": { "$ref": "#/components/responses/BadRequest" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
-          "403": { "$ref": "#/components/responses/Forbidden" },
-          "408": { "$ref": "#/components/responses/RequestTimeout" },
-          "423": { "$ref": "#/components/responses/Locked" },
-          "429": { "$ref": "#/components/responses/RateLimited" },
-          "503": { "$ref": "#/components/responses/RateLimitUnavailable" }
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
         }
       }
     },
@@ -649,13 +1185,19 @@
             "in": "path",
             "required": true,
             "description": "Market condition ID. Use the condition_id returned by /api/v1/markets/search, not the prefixed market.id value (mkt_...).",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "timeframe",
             "in": "query",
             "description": "Lookback window for whale flow aggregation.",
-            "schema": { "type": "string", "enum": ["1h", "4h", "24h", "7d"], "default": "24h" }
+            "schema": {
+              "type": "string",
+              "enum": ["1h", "4h", "24h", "7d"],
+              "default": "24h"
+            }
           }
         ],
         "responses": {
@@ -667,8 +1209,145 @@
                   "type": "object",
                   "required": ["object", "data", "meta"],
                   "properties": {
-                    "object": { "type": "string", "const": "market_intel" },
-                    "data": { "$ref": "#/components/schemas/MarketIntel" },
+                    "object": {
+                      "type": "string",
+                      "const": "market_intel"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/MarketIntel"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/markets/intel/batch": {
+      "post": {
+        "operationId": "batch_get_market_intel",
+        "summary": "Batch market intelligence",
+        "description": "Returns smart-money market intelligence for 1-25 raw provider condition_id values. Results preserve request order, duplicate inputs return duplicate rows, and each item is charged one batch item unit before execution. Do not pass prefixed mkt_ IDs; use market.condition_id from search or explore.",
+        "tags": ["Markets"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["condition_ids"],
+                "properties": {
+                  "condition_ids": { "type": "array", "minItems": 1, "maxItems": 25, "items": { "type": "string" } },
+                  "timeframe": { "type": "string", "enum": ["1h", "4h", "24h", "7d"], "default": "24h" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ordered batch market intelligence results",
+            "headers": {
+              "X-Request-Cost": {
+                "schema": { "type": "integer" },
+                "description": "Number of batch item units charged for this request."
+              },
+              "X-Batch-RateLimit-Limit": {
+                "schema": { "type": "integer" },
+                "description": "Batch item units allowed per minute."
+              },
+              "X-Batch-RateLimit-Remaining": {
+                "schema": { "type": "integer" },
+                "description": "Batch item units remaining in the current sliding window."
+              },
+              "X-Batch-RateLimit-Reset": {
+                "schema": { "type": "integer" },
+                "description": "Unix timestamp when the batch item window resets."
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["object", "data", "meta"],
+                  "properties": {
+                    "object": { "type": "string", "const": "market_intel_batch" },
+                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/BatchMarketIntelItem" } },
+                    "meta": { "$ref": "#/components/schemas/BatchResponseMeta" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
+          "423": { "$ref": "#/components/responses/Locked" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/market/{condition_id}/snapshot": {
+      "get": {
+        "operationId": "get_market_snapshot",
+        "summary": "Get market live snapshot",
+        "description": "Provider-first market card snapshot with canonical identity, outcome labels, cached top-of-book when available, liquidity, live sports context, and explicit freshness/unavailable states.",
+        "tags": ["Markets"],
+        "parameters": [
+          {
+            "name": "condition_id",
+            "in": "path",
+            "required": true,
+            "description": "Market condition ID. Use the condition_id returned by /api/v1/markets/search or /api/v1/markets/explore, not the prefixed market.id value (mkt_...).",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider-first market snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["object", "data", "meta"],
+                  "properties": {
+                    "object": { "type": "string", "const": "market_snapshot" },
+                    "data": { "$ref": "#/components/schemas/MarketSnapshot" },
                     "meta": { "$ref": "#/components/schemas/ResponseMeta" }
                   }
                 }
@@ -697,25 +1376,38 @@
           {
             "name": "limit",
             "in": "query",
-            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
           },
           {
             "name": "cursor",
             "in": "query",
             "description": "Pagination cursor from previous response.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "min_suspicion",
             "in": "query",
             "description": "Minimum suspicion score (0-100).",
-            "schema": { "type": "number", "default": 0 }
+            "schema": {
+              "type": "number",
+              "default": 0
+            }
           },
           {
             "name": "severity",
             "in": "query",
             "description": "Filter by severity level.",
-            "schema": { "type": "string", "enum": ["flag", "watch"] }
+            "schema": {
+              "type": "string",
+              "enum": ["flag", "watch"]
+            }
           }
         ],
         "responses": {
@@ -727,11 +1419,97 @@
                   "type": "object",
                   "required": ["object", "data", "has_more", "meta"],
                   "properties": {
-                    "object": { "type": "string", "const": "list" },
-                    "data": { "type": "array", "items": { "$ref": "#/components/schemas/RadarFlag" } },
+                    "object": {
+                      "type": "string",
+                      "const": "list"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/RadarFlag"
+                      }
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/events/feed/since": {
+      "get": {
+        "operationId": "get_event_replay_since",
+        "summary": "Replay public whale-trade intelligence events",
+        "description": "Returns durable public whale-trade intelligence events strictly after an opaque cursor backed by whale_alerts.id. This is a separate API-key contract from the browser/session /api/events/feed stream: browser-only and private alert, following, radar, and position patch events are excluded until they have a durable public outbox.",
+        "tags": ["Events"],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque event replay cursor returned as next_cursor by a prior response. The cursor maps to whale_alerts.id and is valid across backend replicas. Omit to fetch the latest durable public suffix.",
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum durable public whale-trade events to return.",
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Public event replay window",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["object", "data", "has_more", "next_cursor", "meta"],
+                  "properties": {
+                    "object": { "type": "string", "const": "event_replay" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/EventReplayEvent" }
+                    },
                     "has_more": { "type": "boolean" },
-                    "next_cursor": { "type": "string", "nullable": true },
-                    "meta": { "$ref": "#/components/schemas/ResponseMeta" }
+                    "next_cursor": { "type": "string" },
+                    "meta": { "$ref": "#/components/schemas/EventReplayMeta" }
                   }
                 }
               }
@@ -748,6 +1526,171 @@
         }
       }
     },
+    "/api/v1/webhooks": {
+      "get": {
+        "operationId": "list_webhooks",
+        "summary": "List builder webhook destinations",
+        "description": "Returns webhook destinations owned by the authenticated API key user. Disabled endpoints are omitted.",
+        "tags": ["Webhooks"],
+        "responses": {
+          "200": { "$ref": "#/components/responses/WebhookList" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
+          "423": { "$ref": "#/components/responses/Locked" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "post": {
+        "operationId": "create_webhook",
+        "summary": "Create a builder webhook destination",
+        "description": "Creates a pending HTTPS webhook destination. The response includes one-time signing_secret and verification.token values. Deliveries are not sent until the endpoint is verified.",
+        "tags": ["Webhooks"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateWebhookRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/WebhookObject" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
+          "423": { "$ref": "#/components/responses/Locked" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/webhooks/{id}": {
+      "get": {
+        "operationId": "get_webhook",
+        "summary": "Get one builder webhook destination",
+        "description": "Returns one webhook destination owned by the authenticated API key user.",
+        "tags": ["Webhooks"],
+        "parameters": [{ "$ref": "#/components/parameters/WebhookId" }],
+        "responses": {
+          "200": { "$ref": "#/components/responses/WebhookObject" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
+          "423": { "$ref": "#/components/responses/Locked" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "patch": {
+        "operationId": "update_webhook",
+        "summary": "Update a builder webhook destination",
+        "description": "Updates name, HTTPS URL, event types, or enabled state. URL changes force pending_verification and return a new verification token.",
+        "tags": ["Webhooks"],
+        "parameters": [{ "$ref": "#/components/parameters/WebhookId" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateWebhookRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/WebhookObject" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
+          "423": { "$ref": "#/components/responses/Locked" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      },
+      "delete": {
+        "operationId": "delete_webhook",
+        "summary": "Disable a builder webhook destination",
+        "description": "Soft-deletes a webhook destination owned by the authenticated API key user. Existing delivery audit rows remain retained.",
+        "tags": ["Webhooks"],
+        "parameters": [{ "$ref": "#/components/parameters/WebhookId" }],
+        "responses": {
+          "200": { "$ref": "#/components/responses/WebhookObject" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
+          "423": { "$ref": "#/components/responses/Locked" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/webhooks/{id}/verify": {
+      "post": {
+        "operationId": "verify_webhook",
+        "summary": "Verify a builder webhook destination",
+        "description": "Activates a pending webhook destination when the one-time verification token matches and has not expired.",
+        "tags": ["Webhooks"],
+        "parameters": [{ "$ref": "#/components/parameters/WebhookId" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/VerifyWebhookRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/WebhookObject" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
+          "423": { "$ref": "#/components/responses/Locked" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
+    "/api/v1/webhooks/{id}/rotate-secret": {
+      "post": {
+        "operationId": "rotate_webhook_secret",
+        "summary": "Rotate a builder webhook signing secret",
+        "description": "Rotates the endpoint signing secret and returns the new signing_secret once in the response.",
+        "tags": ["Webhooks"],
+        "parameters": [{ "$ref": "#/components/parameters/WebhookId" }],
+        "responses": {
+          "200": { "$ref": "#/components/responses/WebhookObject" },
+          "404": { "$ref": "#/components/responses/NotFound" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
+          "403": { "$ref": "#/components/responses/Forbidden" },
+          "408": { "$ref": "#/components/responses/RequestTimeout" },
+          "423": { "$ref": "#/components/responses/Locked" },
+          "429": { "$ref": "#/components/responses/RateLimited" },
+          "503": { "$ref": "#/components/responses/RateLimitUnavailable" },
+          "500": { "$ref": "#/components/responses/InternalError" }
+        }
+      }
+    },
     "/api/v1/health": {
       "get": {
         "operationId": "health",
@@ -761,7 +1704,9 @@
             "in": "header",
             "required": false,
             "description": "Conditional GET validator from a previous ETag. Matching values return 304 Not Modified with an empty body.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -770,7 +1715,9 @@
             "headers": {
               "ETag": {
                 "description": "Stable validator for the current health payload. Re-send it via If-None-Match for conditional GETs.",
-                "schema": { "type": "string" }
+                "schema": {
+                  "type": "string"
+                }
               }
             },
             "content": {
@@ -779,37 +1726,86 @@
                   "type": "object",
                   "required": ["object", "data", "meta"],
                   "properties": {
-                    "object": { "type": "string", "const": "health" },
+                    "object": {
+                      "type": "string",
+                      "const": "health"
+                    },
                     "data": {
                       "type": "object",
                       "properties": {
-                        "status": { "type": "string", "enum": ["ok", "degraded", "down", "maintenance"] },
-                        "db": { "type": "boolean" },
-                        "cache": { "type": "boolean" },
+                        "status": {
+                          "type": "string",
+                          "enum": ["ok", "degraded", "down", "maintenance"]
+                        },
+                        "db": {
+                          "type": "boolean"
+                        },
+                        "cache": {
+                          "type": "boolean"
+                        },
                         "subsystems": {
                           "type": "object",
                           "required": ["background_jobs"],
                           "properties": {
                             "background_jobs": {
                               "type": "object",
-                              "required": ["status", "checked", "total", "healthy", "stale", "missing", "invalid", "unconfigured"],
+                              "required": [
+                                "status",
+                                "checked",
+                                "total",
+                                "healthy",
+                                "stale",
+                                "missing",
+                                "invalid",
+                                "unconfigured"
+                              ],
                               "description": "Public-safe aggregate status for expected background job successful-completion heartbeats. Does not expose Redis keys, job names, raw errors, provider payloads, wallet addresses, or condition IDs.",
                               "properties": {
-                                "status": { "type": "string", "enum": ["ok", "degraded", "down", "not_checked"] },
-                                "checked": { "type": "boolean" },
-                                "total": { "type": "integer", "minimum": 0 },
-                                "healthy": { "type": "integer", "minimum": 0 },
-                                "stale": { "type": "integer", "minimum": 0 },
-                                "missing": { "type": "integer", "minimum": 0 },
-                                "invalid": { "type": "integer", "minimum": 0 },
-                                "unconfigured": { "type": "integer", "minimum": 0 }
+                                "status": {
+                                  "type": "string",
+                                  "enum": [
+                                    "ok",
+                                    "degraded",
+                                    "down",
+                                    "not_checked"
+                                  ]
+                                },
+                                "checked": {
+                                  "type": "boolean"
+                                },
+                                "total": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "healthy": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "stale": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "missing": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "invalid": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                },
+                                "unconfigured": {
+                                  "type": "integer",
+                                  "minimum": 0
+                                }
                               }
                             }
                           }
                         }
                       }
                     },
-                    "meta": { "$ref": "#/components/schemas/ResponseMeta" }
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
                   }
                 }
               }
@@ -820,12 +1816,18 @@
             "headers": {
               "ETag": {
                 "description": "Validator for the unchanged health payload.",
-                "schema": { "type": "string" }
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
-          "408": { "$ref": "#/components/responses/RequestTimeout" },
-          "429": { "$ref": "#/components/responses/RateLimited" }
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
         }
       }
     },
@@ -841,14 +1843,18 @@
             "in": "query",
             "required": false,
             "description": "Deprecated compatibility API-key query parameter for remote MCP clients that cannot send Authorization headers. Prefer Authorization: Bearer <token> or the stdio package because URL secrets are easier to leak through logs and history.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "Mcp-Session-Id",
             "in": "header",
             "required": false,
             "description": "Session ID minted by the server on initialize; echoed on every subsequent request.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -859,10 +1865,36 @@
                 "type": "object",
                 "required": ["jsonrpc", "method"],
                 "properties": {
-                  "jsonrpc": { "type": "string", "const": "2.0" },
-                  "id": { "oneOf": [{ "type": "string" }, { "type": "number" }, { "type": "null" }] },
-                  "method": { "type": "string", "enum": ["initialize", "notifications/initialized", "ping", "tools/list", "tools/call"] },
-                  "params": { "type": "object" }
+                  "jsonrpc": {
+                    "type": "string",
+                    "const": "2.0"
+                  },
+                  "id": {
+                    "oneOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "method": {
+                    "type": "string",
+                    "enum": [
+                      "initialize",
+                      "notifications/initialized",
+                      "ping",
+                      "tools/list",
+                      "tools/call"
+                    ]
+                  },
+                  "params": {
+                    "type": "object"
+                  }
                 }
               }
             }
@@ -877,15 +1909,36 @@
                   "type": "object",
                   "required": ["jsonrpc", "id"],
                   "properties": {
-                    "jsonrpc": { "type": "string", "const": "2.0" },
-                    "id": { "oneOf": [{ "type": "string" }, { "type": "number" }, { "type": "null" }] },
-                    "result": { "type": "object" },
+                    "jsonrpc": {
+                      "type": "string",
+                      "const": "2.0"
+                    },
+                    "id": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "result": {
+                      "type": "object"
+                    },
                     "error": {
                       "type": "object",
                       "required": ["code", "message"],
                       "properties": {
-                        "code": { "type": "integer" },
-                        "message": { "type": "string" }
+                        "code": {
+                          "type": "integer"
+                        },
+                        "message": {
+                          "type": "string"
+                        }
                       }
                     }
                   }
@@ -893,13 +1946,27 @@
               }
             }
           },
-          "202": { "description": "Notification acknowledged (no body)" },
-          "400": { "description": "JSON-RPC parse or invalid-request error" },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "402": { "$ref": "#/components/responses/SubscriptionRequired" },
-          "403": { "description": "Origin rejected or tier forbidden" },
-          "429": { "$ref": "#/components/responses/RateLimited" },
-          "500": { "$ref": "#/components/responses/InternalError" }
+          "202": {
+            "description": "Notification acknowledged (no body)"
+          },
+          "400": {
+            "description": "JSON-RPC parse or invalid-request error"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "description": "Origin rejected or tier forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
         }
       },
       "get": {
@@ -913,14 +1980,18 @@
             "in": "query",
             "required": false,
             "description": "API key as query parameter (same contract as POST).",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "Mcp-Session-Id",
             "in": "header",
             "required": false,
             "description": "Session ID minted by the server on initialize.",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -928,13 +1999,331 @@
             "description": "SSE stream",
             "content": {
               "text/event-stream": {
-                "schema": { "type": "string" }
+                "schema": {
+                  "type": "string"
+                }
               }
             }
           },
-          "401": { "$ref": "#/components/responses/Unauthorized" },
-          "403": { "description": "Origin rejected" },
-          "429": { "$ref": "#/components/responses/RateLimited" }
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "Origin rejected"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/api/v1/reports/daily": {
+      "get": {
+        "operationId": "get_daily_report_snapshot",
+        "summary": "Daily report snapshot",
+        "description": "Returns a dated daily whale-activity report snapshot with source_range, snapshot.status, completeness, and reconciliation metadata. Report whale volume is local whale-alert activity volume, not provider lifetime trader volume.",
+        "tags": ["Reports"],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "description": "UTC report date in YYYY-MM-DD format.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daily report snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["object", "data", "meta"],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "report_snapshot"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ReportSnapshot"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/reports/weekly": {
+      "get": {
+        "operationId": "get_weekly_report_snapshot",
+        "summary": "Weekly report snapshot",
+        "description": "Returns a weekly whale-activity report snapshot. Pass either from/to UTC dates or an ISO YYYY-WW week token. The response identifies closed ranges as final and current ranges as rolling.",
+        "tags": ["Reports"],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "description": "UTC source-range start in YYYY-MM-DD format; required with to.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "description": "UTC source-range end in YYYY-MM-DD format; required with from.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+            }
+          },
+          {
+            "name": "week",
+            "in": "query",
+            "required": false,
+            "description": "ISO week selector in YYYY-WW format; alternative to from/to.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Weekly report snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["object", "data", "meta"],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "report_snapshot"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ReportSnapshot"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/reports/monthly": {
+      "get": {
+        "operationId": "get_monthly_report_snapshot",
+        "summary": "Monthly report snapshot",
+        "description": "Returns a UTC monthly whale-activity report snapshot with source_range, completeness, and reconciliation metadata.",
+        "tags": ["Reports"],
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "required": true,
+            "description": "UTC report month in YYYY-MM format.",
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Monthly report snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["object", "data", "meta"],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "report_snapshot"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ReportSnapshot"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        }
+      }
+    },
+    "/api/v1/trader/{address}/export": {
+      "get": {
+        "operationId": "get_trader_export_snapshot",
+        "summary": "Trader export snapshot metadata",
+        "description": "Returns export source-range, completeness, volume reconciliation, row-count estimate, and large-export policy for one trader. V1 is metadata-only; full raw dataset export remains on the internal streaming or async export route.",
+        "tags": ["Traders"],
+        "parameters": [
+          {
+            "name": "address",
+            "in": "path",
+            "required": true,
+            "description": "Trader wallet address (0x...) or known trader username-style lookup accepted by the export read model.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trader export snapshot metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["object", "data", "meta"],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "trader_export_snapshot"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/TraderExportSnapshot"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
         }
       }
     }
@@ -947,68 +2336,413 @@
         "description": "API key: Authorization: Bearer oxi_sk_live_..."
       }
     },
+    "parameters": {
+      "WebhookId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "Webhook endpoint id owned by the authenticated API key user.",
+        "schema": { "type": "integer", "format": "int64" }
+      }
+    },
     "schemas": {
+      "WebhookEventType": {
+        "type": "string",
+        "enum": ["whale_trades_inserted", "live_sports_updated", "whale_trader_synced", "large_positions_updated"]
+      },
+      "WebhookStatus": {
+        "type": "string",
+        "enum": ["pending_verification", "active", "disabled"]
+      },
+      "WebhookRetryPolicy": {
+        "type": "object",
+        "required": ["max_attempts", "terminal_status"],
+        "properties": {
+          "max_attempts": { "type": "integer", "const": 8 },
+          "terminal_status": { "type": "string", "const": "dead_letter" }
+        }
+      },
+      "WebhookVerification": {
+        "type": "object",
+        "required": ["token", "expires_at"],
+        "properties": {
+          "token": { "type": "string", "description": "One-time verification token returned only on create or URL change." },
+          "expires_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "WebhookEndpoint": {
+        "type": "object",
+        "required": ["id", "object", "name", "url", "event_types", "status", "verification_token_expires_at", "failure_count", "created_at", "updated_at", "retry_policy"],
+        "properties": {
+          "id": { "type": "integer", "format": "int64" },
+          "object": { "type": "string", "const": "webhook" },
+          "name": { "type": "string" },
+          "url": { "type": "string", "format": "uri" },
+          "event_types": { "type": "array", "items": { "$ref": "#/components/schemas/WebhookEventType" } },
+          "status": { "$ref": "#/components/schemas/WebhookStatus" },
+          "verified_at": { "type": "string", "format": "date-time", "nullable": true },
+          "verification_token_expires_at": { "type": "string", "format": "date-time" },
+          "failure_count": { "type": "integer" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "updated_at": { "type": "string", "format": "date-time" },
+          "retry_policy": { "$ref": "#/components/schemas/WebhookRetryPolicy" },
+          "signing_secret": { "type": "string", "description": "Returned only on create or rotate-secret." },
+          "verification": { "$ref": "#/components/schemas/WebhookVerification" }
+        }
+      },
+      "CreateWebhookRequest": {
+        "type": "object",
+        "required": ["name", "url", "event_types"],
+        "properties": {
+          "name": { "type": "string", "maxLength": 100 },
+          "url": { "type": "string", "format": "uri", "description": "Public HTTPS callback URL. Local/private/internal targets are rejected." },
+          "event_types": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/WebhookEventType" } }
+        }
+      },
+      "UpdateWebhookRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string", "maxLength": 100 },
+          "url": { "type": "string", "format": "uri" },
+          "event_types": { "type": "array", "minItems": 1, "items": { "$ref": "#/components/schemas/WebhookEventType" } },
+          "enabled": { "type": "boolean" }
+        }
+      },
+      "VerifyWebhookRequest": {
+        "type": "object",
+        "required": ["verification_token"],
+        "properties": {
+          "verification_token": { "type": "string" }
+        }
+      },
       "ResponseMeta": {
         "type": "object",
         "required": ["request_id", "cached"],
         "properties": {
+          "request_id": {
+            "type": "string",
+            "description": "Unique request ID (req_ prefix)."
+          },
+          "cached": {
+            "type": "boolean"
+          },
+          "cache_age_s": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Cache age in seconds, null if not cached."
+          }
+        }
+      },
+      "WhaleTradeHistoryMeta": {
+        "type": "object",
+        "required": ["request_id", "cached", "source", "completeness"],
+        "properties": {
           "request_id": { "type": "string", "description": "Unique request ID (req_ prefix)." },
           "cached": { "type": "boolean" },
-          "cache_age_s": { "type": "integer", "nullable": true, "description": "Cache age in seconds, null if not cached." }
+          "cache_age_s": { "type": "integer", "nullable": true, "description": "Cache age in seconds, null if not cached." },
+          "source": {
+            "type": "object",
+            "required": ["kind", "table", "provider_fetch_at_request_time"],
+            "properties": {
+              "kind": { "type": "string", "const": "local_replay" },
+              "table": { "type": "string", "const": "whale_alerts" },
+              "provider_fetch_at_request_time": { "type": "boolean", "const": false }
+            }
+          },
+          "completeness": {
+            "type": "object",
+            "required": ["status", "reason"],
+            "properties": {
+              "status": { "type": "string", "const": "best_effort" },
+              "reason": { "type": "string", "description": "Explains that local replay completeness can vary by market and time window." }
+            }
+          }
+        }
+      },
+      "EventReplayEvent": {
+        "type": "object",
+        "required": ["id", "type", "cursor", "sequence", "published_at", "payload", "source", "freshness"],
+        "properties": {
+          "id": { "type": "string", "description": "Opaque event ID; currently identical to cursor for the whale_alerts.id sequence." },
+          "type": {
+            "type": "string",
+            "enum": ["whale_trades_inserted"]
+          },
+          "cursor": { "type": "string", "description": "Cursor positioned at this event." },
+          "sequence": { "type": "integer", "minimum": 1, "description": "Global whale_alerts.id sequence." },
+          "published_at": { "type": "string", "format": "date-time" },
+          "payload": { "type": "object", "additionalProperties": true },
+          "source": { "$ref": "#/components/schemas/EventReplaySource" },
+          "freshness": { "$ref": "#/components/schemas/EventReplayFreshness" }
+        }
+      },
+      "EventReplaySource": {
+        "type": "object",
+        "required": ["kind", "producer_family", "owner", "provider_fetch_at_request_time"],
+        "properties": {
+          "kind": { "type": "string", "const": "local_durable_replay" },
+          "producer_family": {
+            "type": "string",
+            "enum": ["whale_trades"]
+          },
+          "owner": { "type": "string", "const": "whale_alerts" },
+          "provider_fetch_at_request_time": { "type": "boolean", "const": false }
+        }
+      },
+      "EventReplayFreshness": {
+        "type": "object",
+        "required": ["status", "observed_at"],
+        "properties": {
+          "status": { "type": "string", "const": "observed" },
+          "observed_at": { "type": "string", "format": "date-time" }
+        }
+      },
+      "EventReplayMeta": {
+        "type": "object",
+        "required": ["request_id", "cached", "replay", "retention", "completeness"],
+        "properties": {
+          "request_id": { "type": "string", "description": "Unique request ID (req_ prefix)." },
+          "cached": { "type": "boolean" },
+          "cache_age_s": { "type": "integer", "nullable": true },
+          "replay": {
+            "type": "object",
+            "required": ["from_cursor", "to_cursor", "from_sequence", "to_sequence", "ordering"],
+            "properties": {
+              "from_cursor": { "type": "string" },
+              "to_cursor": { "type": "string" },
+              "from_sequence": { "type": "integer", "minimum": 0 },
+              "to_sequence": { "type": "integer", "minimum": 0 },
+              "ordering": { "type": "string", "const": "whale_alerts_id_asc" }
+            }
+          },
+          "retention": {
+            "type": "object",
+            "required": ["status", "retained_events", "cursor_expired"],
+            "properties": {
+              "status": { "type": "string", "enum": ["durable_database"] },
+              "retained_events": { "type": "integer", "minimum": 0 },
+              "cursor_expired": { "type": "boolean", "const": false }
+            }
+          },
+          "completeness": {
+            "type": "object",
+            "required": ["status", "reason"],
+            "properties": {
+              "status": { "type": "string", "enum": ["complete", "caught_up"] },
+              "reason": { "type": "string" }
+            }
+          }
+        }
+      },
+      "TrustSource": {
+        "type": "object",
+        "description": "Source metadata for a trust-critical value. Providers and DB/read models own business truth; clients should not infer missing provider facts from titles, slugs, zeros, or empty arrays.",
+        "required": ["kind", "owner"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["provider", "database", "cache", "computed", "client_input", "unavailable"]
+          },
+          "owner": { "type": "string", "description": "Provider, table/read-model, cache, or service that owns the value." },
+          "field": { "type": "string", "nullable": true, "description": "Provider field, DB column, or computed field name when applicable." }
+        }
+      },
+      "TrustFreshness": {
+        "type": "object",
+        "description": "Freshness metadata for a trust-critical value. This is separate from transport cache fields in ResponseMeta.",
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["fresh", "refreshing", "stale", "not_live", "unknown", "unavailable"]
+          },
+          "as_of": { "type": "string", "format": "date-time", "nullable": true },
+          "max_age_s": { "type": "integer", "nullable": true, "minimum": 0 }
+        }
+      },
+      "TrustReconciliation": {
+        "type": "object",
+        "description": "How provider-owned facts were reconciled with stored/read-model values.",
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["provider_backed", "db_mirror", "computed", "partial", "not_applicable", "unavailable"]
+          },
+          "detail": { "type": "string", "nullable": true }
+        }
+      },
+      "TrustCompleteness": {
+        "type": "object",
+        "description": "Whether the described value or result set is complete for its stated contract.",
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["complete", "partial", "not_computed", "not_applicable", "unavailable"]
+          },
+          "detail": { "type": "string", "nullable": true }
+        }
+      },
+      "TrustMetadata": {
+        "type": "object",
+        "description": "Shared source/freshness/reconciliation/completeness metadata for public API values that may be cached, stale, partial, computed, or provider-unavailable. Unavailable provider values must be represented with explicit metadata instead of fabricated zeros or empty arrays.",
+        "required": ["source", "freshness", "reconciliation", "completeness"],
+        "properties": {
+          "source": { "$ref": "#/components/schemas/TrustSource" },
+          "freshness": { "$ref": "#/components/schemas/TrustFreshness" },
+          "reconciliation": { "$ref": "#/components/schemas/TrustReconciliation" },
+          "completeness": { "$ref": "#/components/schemas/TrustCompleteness" }
         }
       },
       "PositionTimelineEvent": {
         "type": "object",
-        "required": ["id", "event_timestamp", "action", "outcome_side", "amount_delta", "price", "usdc_notional", "tx_hash", "running_amount", "running_avg_price"],
+        "required": [
+          "id",
+          "event_timestamp",
+          "action",
+          "outcome_side",
+          "amount_delta",
+          "price",
+          "usdc_notional",
+          "tx_hash",
+          "running_amount",
+          "running_avg_price"
+        ],
         "properties": {
-          "id": { "type": "string", "description": "Prefixed ID (pe_...)." },
-          "event_timestamp": { "type": "string", "format": "date-time", "description": "ISO 8601 timestamp of the on-chain fill." },
-          "action": { "type": "string", "enum": ["buy", "sell"], "description": "From the taker's perspective." },
-          "outcome_side": { "type": "string", "enum": ["yes", "no"] },
-          "amount_delta": { "type": "number", "description": "Signed share delta (+ on buy, − on sell)." },
-          "price": { "type": "number", "description": "Fill price in USDC per share, in [0,1]." },
-          "usdc_notional": { "type": "number", "description": "Positive USDC notional of the fill." },
-          "tx_hash": { "type": "string", "description": "Polygon transaction hash of the fill." },
-          "running_amount": { "type": "number", "description": "Cumulative signed share balance after this fill." },
-          "running_avg_price": { "type": "number", "description": "Buy-weighted entry basis (matches Polymarket /positions avgPrice semantics). Sells do not change this value. 0 when no buys have occurred yet." }
+          "id": {
+            "type": "string",
+            "description": "Prefixed ID (pe_...)."
+          },
+          "event_timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp of the on-chain fill."
+          },
+          "action": {
+            "type": "string",
+            "enum": ["buy", "sell"],
+            "description": "From the taker's perspective."
+          },
+          "outcome_side": {
+            "type": "string",
+            "enum": ["yes", "no"]
+          },
+          "amount_delta": {
+            "type": "number",
+            "description": "Signed share delta (+ on buy, − on sell)."
+          },
+          "price": {
+            "type": "number",
+            "description": "Fill price in USDC per share, in [0,1]."
+          },
+          "usdc_notional": {
+            "type": "number",
+            "description": "Positive USDC notional of the fill."
+          },
+          "tx_hash": {
+            "type": "string",
+            "description": "Polygon transaction hash of the fill."
+          },
+          "running_amount": {
+            "type": "number",
+            "description": "Cumulative signed share balance after this fill."
+          },
+          "running_avg_price": {
+            "type": "number",
+            "description": "Buy-weighted entry basis (matches Polymarket /positions avgPrice semantics). Sells do not change this value. 0 when no buys have occurred yet."
+          }
         }
       },
       "Trader": {
         "type": "object",
         "required": ["id", "address", "pnl", "stats"],
         "properties": {
-          "id": { "type": "string", "description": "Prefixed ID (trd_...)." },
-          "address": { "type": "string" },
-          "username": { "type": "string", "nullable": true },
-          "grade": { "type": "string", "enum": ["S", "A", "B", "C", "D", "F"], "nullable": true },
-          "score": { "type": "number", "nullable": true },
-          "rank": { "type": "integer", "nullable": true },
+          "id": {
+            "type": "string",
+            "description": "Prefixed ID (trd_...)."
+          },
+          "address": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "grade": {
+            "type": "string",
+            "enum": ["S", "A", "B", "C", "D", "F"],
+            "nullable": true
+          },
+          "score": {
+            "type": "number",
+            "nullable": true
+          },
+          "rank": {
+            "type": "integer",
+            "nullable": true
+          },
           "pnl": {
             "type": "object",
             "properties": {
-              "total": { "type": "number", "nullable": true },
-              "realized": { "type": "number", "nullable": true },
-              "unrealized": { "type": "number", "nullable": true },
-              "last_7d": { "type": "number", "nullable": true },
-              "last_30d": { "type": "number", "nullable": true }
+              "total": {
+                "type": "number",
+                "nullable": true
+              },
+              "realized": {
+                "type": "number",
+                "nullable": true
+              },
+              "unrealized": {
+                "type": "number",
+                "nullable": true
+              },
+              "last_7d": {
+                "type": "number",
+                "nullable": true
+              },
+              "last_30d": {
+                "type": "number",
+                "nullable": true
+              }
             }
           },
           "stats": {
             "type": "object",
             "properties": {
-              "markets_traded": { "type": "integer", "nullable": true },
-              "win_rate": { "type": "number", "nullable": true },
-              "daily_win_rate": { "type": "number", "nullable": true },
-              "total_volume": { "type": "number", "nullable": true }
+              "markets_traded": {
+                "type": "integer",
+                "nullable": true
+              },
+              "win_rate": {
+                "type": "number",
+                "nullable": true
+              },
+              "daily_win_rate": {
+                "type": "number",
+                "nullable": true
+              },
+              "total_volume": {
+                "type": "number",
+                "nullable": true
+              }
             }
           },
           "strategy": {
             "type": "object",
             "nullable": true,
             "properties": {
-              "strategy_type": { "type": "string" },
-              "description": { "type": "string", "nullable": true },
-              "confidence": { "type": "number", "nullable": true }
+              "strategy_type": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string",
+                "nullable": true
+              },
+              "confidence": {
+                "type": "number",
+                "nullable": true
+              }
             }
           },
           "category_strengths": {
@@ -1018,11 +2752,25 @@
             "items": {
               "type": "object",
               "properties": {
-                "category": { "type": "string" },
-                "grade": { "type": "string", "nullable": true },
-                "rank": { "type": "integer", "nullable": true },
-                "markets": { "type": "integer", "nullable": true },
-                "pnl": { "type": "number", "nullable": true }
+                "category": {
+                  "type": "string"
+                },
+                "grade": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "rank": {
+                  "type": "integer",
+                  "nullable": true
+                },
+                "markets": {
+                  "type": "integer",
+                  "nullable": true
+                },
+                "pnl": {
+                  "type": "number",
+                  "nullable": true
+                }
               }
             }
           },
@@ -1031,95 +2779,286 @@
             "nullable": true,
             "description": "Advanced risk/performance metrics (expand=quant_metrics or expand[]=quant_metrics). Null unless expanded.",
             "properties": {
-              "sharpe_ratio": { "type": "number", "nullable": true, "description": "Risk-adjusted return (annualized)" },
-              "sortino_ratio": { "type": "number", "nullable": true, "description": "Downside risk-adjusted return" },
-              "max_drawdown": { "type": "number", "nullable": true, "description": "Largest peak-to-trough decline (0.0-1.0)" },
-              "profit_factor": { "type": "number", "nullable": true, "description": "Gross profit / gross loss" },
-              "kelly_fraction": { "type": "number", "nullable": true, "description": "Optimal bet size (Kelly criterion)" },
-              "sharpe_percentile": { "type": "number", "nullable": true, "description": "Percentile rank among all traders" }
+              "sharpe_ratio": {
+                "type": "number",
+                "nullable": true,
+                "description": "Risk-adjusted return (annualized)"
+              },
+              "sortino_ratio": {
+                "type": "number",
+                "nullable": true,
+                "description": "Downside risk-adjusted return"
+              },
+              "max_drawdown": {
+                "type": "number",
+                "nullable": true,
+                "description": "Largest peak-to-trough decline (0.0-1.0)"
+              },
+              "profit_factor": {
+                "type": "number",
+                "nullable": true,
+                "description": "Gross profit / gross loss"
+              },
+              "kelly_fraction": {
+                "type": "number",
+                "nullable": true,
+                "description": "Optimal bet size (Kelly criterion)"
+              },
+              "sharpe_percentile": {
+                "type": "number",
+                "nullable": true,
+                "description": "Percentile rank among all traders"
+              }
             }
           },
-          "last_active": { "type": "string", "format": "date-time", "nullable": true },
-          "synced_at": { "type": "string", "format": "date-time", "nullable": true },
-          "sync_status": { "type": "string", "nullable": true, "description": "synced, unknown, or pending." }
+          "last_active": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "synced_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "sync_status": {
+            "type": "string",
+            "nullable": true,
+            "description": "synced, unknown, or pending."
+          }
         }
       },
       "Position": {
         "type": "object",
-        "required": ["id", "platform", "wallet", "side", "shares", "current_value_usd", "freshness", "trader", "market"],
+        "required": [
+          "id",
+          "platform",
+          "wallet",
+          "side",
+          "shares",
+          "current_value_usd",
+          "freshness",
+          "trader",
+          "market"
+        ],
         "properties": {
-          "id": { "type": "string", "description": "Composite prefixed ID `pos_<wallet>:<condition_id>:<outcome_index>`." },
-          "platform": { "type": "string", "enum": ["polymarket", "kalshi"], "description": "Provider discriminator. Slice 5 ships Polymarket only; the field stays in the response shape so Kalshi positions can land without a breaking change." },
-          "wallet": { "type": "string", "description": "Lowercased proxy wallet address." },
-          "side": { "type": "string", "enum": ["YES", "NO"], "description": "Binary outcome side. Non-binary positions are not surfaced on V1." },
-          "shares": { "type": "number", "description": "Live share count from the wallet_positions mirror." },
-          "avg_price": { "type": "number", "nullable": true, "description": "Volume-weighted entry price for this leg." },
-          "current_value_usd": { "type": "number", "description": "Current mark-to-market value in USD (always non-null on V1 — pre-reconcile rows are excluded)." },
-          "initial_value_usd": { "type": "number", "nullable": true },
-          "cash_pnl": { "type": "number", "nullable": true, "description": "Unrealized P&L for the open position (Polymarket `cashPnl`)." },
-          "realized_pnl": { "type": "number", "nullable": true, "description": "Closed-leg P&L rolled up (Polymarket `realizedPnl`)." },
-          "last_reconciled_at": { "type": "string", "format": "date-time", "nullable": true, "description": "Max updated_at across mirror legs for this pair." },
-          "freshness": { "type": "string", "enum": ["fresh", "refreshing", "stale", "unknown"], "description": "Backend-computed staleness bucket derived from last_reconciled_at." },
+          "id": {
+            "type": "string",
+            "description": "Composite prefixed ID `pos_<wallet>:<condition_id>:<outcome_index>`."
+          },
+          "platform": {
+            "type": "string",
+            "enum": ["polymarket", "kalshi"],
+            "description": "Provider discriminator. Slice 5 ships Polymarket only; the field stays in the response shape so Kalshi positions can land without a breaking change."
+          },
+          "wallet": {
+            "type": "string",
+            "description": "Lowercased proxy wallet address."
+          },
+          "side": {
+            "type": "string",
+            "enum": ["YES", "NO"],
+            "description": "Binary outcome side. Non-binary positions are not surfaced on V1."
+          },
+          "shares": {
+            "type": "number",
+            "description": "Live share count from the wallet_positions mirror."
+          },
+          "avg_price": {
+            "type": "number",
+            "nullable": true,
+            "description": "Volume-weighted entry price for this leg."
+          },
+          "current_value_usd": {
+            "type": "number",
+            "description": "Current mark-to-market value in USD (always non-null on V1 — pre-reconcile rows are excluded)."
+          },
+          "initial_value_usd": {
+            "type": "number",
+            "nullable": true
+          },
+          "cash_pnl": {
+            "type": "number",
+            "nullable": true,
+            "description": "Unrealized P&L for the open position (Polymarket `cashPnl`)."
+          },
+          "realized_pnl": {
+            "type": "number",
+            "nullable": true,
+            "description": "Closed-leg P&L rolled up (Polymarket `realizedPnl`)."
+          },
+          "last_reconciled_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Max updated_at across mirror legs for this pair."
+          },
+          "freshness": {
+            "type": "string",
+            "enum": ["fresh", "refreshing", "stale", "unknown"],
+            "description": "Backend-computed staleness bucket derived from last_reconciled_at."
+          },
           "trader": {
             "type": "object",
             "required": ["id", "address", "is_new_wallet"],
             "properties": {
-              "id": { "type": "string", "description": "Prefixed ID (`trd_0x...`)." },
-              "address": { "type": "string" },
-              "username": { "type": "string", "nullable": true },
-              "grade": { "type": "string", "enum": ["S", "A", "B", "C", "D", "F"], "nullable": true },
-              "win_rate": { "type": "number", "nullable": true, "description": "Percentage 0-100." },
-              "pnl": { "type": "number", "nullable": true },
-              "markets": { "type": "integer", "nullable": true },
-              "wallet_age_days": { "type": "number", "nullable": true },
-              "is_new_wallet": { "type": "boolean", "description": "Wallet is younger than the new-wallet threshold (30 days)." }
+              "id": {
+                "type": "string",
+                "description": "Prefixed ID (`trd_0x...`)."
+              },
+              "address": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string",
+                "nullable": true
+              },
+              "grade": {
+                "type": "string",
+                "enum": ["S", "A", "B", "C", "D", "F"],
+                "nullable": true
+              },
+              "win_rate": {
+                "type": "number",
+                "nullable": true,
+                "description": "Percentage 0-100."
+              },
+              "pnl": {
+                "type": "number",
+                "nullable": true
+              },
+              "markets": {
+                "type": "integer",
+                "nullable": true
+              },
+              "wallet_age_days": {
+                "type": "number",
+                "nullable": true
+              },
+              "is_new_wallet": {
+                "type": "boolean",
+                "description": "Wallet is younger than the new-wallet threshold (30 days)."
+              }
             }
           },
           "market": {
             "type": "object",
             "required": ["id", "condition_id", "title"],
             "properties": {
-              "id": { "type": "string", "description": "Prefixed ID (`mkt_...`)." },
-              "condition_id": { "type": "string" },
-              "title": { "type": "string" },
-              "slug": { "type": "string", "nullable": true },
-              "event_slug": { "type": "string", "nullable": true },
-              "category": { "type": "string", "nullable": true, "description": "Provider-backed market_canonical category." },
-              "outcome_label": { "type": "string", "nullable": true, "description": "Provider-reported outcome label (e.g. team name for sports). Separate from `side` because provider labels can diverge from the binary Yes/No axis." },
-              "end_date": { "type": "string", "format": "date-time", "nullable": true }
+              "id": {
+                "type": "string",
+                "description": "Prefixed ID (`mkt_...`)."
+              },
+              "condition_id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string",
+                "nullable": true
+              },
+              "event_slug": {
+                "type": "string",
+                "nullable": true
+              },
+              "category": {
+                "type": "string",
+                "nullable": true,
+                "description": "Provider-backed market_canonical category."
+              },
+              "outcome_label": {
+                "type": "string",
+                "nullable": true,
+                "description": "Provider-reported outcome label (e.g. team name for sports). Separate from `side` because provider labels can diverge from the binary Yes/No axis."
+              },
+              "end_date": {
+                "type": "string",
+                "format": "date-time",
+                "nullable": true
+              }
             }
           }
         }
       },
       "WhaleTrade": {
         "type": "object",
-        "required": ["id", "traded_at", "size_usd", "side", "price", "signal_score", "trader", "market"],
+        "required": [
+          "id",
+          "traded_at",
+          "size_usd",
+          "side",
+          "price",
+          "signal_score",
+          "trader",
+          "market"
+        ],
         "properties": {
-          "id": { "type": "string", "description": "Prefixed ID (wt_...)." },
-          "traded_at": { "type": "string", "format": "date-time" },
-          "size_usd": { "type": "number" },
-          "side": { "type": "string", "enum": ["BUY", "SELL"] },
-          "price": { "type": "number" },
-          "signal_score": { "type": "number", "description": "0.0–1.0 normalized signal score." },
+          "id": {
+            "type": "string",
+            "description": "Prefixed ID (wt_...)."
+          },
+          "traded_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "size_usd": {
+            "type": "number"
+          },
+          "side": {
+            "type": "string",
+            "enum": ["BUY", "SELL"]
+          },
+          "price": {
+            "type": "number"
+          },
+          "signal_score": {
+            "type": "number",
+            "description": "0.0–1.0 normalized signal score."
+          },
           "trader": {
             "type": "object",
             "required": ["id", "address"],
             "properties": {
-              "id": { "type": "string" },
-              "address": { "type": "string" },
-              "username": { "type": "string", "nullable": true },
-              "grade": { "type": "string", "nullable": true }
+              "id": {
+                "type": "string"
+              },
+              "address": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string",
+                "nullable": true
+              },
+              "grade": {
+                "type": "string",
+                "nullable": true
+              }
             }
           },
           "market": {
             "type": "object",
             "required": ["id", "condition_id", "title"],
             "properties": {
-              "id": { "type": "string" },
-              "condition_id": { "type": "string" },
-              "title": { "type": "string" },
-              "slug": { "type": "string", "nullable": true },
-              "category": { "type": "string", "nullable": true, "description": "Provider-backed market_canonical category." }
+              "id": {
+                "type": "string"
+              },
+              "condition_id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string",
+                "nullable": true
+              },
+              "category": {
+                "type": "string",
+                "nullable": true,
+                "description": "Provider-backed market_canonical category."
+              }
             }
           }
         }
@@ -1128,64 +3067,201 @@
         "type": "object",
         "required": ["id", "address", "platform"],
         "properties": {
-          "id": { "type": "string" },
-          "address": { "type": "string" },
-          "username": { "type": "string", "nullable": true },
-          "grade": { "type": "string", "nullable": true },
-          "score": { "type": "number", "nullable": true },
-          "pnl": { "type": "number", "nullable": true },
-          "volume": { "type": "number", "nullable": true },
-          "markets_traded": { "type": "integer", "nullable": true },
-          "win_rate": { "type": "number", "nullable": true },
-          "strategy_type": { "type": "string", "nullable": true },
-          "platform": { "type": "string" },
-          "last_active": { "type": "string", "format": "date-time", "nullable": true }
+          "id": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "grade": {
+            "type": "string",
+            "nullable": true
+          },
+          "score": {
+            "type": "number",
+            "nullable": true
+          },
+          "pnl": {
+            "type": "number",
+            "nullable": true
+          },
+          "volume": {
+            "type": "number",
+            "nullable": true
+          },
+          "markets_traded": {
+            "type": "integer",
+            "nullable": true
+          },
+          "win_rate": {
+            "type": "number",
+            "nullable": true
+          },
+          "strategy_type": {
+            "type": "string",
+            "nullable": true
+          },
+          "platform": {
+            "type": "string"
+          },
+          "last_active": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
         }
       },
       "MarketSearchResult": {
         "type": "object",
         "required": ["id", "condition_id", "title", "status"],
         "properties": {
-          "id": { "type": "string" },
-          "condition_id": { "type": "string" },
-          "title": { "type": "string" },
-          "slug": { "type": "string", "nullable": true },
-          "category": { "type": "string", "nullable": true },
-          "platform": { "type": "string", "nullable": true },
-          "status": { "type": "string", "enum": ["active", "closed"] }
+          "id": {
+            "type": "string"
+          },
+          "condition_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          },
+          "platform": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "closed"]
+          }
         }
       },
       "ExploreMarket": {
         "type": "object",
         "required": ["id", "condition_id", "title", "status"],
         "properties": {
-          "id": { "type": "string" },
-          "condition_id": { "type": "string" },
-          "title": { "type": "string", "minLength": 1, "description": "Non-empty market title." },
-          "slug": { "type": "string", "nullable": true, "description": "Provider-native market slug." },
-          "url_slug": { "type": "string", "nullable": true, "description": "First-party market page slug used for internal links." },
-          "image": { "type": "string", "nullable": true },
-          "icon": { "type": "string", "nullable": true },
-          "category": { "type": "string", "nullable": true },
-          "platform": { "type": "string", "nullable": true },
-          "status": { "type": "string", "enum": ["active", "closed"] },
-          "volume": { "type": "number", "nullable": true },
-          "liquidity": { "type": "number", "nullable": true },
-          "whale_trade_count": { "type": "integer", "nullable": true },
-          "whale_distinct_wallets": { "type": "integer", "nullable": true },
-          "whale_total_usd": { "type": "number", "nullable": true },
-          "whale_last_trade_at": { "type": "string", "format": "date-time", "nullable": true },
-          "end_date": { "type": "string", "format": "date-time", "nullable": true },
-          "created_at": { "type": "string", "format": "date-time", "nullable": true },
-          "outcome_yes": { "type": "string", "nullable": true },
-          "outcome_no": { "type": "string", "nullable": true },
-          "event_slug": { "type": "string", "nullable": true },
-          "kalshi_series_slug": { "type": "string", "nullable": true },
-          "smart_score": { "type": "number", "nullable": true },
-          "smart_count": { "type": "integer", "nullable": true },
-          "smart_label": { "type": "string", "nullable": true },
-          "open_interest": { "type": "number", "nullable": true },
-          "oi_change_pct": { "type": "number", "nullable": true },
+          "id": {
+            "type": "string"
+          },
+          "condition_id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Non-empty market title."
+          },
+          "slug": {
+            "type": "string",
+            "nullable": true,
+            "description": "Provider-native market slug."
+          },
+          "url_slug": {
+            "type": "string",
+            "nullable": true,
+            "description": "First-party market page slug used for internal links."
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          },
+          "icon": {
+            "type": "string",
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          },
+          "platform": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": ["active", "closed"]
+          },
+          "volume": {
+            "type": "number",
+            "nullable": true
+          },
+          "liquidity": {
+            "type": "number",
+            "nullable": true
+          },
+          "whale_trade_count": {
+            "type": "integer",
+            "nullable": true
+          },
+          "whale_distinct_wallets": {
+            "type": "integer",
+            "nullable": true
+          },
+          "whale_total_usd": {
+            "type": "number",
+            "nullable": true
+          },
+          "whale_last_trade_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "outcome_yes": {
+            "type": "string",
+            "nullable": true
+          },
+          "outcome_no": {
+            "type": "string",
+            "nullable": true
+          },
+          "event_slug": {
+            "type": "string",
+            "nullable": true
+          },
+          "kalshi_series_slug": {
+            "type": "string",
+            "nullable": true
+          },
+          "smart_score": {
+            "type": "number",
+            "nullable": true
+          },
+          "smart_count": {
+            "type": "integer",
+            "nullable": true
+          },
+          "smart_label": {
+            "type": "string",
+            "nullable": true
+          },
+          "open_interest": {
+            "type": "number",
+            "nullable": true
+          },
+          "oi_change_pct": {
+            "type": "number",
+            "nullable": true
+          },
           "price_points": {
             "type": "array",
             "nullable": true,
@@ -1193,7 +3269,9 @@
               "type": "array",
               "minItems": 2,
               "maxItems": 2,
-              "items": { "type": "number" }
+              "items": {
+                "type": "number"
+              }
             }
           }
         }
@@ -1202,46 +3280,98 @@
         "type": "object",
         "required": ["type", "event_slug", "parent_title", "markets"],
         "properties": {
-          "type": { "type": "string", "const": "group" },
-          "event_slug": { "type": "string" },
-          "parent_title": { "type": "string" },
-          "image": { "type": "string", "nullable": true },
-          "platform": { "type": "string", "nullable": true },
-          "category": { "type": "string", "nullable": true },
-          "markets": { "type": "array", "items": { "$ref": "#/components/schemas/ExploreMarket" } },
-          "rep_volume": { "type": "number", "nullable": true },
-          "rep_whales": { "type": "integer", "nullable": true }
+          "type": {
+            "type": "string",
+            "const": "group"
+          },
+          "event_slug": {
+            "type": "string"
+          },
+          "parent_title": {
+            "type": "string"
+          },
+          "image": {
+            "type": "string",
+            "nullable": true
+          },
+          "platform": {
+            "type": "string",
+            "nullable": true
+          },
+          "category": {
+            "type": "string",
+            "nullable": true
+          },
+          "markets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExploreMarket"
+            }
+          },
+          "rep_volume": {
+            "type": "number",
+            "nullable": true
+          },
+          "rep_whales": {
+            "type": "integer",
+            "nullable": true
+          }
         }
       },
       "ExploreStandalone": {
         "type": "object",
         "required": ["type", "market"],
         "properties": {
-          "type": { "type": "string", "const": "standalone" },
-          "market": { "$ref": "#/components/schemas/ExploreMarket" }
+          "type": {
+            "type": "string",
+            "const": "standalone"
+          },
+          "market": {
+            "$ref": "#/components/schemas/ExploreMarket"
+          }
         }
       },
       "ExploreFacetValue": {
         "type": "object",
         "required": ["value", "label", "count"],
         "properties": {
-          "value": { "type": "string" },
-          "label": { "type": "string" },
-          "count": { "type": "integer" }
+          "value": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "count": {
+            "type": "integer"
+          }
         }
       },
       "ExploreFacets": {
         "type": "object",
         "required": ["categories", "platforms"],
         "properties": {
-          "categories": { "type": "array", "items": { "$ref": "#/components/schemas/ExploreFacetValue" } },
-          "platforms": { "type": "array", "items": { "$ref": "#/components/schemas/ExploreFacetValue" } }
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExploreFacetValue"
+            }
+          },
+          "platforms": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExploreFacetValue"
+            }
+          }
         }
       },
       "ExploreEntry": {
         "oneOf": [
-          { "$ref": "#/components/schemas/ExploreGroup" },
-          { "$ref": "#/components/schemas/ExploreStandalone" }
+          {
+            "$ref": "#/components/schemas/ExploreGroup"
+          },
+          {
+            "$ref": "#/components/schemas/ExploreStandalone"
+          }
         ],
         "discriminator": {
           "propertyName": "type",
@@ -1259,106 +3389,724 @@
             "type": "object",
             "required": ["id", "condition_id", "title"],
             "properties": {
-              "id": { "type": "string" },
-              "condition_id": { "type": "string" },
-              "title": { "type": "string" },
-              "slug": { "type": "string", "nullable": true },
-              "category": { "type": "string", "nullable": true },
-              "platform": { "type": "string", "nullable": true }
+              "id": {
+                "type": "string"
+              },
+              "condition_id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string",
+                "nullable": true
+              },
+              "category": {
+                "type": "string",
+                "nullable": true
+              },
+              "platform": {
+                "type": "string",
+                "nullable": true
+              }
             }
           },
           "smart_money": {
             "type": "object",
-            "required": ["net_flow_usd", "direction", "whale_trade_count", "buy_volume_usd", "sell_volume_usd", "top_positions"],
+            "required": [
+              "net_flow_usd",
+              "direction",
+              "whale_trade_count",
+              "buy_volume_usd",
+              "sell_volume_usd",
+              "top_positions"
+            ],
             "properties": {
-              "net_flow_usd": { "type": "number" },
-              "direction": { "type": "string", "enum": ["YES", "NO"] },
-              "whale_trade_count": { "type": "integer" },
-              "buy_volume_usd": { "type": "number" },
-              "sell_volume_usd": { "type": "number" },
+              "net_flow_usd": {
+                "type": "number"
+              },
+              "direction": {
+                "type": "string",
+                "enum": ["YES", "NO"]
+              },
+              "whale_trade_count": {
+                "type": "integer"
+              },
+              "buy_volume_usd": {
+                "type": "number"
+              },
+              "sell_volume_usd": {
+                "type": "number"
+              },
               "top_positions": {
                 "type": "array",
                 "items": {
                   "type": "object",
                   "required": ["id", "address", "side", "size_usd"],
                   "properties": {
-                    "id": { "type": "string" },
-                    "address": { "type": "string" },
-                    "username": { "type": "string", "nullable": true },
-                    "grade": { "type": "string", "nullable": true },
-                    "side": { "type": "string", "enum": ["YES", "NO"] },
-                    "size_usd": { "type": "number" }
+                    "id": {
+                      "type": "string"
+                    },
+                    "address": {
+                      "type": "string"
+                    },
+                    "username": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "grade": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "side": {
+                      "type": "string",
+                      "enum": ["YES", "NO"]
+                    },
+                    "size_usd": {
+                      "type": "number"
+                    }
                   }
                 }
               }
             }
           },
-          "timeframe": { "type": "string" }
+          "timeframe": {
+            "type": "string"
+          }
+        }
+      },
+      "MarketSnapshotFreshness": {
+        "type": "object",
+        "required": ["status", "source"],
+        "properties": {
+          "status": { "type": "string", "enum": ["fresh", "stale", "available", "not_live", "unavailable"] },
+          "source": { "type": "string" },
+          "as_of": { "type": "string", "format": "date-time", "nullable": true },
+          "stale_after_s": { "type": "integer", "nullable": true },
+          "reason": { "type": "string", "nullable": true }
+        }
+      },
+      "MarketSnapshotTopOfBook": {
+        "type": "object",
+        "required": ["status", "source"],
+        "properties": {
+          "status": { "type": "string", "enum": ["available", "unavailable"] },
+          "source": { "type": "string" },
+          "best_bid": { "type": "number", "nullable": true },
+          "best_ask": { "type": "number", "nullable": true },
+          "spread_bps": { "type": "integer", "nullable": true },
+          "bid_depth_usdc": { "type": "number", "nullable": true },
+          "ask_depth_usdc": { "type": "number", "nullable": true },
+          "reason": { "type": "string", "nullable": true }
+        }
+      },
+      "MarketSnapshot": {
+        "type": "object",
+        "required": ["market", "outcomes", "liquidity", "sports", "freshness"],
+        "properties": {
+          "market": {
+            "type": "object",
+            "required": ["id", "condition_id", "provider", "status"],
+            "properties": {
+              "id": { "type": "string" },
+              "condition_id": { "type": "string" },
+              "provider": { "type": "string" },
+              "title": { "type": "string", "nullable": true },
+              "slug": { "type": "string", "nullable": true },
+              "page_slug": { "type": "string", "nullable": true },
+              "event_slug": { "type": "string", "nullable": true },
+              "category": { "type": "string", "nullable": true },
+              "status": { "type": "string", "enum": ["active", "closed"] },
+              "description": { "type": "string", "nullable": true },
+              "image": { "type": "string", "nullable": true },
+              "series_slug": { "type": "string", "nullable": true },
+              "kalshi_series_slug": { "type": "string", "nullable": true },
+              "market_type": { "type": "string", "nullable": true },
+              "market_result": { "type": "string", "nullable": true },
+              "created_at": { "type": "string", "format": "date-time", "nullable": true },
+              "end_date": { "type": "string", "format": "date-time", "nullable": true },
+              "resolved_at": { "type": "string", "format": "date-time", "nullable": true }
+            }
+          },
+          "outcomes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["side", "label", "top_of_book"],
+              "properties": {
+                "side": { "type": "string", "enum": ["yes", "no"] },
+                "label": { "type": "string" },
+                "token_id": { "type": "string", "nullable": true },
+                "current_price": { "type": "number", "nullable": true },
+                "top_of_book": { "$ref": "#/components/schemas/MarketSnapshotTopOfBook" }
+              }
+            }
+          },
+          "liquidity": {
+            "type": "object",
+            "required": ["source"],
+            "properties": {
+              "source": { "type": "string" },
+              "volume_usd": { "type": "number", "nullable": true },
+              "liquidity_usd": { "type": "number", "nullable": true },
+              "volume_24h_usd": { "type": "number", "nullable": true },
+              "last_price": { "type": "number", "nullable": true }
+            }
+          },
+          "sports": {
+            "type": "object",
+            "required": ["status", "source"],
+            "properties": {
+              "status": { "type": "string", "enum": ["fresh", "stale", "not_live", "unavailable"] },
+              "source": { "type": "string" },
+              "live_match_key": { "type": "string", "nullable": true },
+              "live_league_key": { "type": "string", "nullable": true },
+              "live_score": { "type": "object", "nullable": true },
+              "reason": { "type": "string", "nullable": true }
+            }
+          },
+          "freshness": {
+            "type": "object",
+            "required": ["market_data", "top_of_book", "live_sports"],
+            "properties": {
+              "market_data": { "$ref": "#/components/schemas/MarketSnapshotFreshness" },
+              "top_of_book": { "$ref": "#/components/schemas/MarketSnapshotFreshness" },
+              "live_sports": { "$ref": "#/components/schemas/MarketSnapshotFreshness" }
+            }
+          }
         }
       },
       "RadarFlag": {
         "type": "object",
-        "required": ["id", "suspicion_score", "severity", "trader", "market", "scores", "evidence", "created_at"],
+        "required": [
+          "id",
+          "suspicion_score",
+          "severity",
+          "trader",
+          "market",
+          "scores",
+          "evidence",
+          "created_at"
+        ],
         "properties": {
-          "id": { "type": "string", "description": "Prefixed ID (rf_...)." },
-          "suspicion_score": { "type": "number" },
-          "severity": { "type": "string", "enum": ["flag", "watch"] },
+          "id": {
+            "type": "string",
+            "description": "Prefixed ID (rf_...)."
+          },
+          "suspicion_score": {
+            "type": "number"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["flag", "watch"]
+          },
           "trader": {
             "type": "object",
             "required": ["id", "address"],
             "properties": {
-              "id": { "type": "string" },
-              "address": { "type": "string" },
-              "username": { "type": "string", "nullable": true }
+              "id": {
+                "type": "string"
+              },
+              "address": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string",
+                "nullable": true
+              }
             }
           },
           "market": {
             "type": "object",
             "required": ["id", "condition_id", "title"],
             "properties": {
-              "id": { "type": "string" },
-              "condition_id": { "type": "string" },
-              "title": { "type": "string" }
+              "id": {
+                "type": "string"
+              },
+              "condition_id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
             }
           },
           "scores": {
             "type": "object",
             "properties": {
-              "timing": { "type": "number", "nullable": true },
-              "edge": { "type": "number", "nullable": true },
-              "size": { "type": "number", "nullable": true },
-              "fresh_wallet": { "type": "number", "nullable": true }
+              "timing": {
+                "type": "number",
+                "nullable": true
+              },
+              "edge": {
+                "type": "number",
+                "nullable": true
+              },
+              "size": {
+                "type": "number",
+                "nullable": true
+              },
+              "fresh_wallet": {
+                "type": "number",
+                "nullable": true
+              }
             }
           },
-          "evidence": { "description": "Structured evidence JSON." },
-          "created_at": { "type": "string", "format": "date-time" }
+          "evidence": {
+            "description": "Structured evidence JSON."
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ApiErrorBody": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string" },
+          "message": { "type": "string" },
+          "doc_url": { "type": "string", "nullable": true },
+          "param": { "type": "string", "nullable": true }
+        }
+      },
+      "BatchRateLimitMeta": {
+        "type": "object",
+        "required": ["basis", "limit", "remaining", "reset"],
+        "properties": {
+          "basis": { "type": "string", "const": "batch_items_per_minute" },
+          "limit": { "type": "integer" },
+          "remaining": { "type": "integer" },
+          "reset": { "type": "integer", "description": "Unix timestamp when the batch item window resets." }
+        }
+      },
+      "BatchResponseMeta": {
+        "type": "object",
+        "required": ["request_id", "cached", "total_items", "successful_items", "failed_items", "request_cost", "rate_limit"],
+        "properties": {
+          "request_id": { "type": "string" },
+          "cached": { "type": "boolean" },
+          "total_items": { "type": "integer" },
+          "successful_items": { "type": "integer" },
+          "failed_items": { "type": "integer" },
+          "request_cost": { "type": "integer", "description": "Number of batch item units reserved before execution." },
+          "rate_limit": { "$ref": "#/components/schemas/BatchRateLimitMeta" }
+        }
+      },
+      "BatchTraderItem": {
+        "type": "object",
+        "required": ["index", "input", "status"],
+        "properties": {
+          "index": { "type": "integer", "description": "Zero-based request index. Duplicate inputs keep separate result rows." },
+          "input": { "type": "string" },
+          "status": { "type": "string", "enum": ["ok", "error"] },
+          "data": { "$ref": "#/components/schemas/Trader" },
+          "error": { "$ref": "#/components/schemas/ApiErrorBody" }
+        }
+      },
+      "BatchMarketIntelItem": {
+        "type": "object",
+        "required": ["index", "input", "status"],
+        "properties": {
+          "index": { "type": "integer", "description": "Zero-based request index. Duplicate inputs keep separate result rows." },
+          "input": { "type": "string" },
+          "status": { "type": "string", "enum": ["ok", "error"] },
+          "data": { "$ref": "#/components/schemas/MarketIntel" },
+          "error": { "$ref": "#/components/schemas/ApiErrorBody" }
         }
       },
       "ApiError": {
         "type": "object",
         "required": ["object", "error", "meta"],
         "properties": {
-          "object": { "type": "string", "const": "error" },
+          "object": {
+            "type": "string",
+            "const": "error"
+          },
           "error": {
             "type": "object",
             "required": ["code", "message"],
             "properties": {
-              "code": { "type": "string" },
-              "message": { "type": "string" },
-              "doc_url": { "type": "string", "nullable": true },
-              "param": { "type": "string", "nullable": true }
+              "code": {
+                "type": "string"
+              },
+              "message": {
+                "type": "string"
+              },
+              "doc_url": {
+                "type": "string",
+                "nullable": true
+              },
+              "param": {
+                "type": "string",
+                "nullable": true
+              }
             }
           },
-          "meta": { "$ref": "#/components/schemas/ResponseMeta" }
+          "meta": {
+            "$ref": "#/components/schemas/ResponseMeta"
+          }
+        }
+      },
+      "ReportSnapshot": {
+        "type": "object",
+        "required": [
+          "kind",
+          "generated_at",
+          "source_range",
+          "snapshot",
+          "completeness",
+          "reconciliation",
+          "report"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["daily", "weekly", "monthly"]
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_range": {
+            "$ref": "#/components/schemas/ReportSourceRange"
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/SnapshotState"
+          },
+          "completeness": {
+            "$ref": "#/components/schemas/SnapshotCompleteness"
+          },
+          "reconciliation": {
+            "$ref": "#/components/schemas/ReportReconciliation"
+          },
+          "report": {
+            "$ref": "#/components/schemas/ReportPayload"
+          }
+        }
+      },
+      "ReportSourceRange": {
+        "type": "object",
+        "required": ["start_date", "end_date", "timezone"],
+        "properties": {
+          "start_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "timezone": {
+            "type": "string",
+            "const": "UTC"
+          }
+        }
+      },
+      "SnapshotState": {
+        "type": "object",
+        "required": ["status", "generated_at"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["final", "rolling"]
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "mutable_until": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          }
+        }
+      },
+      "SnapshotCompleteness": {
+        "type": "object",
+        "required": [
+          "status",
+          "reason",
+          "expected_days",
+          "covered_days_with_whale_activity"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["complete", "partial", "empty"]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "expected_days": {
+            "type": "integer"
+          },
+          "covered_days_with_whale_activity": {
+            "type": "integer"
+          }
+        }
+      },
+      "ReportReconciliation": {
+        "type": "object",
+        "required": ["volume_kind", "whale_volume_source", "notes"],
+        "properties": {
+          "volume_kind": {
+            "type": "string",
+            "const": "local_whale_activity_volume"
+          },
+          "whale_volume_source": {
+            "type": "string",
+            "const": "whale_alerts.usdc_notional_num"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "ReportPayload": {
+        "type": "object",
+        "properties": {
+          "total_whale_trades": {
+            "type": "integer",
+            "nullable": true
+          },
+          "total_whale_volume": {
+            "type": "number",
+            "nullable": true
+          },
+          "biggest_trade_size": {
+            "type": "number",
+            "nullable": true
+          },
+          "active_traders": {
+            "type": "integer",
+            "nullable": true
+          },
+          "top_whale_trades": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "nullable": true
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "nullable": true
+          },
+          "grade_distribution": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            },
+            "nullable": true
+          }
+        }
+      },
+      "TraderExportSnapshot": {
+        "type": "object",
+        "required": [
+          "address",
+          "generated_at",
+          "source_range",
+          "completeness",
+          "reconciliation",
+          "counts",
+          "large_export_policy"
+        ],
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "source_range": {
+            "$ref": "#/components/schemas/ExportSourceRange"
+          },
+          "completeness": {
+            "$ref": "#/components/schemas/ExportCompleteness"
+          },
+          "reconciliation": {
+            "$ref": "#/components/schemas/ExportVolumeReconciliation"
+          },
+          "counts": {
+            "$ref": "#/components/schemas/ExportCounts"
+          },
+          "large_export_policy": {
+            "$ref": "#/components/schemas/LargeExportPolicy"
+          }
+        }
+      },
+      "ExportSourceRange": {
+        "type": "object",
+        "properties": {
+          "first_pnl_date": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "last_pnl_date": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
+          },
+          "latest_trade_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "latest_market_activity_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "ExportCompleteness": {
+        "type": "object",
+        "required": ["status", "reason", "sync_coverage"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["complete", "partial", "empty"]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "sync_coverage": {
+            "type": "number",
+            "minimum": 0
+          }
+        }
+      },
+      "ExportVolumeReconciliation": {
+        "type": "object",
+        "required": ["exported_activity_volume", "exported_market_cost_basis"],
+        "properties": {
+          "provider_lifetime_volume": {
+            "type": "number",
+            "nullable": true
+          },
+          "exported_activity_volume": {
+            "type": "number"
+          },
+          "exported_market_cost_basis": {
+            "type": "number"
+          },
+          "provider_activity_volume_gap": {
+            "type": "number",
+            "nullable": true
+          },
+          "activity_volume_coverage": {
+            "type": "number",
+            "nullable": true
+          }
+        }
+      },
+      "ExportCounts": {
+        "type": "object",
+        "required": [
+          "pnl_days",
+          "exported_markets",
+          "estimated_trade_rows",
+          "estimated_size_mb"
+        ],
+        "properties": {
+          "pnl_days": {
+            "type": "integer"
+          },
+          "exported_markets": {
+            "type": "integer"
+          },
+          "estimated_trade_rows": {
+            "type": "integer"
+          },
+          "estimated_size_mb": {
+            "type": "number"
+          }
+        }
+      },
+      "LargeExportPolicy": {
+        "type": "object",
+        "required": [
+          "mode",
+          "current_internal_route",
+          "direct_streaming",
+          "async_job",
+          "rate_limit"
+        ],
+        "properties": {
+          "mode": {
+            "type": "string",
+            "const": "metadata_only_in_v1"
+          },
+          "current_internal_route": {
+            "type": "string"
+          },
+          "direct_streaming": {
+            "type": "object"
+          },
+          "async_job": {
+            "type": "object"
+          },
+          "rate_limit": {
+            "type": "object"
+          }
         }
       }
     },
     "responses": {
+      "WebhookObject": {
+        "description": "Webhook destination",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["object", "data", "meta"],
+              "properties": {
+                "object": { "type": "string", "const": "webhook" },
+                "data": { "$ref": "#/components/schemas/WebhookEndpoint" },
+                "meta": { "$ref": "#/components/schemas/ResponseMeta" }
+              }
+            }
+          }
+        }
+      },
+      "WebhookList": {
+        "description": "Webhook destination list",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["object", "data", "has_more", "meta"],
+              "properties": {
+                "object": { "type": "string", "const": "list" },
+                "data": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/WebhookEndpoint" }
+                },
+                "has_more": { "type": "boolean" },
+                "next_cursor": { "type": "string", "nullable": true },
+                "total": { "type": "integer", "nullable": true },
+                "meta": { "$ref": "#/components/schemas/ResponseMeta" }
+              }
+            }
+          }
+        }
+      },
       "BadRequest": {
         "description": "Invalid request parameter",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/ApiError" }
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
           }
         }
       },
@@ -1366,7 +4114,9 @@
         "description": "Missing or invalid API key",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/ApiError" }
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
           }
         }
       },
@@ -1374,7 +4124,9 @@
         "description": "Active Insider subscription required",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/ApiError" }
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
           }
         }
       },
@@ -1382,7 +4134,9 @@
         "description": "Account access denied",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/ApiError" }
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
           }
         }
       },
@@ -1390,7 +4144,9 @@
         "description": "Account is locked",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/ApiError" }
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
           }
         }
       },
@@ -1398,7 +4154,9 @@
         "description": "Resource not found",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/ApiError" }
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
           }
         }
       },
@@ -1406,28 +4164,40 @@
         "description": "Request exceeded the server's 30-second transport timeout. The timeout response has an empty body because it is generated before handler-level JSON error shaping."
       },
       "RateLimited": {
-        "description": "Rate limit exceeded (100 req/min)",
+        "description": "Rate limit exceeded (100 req/min; batch endpoints also reserve 100 batch item units/min before execution)",
         "headers": {
           "Retry-After": {
             "description": "Seconds until rate limit resets.",
-            "schema": { "type": "integer" }
+            "schema": {
+              "type": "integer"
+            }
           },
           "X-RateLimit-Limit": {
-            "schema": { "type": "integer" }
+            "schema": {
+              "type": "integer"
+            }
           },
           "X-RateLimit-Remaining": {
-            "schema": { "type": "integer" }
+            "schema": {
+              "type": "integer"
+            }
           },
           "X-RateLimit-Reset": {
-            "schema": { "type": "integer" }
+            "schema": {
+              "type": "integer"
+            }
           },
           "X-Request-Id": {
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         },
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/ApiError" }
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
           }
         }
       },
@@ -1436,15 +4206,21 @@
         "headers": {
           "Retry-After": {
             "description": "Seconds until the middleware will probe the Redis-backed rate limiter again.",
-            "schema": { "type": "integer" }
+            "schema": {
+              "type": "integer"
+            }
           },
           "X-Request-Id": {
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         },
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/ApiError" }
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
           }
         }
       },
@@ -1452,7 +4228,9 @@
         "description": "Unexpected server error",
         "content": {
           "application/json": {
-            "schema": { "$ref": "#/components/schemas/ApiError" }
+            "schema": {
+              "$ref": "#/components/schemas/ApiError"
+            }
           }
         }
       }
