@@ -1,0 +1,44 @@
+---
+title: "TypeScript client"
+description: "Use the repo-owned TypeScript client source for 0xinsider API calls."
+---
+
+The TypeScript client source lives in the app repo at `web/src/lib/api-client`.
+It is drift-tested against the checked-in OpenAPI spec, but it is not published
+as an npm package yet.
+
+Use it as source or example code for now. A package release needs a follow-up
+issue that defines package name, semver policy, changelog ownership, and npm
+access.
+
+## What it handles
+
+- `Authorization: Bearer` API key headers
+- Path parameter interpolation
+- Repeated query parameters such as `expand=strategy&expand=categories`
+- JSON request bodies
+- V1 error envelopes as typed exceptions
+
+## Example
+
+```ts
+import { OxinsiderApiClient } from "./api-client";
+
+const client = new OxinsiderApiClient({
+  baseUrl: "https://api.0xinsider.com",
+  apiKey: process.env.OXINSIDER_API_KEY,
+});
+
+const trader = await client.getTrader("swisstony", {
+  query: { expand: ["strategy", "categories"] },
+});
+
+const markets = await client.searchMarkets("NBA", {
+  query: { limit: 5, status: "active" },
+});
+```
+
+<Note>
+  Keep using the OpenAPI spec as the source of truth. The client operation table
+  must move whenever `api-reference/openapi.json` changes.
+</Note>

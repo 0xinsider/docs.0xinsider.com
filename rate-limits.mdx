@@ -10,8 +10,12 @@ description: "Request limits and how to handle them."
 | Requests per minute | **100** |
 | Window type | Sliding window |
 | Scope | Per user (not per key) |
+| Batch item units per minute | **100** |
 
 The rate limit is shared across all endpoints and all keys belonging to the same user.
+
+Batch read endpoints also reserve item units before execution. A 25-trader
+batch costs 25 item units; a 25-market intel batch costs 25 item units.
 
 ## Response headers
 
@@ -28,6 +32,15 @@ X-RateLimit-Reset: 1774450631
 | `X-RateLimit-Limit` | Maximum requests per minute |
 | `X-RateLimit-Remaining` | Requests remaining in current window |
 | `X-RateLimit-Reset` | Unix timestamp when the window resets |
+
+Batch responses also include:
+
+| Header | Description |
+|--------|-------------|
+| `X-Request-Cost` | Number of batch item units charged for the request |
+| `X-Batch-RateLimit-Limit` | Maximum batch item units per minute |
+| `X-Batch-RateLimit-Remaining` | Batch item units remaining |
+| `X-Batch-RateLimit-Reset` | Unix timestamp when the batch item window resets |
 
 ## Rate limit exceeded
 
