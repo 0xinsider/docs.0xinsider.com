@@ -2,3 +2,14 @@
 title: "Get Market Snapshot"
 openapi: "GET /api/v1/market/{condition_id}/snapshot"
 ---
+
+One-shot view of a single market — price, volume, status, recent activity — with trust-metadata fields so you can tell which values are live provider-backed and which are cached, partial, or unavailable.
+
+Pass the raw on-chain `condition_id` in the path.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/market/0xabc.../snapshot"
+```
+
+If a field comes back marked `unavailable`, treat it as missing — do not flatten to `0`. See [Trust metadata](/api-reference/introduction#trust-metadata).

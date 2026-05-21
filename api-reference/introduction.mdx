@@ -1,7 +1,7 @@
 ---
 title: "API Reference"
 sidebarTitle: "Overview"
-description: "Complete reference for all 0xinsider API endpoints."
+description: "What every 0xinsider endpoint shares: base URL, auth, envelope, IDs, rate limits, and trust metadata."
 ---
 
 ## Base URL
@@ -12,74 +12,88 @@ https://api.0xinsider.com/api/v1/
 
 ## Authentication
 
-All endpoints (except `/api/v1/health`) require a Bearer token:
+Every endpoint except `/health` requires a Bearer token:
 
 ```bash
 Authorization: Bearer oxi_sk_live_...
 ```
 
-Generate your key at [0xinsider.com/developers](https://0xinsider.com/developers).
+Generate yours at [0xinsider.com/developers](https://0xinsider.com/developers). Full details in [Authentication](/authentication).
 
-## Response format
+## Response envelope
 
-Every response follows a consistent envelope:
+Single-resource endpoints return:
 
 ```json
 {
   "object": "trader",
   "data": { ... },
-  "meta": {
-    "request_id": "req_550e8400",
-    "cached": false
-  }
+  "meta": { "request_id": "req_550e8400", "cached": false }
 }
 ```
 
-List endpoints include pagination:
+List endpoints add pagination fields:
 
 ```json
 {
   "object": "list",
-  "data": [...],
+  "data": [ ... ],
   "has_more": true,
   "next_cursor": "97.94_0x863...",
-  "meta": { ... }
+  "meta": { "request_id": "req_550e8400", "cached": false }
 }
 ```
 
+| Field | Meaning |
+|---|---|
+| `object` | Shape of `data`. A singular type (`trader`, `market`, `health`, ...) or `list`. |
+| `data` | The actual payload — an object or an array. |
+| `meta.request_id` | Give us this when you write to support. |
+| `meta.cached` | `true` when the response came from cache. |
+| `has_more` / `next_cursor` | Present on list responses. See [Pagination](/concepts/pagination). |
+
+Errors share the same envelope, with `"object": "error"`. See [Errors](/errors).
+
 ## Prefixed IDs
 
-Every entity has a type-prefixed ID for easy identification:
+Every ID is prefixed with its type, so an ID is self-describing in logs and chat transcripts.
 
 | Entity | Prefix | Example |
-|--------|--------|---------|
+|---|---|---|
 | Trader | `trd_` | `trd_0xabc123def456` |
 | Market | `mkt_` | `mkt_0x789condition` |
 | Whale trade | `wt_` | `wt_12345` |
 | Radar flag | `rf_` | `rf_67890` |
 | Request | `req_` | `req_550e8400` |
 
+When an endpoint accepts an address in the path (`/trader/{address}`), pass the raw address — strip the `trd_` prefix. When an endpoint accepts a `condition_id` in the path (`/market/{condition_id}/intel`), pass the raw on-chain condition ID — not the prefixed `mkt_...` form.
+
 ## Rate limits
 
-100 requests per minute per user (sliding window). Check response headers:
+100 requests per minute per user, sliding window. Batch endpoints have an additional 100-item-unit-per-minute budget.
 
-| Header | Description |
-|--------|-------------|
-| `X-RateLimit-Limit` | Max requests per window |
-| `X-RateLimit-Remaining` | Requests remaining |
-| `X-RateLimit-Reset` | Unix timestamp when window resets |
-| `Retry-After` | Seconds to wait (only on 429) |
+| Header | Meaning |
+|---|---|
+| `X-RateLimit-Limit` | Maximum requests per window (`100`). |
+| `X-RateLimit-Remaining` | How many you have left in the current window. |
+| `X-RateLimit-Reset` | Unix timestamp (seconds) when the window resets. |
+| `X-Request-Cost` | Item units this single batch call charged. |
+| `X-Batch-RateLimit-Limit` | Max batch item units per minute. |
+| `X-Batch-RateLimit-Remaining` | Batch item units remaining. |
+| `X-Batch-RateLimit-Reset` | Unix timestamp when the batch window resets. |
+| `Retry-After` | Seconds to wait. Only on `429`. |
 
-Batch endpoints also expose `X-Request-Cost` and `X-Batch-RateLimit-*`
-headers. A batch item costs one item unit, so a 25-item batch reserves 25
-batch units before execution.
+See [Rate Limits](/rate-limits) for backoff patterns.
 
 ## Trust metadata
 
-Newer builder endpoints document source, freshness, reconciliation, and
-completeness metadata for values that can be cached, stale, partial, computed,
-or provider-unavailable.
+Newer builder endpoints (snapshots, history ranges, batch reads, reports) attach metadata to provider-owned values so clients can distinguish provider-backed, cached, partial, stale, and unavailable data.
 
-Do not convert unavailable provider-owned values into `0`, empty arrays, or
-empty objects. Treat explicit `unavailable` or `partial` metadata as part of the
-result.
+The shape per value is:
+
+- `source` — where the value came from (`provider`, `cache`, `computed`).
+- `freshness` — how stale the value is (e.g. an ISO timestamp or `live`).
+- `reconciliation` — whether the value has been cross-checked against the source of truth.
+- `completeness` — `full`, `partial`, or `unavailable`.
+
+Rule of thumb: **do not flatten unavailable values into `0`, `[]`, or `{}`.** Read the metadata, and surface "unavailable" to your consumer instead of inventing a zero. Provider data that quietly turns into `0` produces silent bugs downstream.

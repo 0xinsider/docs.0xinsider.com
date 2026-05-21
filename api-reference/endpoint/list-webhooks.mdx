@@ -2,3 +2,19 @@
 title: "List Webhooks"
 openapi: "GET /api/v1/webhooks"
 ---
+
+List every webhook endpoint registered on your account. Each entry includes the destination URL, the events it subscribes to, its delivery status, and metadata for signature verification.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/webhooks"
+```
+
+## The webhook lifecycle
+
+- [Create](/api-reference/endpoint/create-webhook) a webhook with the URL and event types you care about.
+- [Get](/api-reference/endpoint/get-webhook) one to inspect its current state.
+- [Update](/api-reference/endpoint/update-webhook) to change URL, events, or active flag.
+- [Delete](/api-reference/endpoint/delete-webhook) when you no longer need it.
+- [Verify](/api-reference/endpoint/verify-webhook) signed delivery on your side using HMAC.
+- [Rotate secret](/api-reference/endpoint/rotate-webhook-secret) if a signing secret leaks.

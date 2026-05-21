@@ -2,3 +2,17 @@
 title: "Create Webhook"
 openapi: "POST /api/v1/webhooks"
 ---
+
+Register a webhook endpoint to receive whale trade and radar events as they happen.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://api.yourapp.com/webhooks/0xinsider",
+    "events": ["whale_trade.created", "radar_flag.created"]
+  }' \
+  "https://api.0xinsider.com/api/v1/webhooks"
+```
+
+The response includes a one-time signing secret. **Copy it immediately** — you cannot retrieve it later. Use it to verify the `X-0xinsider-Signature` header on every delivery; see [Verify Webhook](/api-reference/endpoint/verify-webhook). If the secret leaks, [rotate it](/api-reference/endpoint/rotate-webhook-secret).

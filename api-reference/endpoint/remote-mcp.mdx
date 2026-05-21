@@ -4,8 +4,22 @@ sidebarTitle: "Remote MCP"
 openapi: "POST /api/v1/mcp"
 ---
 
-Use `Authorization: Bearer <token>` for remote MCP clients that support custom
-headers. The `?token=` query parameter remains available only as legacy
-compatibility for URL-only clients; prefer headers because URL secrets can be
-stored in shell history, browser history, proxies, and logs.
+Hosted, streamable HTTP MCP endpoint. Use this when your agent runs in an environment that cannot spawn a local `npx` subprocess — for example, a serverless function, a browser-based agent, or a hosted automation runtime.
 
+Same nine read-only tools as the local [`@0xinsider/mcp`](https://www.npmjs.com/package/@0xinsider/mcp) server, same auth, same payload contracts.
+
+## Authentication
+
+Prefer the header form:
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}' \
+  https://api.0xinsider.com/api/v1/mcp
+```
+
+A `?token=...` query parameter remains available for URL-only clients but is **legacy** — URL secrets leak into shell history, browser history, proxies, and logs. Use headers wherever possible.
+
+For the streaming response, see [Remote MCP Stream](/api-reference/endpoint/remote-mcp-stream).

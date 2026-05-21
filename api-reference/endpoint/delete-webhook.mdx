@@ -2,3 +2,13 @@
 title: "Delete Webhook"
 openapi: "DELETE /api/v1/webhooks/{id}"
 ---
+
+Permanently remove a webhook registration. After deletion no further events are delivered to that URL and the signing secret is invalidated.
+
+```bash
+curl -X DELETE \
+  -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/webhooks/wh_abc123"
+```
+
+To temporarily stop deliveries without losing the registration, [update](/api-reference/endpoint/update-webhook) the webhook to `active: false` instead.

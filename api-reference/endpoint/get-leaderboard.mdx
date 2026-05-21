@@ -2,3 +2,14 @@
 title: "Get Leaderboard"
 openapi: "GET /api/v1/leaderboard"
 ---
+
+Top-ranked traders by composite score. Only S, A, and B grades appear — see [Trader Grades](/concepts/grades).
+
+Filter by category (e.g. `crypto`, `politics`, `sports`) or by strategy (`swing_trader`, etc.). Some traders rank but have no detected strategy; `strategy_type` is nullable.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/leaderboard?limit=20&category=crypto"
+```
+
+Cursor-paginated. Pass `next_cursor` from one response as `cursor` on the next. See [Pagination](/concepts/pagination).

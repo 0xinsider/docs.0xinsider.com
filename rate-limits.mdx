@@ -1,50 +1,52 @@
 ---
 title: "Rate Limits"
-description: "Request limits and how to handle them."
+description: "How many requests you can make, and how to back off cleanly."
 ---
 
-## Limits
+The API allows **100 requests per minute** on a sliding window. The limit is **per user**, shared across every key and every endpoint.
 
-| Metric | Value |
-|--------|-------|
-| Requests per minute | **100** |
-| Window type | Sliding window |
-| Scope | Per user (not per key) |
-| Batch item units per minute | **100** |
+Batch read endpoints (e.g. `POST /api/v1/traders/batch`, `POST /api/v1/markets/intel/batch`) have a **separate** budget measured in *item units*, also 100 per minute. A 25-item batch reserves 25 item units before it executes.
 
-The rate limit is shared across all endpoints and all keys belonging to the same user.
+| Setting | Value |
+|---|---|
+| Requests per minute | 100 |
+| Batch item units per minute | 100 |
+| Window type | Sliding (not bucket-of-60-seconds) |
+| Scope | Per user (sum of all keys) |
+| Header on success | `X-RateLimit-*` (+ `X-Batch-RateLimit-*` on batch endpoints) |
+| Header on `429` | `Retry-After` |
 
-Batch read endpoints also reserve item units before execution. A 25-trader
-batch costs 25 item units; a 25-market intel batch costs 25 item units.
+## Headers you should read
 
-## Response headers
-
-Every authenticated response includes rate limit headers:
+Every authenticated response carries:
 
 ```
-X-RateLimit-Limit: 100
+X-RateLimit-Limit:     100
 X-RateLimit-Remaining: 87
-X-RateLimit-Reset: 1774450631
+X-RateLimit-Reset:     1774450631
 ```
 
-| Header | Description |
-|--------|-------------|
-| `X-RateLimit-Limit` | Maximum requests per minute |
-| `X-RateLimit-Remaining` | Requests remaining in current window |
-| `X-RateLimit-Reset` | Unix timestamp when the window resets |
+| Header | Meaning |
+|---|---|
+| `X-RateLimit-Limit` | Max requests per minute. |
+| `X-RateLimit-Remaining` | Remaining slots in the current window. |
+| `X-RateLimit-Reset` | Unix timestamp (seconds) when the window resets. |
 
-Batch responses also include:
+Batch responses additionally carry:
 
-| Header | Description |
-|--------|-------------|
-| `X-Request-Cost` | Number of batch item units charged for the request |
-| `X-Batch-RateLimit-Limit` | Maximum batch item units per minute |
-| `X-Batch-RateLimit-Remaining` | Batch item units remaining |
-| `X-Batch-RateLimit-Reset` | Unix timestamp when the batch item window resets |
+| Header | Meaning |
+|---|---|
+| `X-Request-Cost` | Item units this single call charged (one per batch item). |
+| `X-Batch-RateLimit-Limit` | Max item units per minute. |
+| `X-Batch-RateLimit-Remaining` | Item units remaining in the window. |
+| `X-Batch-RateLimit-Reset` | Unix timestamp when the batch window resets. |
 
-## Rate limit exceeded
+If you go over either budget, you get a `429` plus a `Retry-After` header in seconds:
 
-When you exceed the limit, you'll receive a `429` response:
+```
+HTTP/1.1 429 Too Many Requests
+Retry-After: 12
+```
 
 ```json
 {
@@ -52,20 +54,57 @@ When you exceed the limit, you'll receive a `429` response:
   "error": {
     "code": "rate_limited",
     "message": "Rate limit exceeded. Retry after 12s.",
-    "doc_url": "https://docs.0xinsider.com/api-reference/introduction#rate-limits"
+    "doc_url": "https://docs.0xinsider.com/rate-limits"
   }
 }
 ```
 
-The `Retry-After` header tells you how many seconds to wait:
+## A real "respect the retry" client
 
+<CodeGroup>
+```javascript JavaScript
+async function fetchWithBackoff(url, opts = {}, maxRetries = 5) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const res = await fetch(url, opts);
+    if (res.status !== 429) return res;
+
+    const wait = Number(res.headers.get("retry-after") ?? 1) * 1000;
+    await new Promise(r => setTimeout(r, wait));
+  }
+  throw new Error("Rate limit retries exhausted");
+}
+
+const res = await fetchWithBackoff(
+  "https://api.0xinsider.com/api/v1/whale-trades?limit=50",
+  { headers: { Authorization: `Bearer ${process.env.OXINSIDER_API_KEY}` } }
+);
+const body = await res.json();
 ```
-Retry-After: 12
+
+```python Python
+import os, time, requests
+
+def get_with_backoff(url, params=None, max_retries=5):
+    headers = {"Authorization": f"Bearer {os.environ['OXINSIDER_API_KEY']}"}
+    for _ in range(max_retries):
+        r = requests.get(url, params=params, headers=headers)
+        if r.status_code != 429:
+            return r
+        time.sleep(int(r.headers.get("Retry-After", "1")))
+    raise RuntimeError("Rate limit retries exhausted")
+
+body = get_with_backoff(
+    "https://api.0xinsider.com/api/v1/whale-trades",
+    params={"limit": 50},
+).json()
 ```
+</CodeGroup>
 
-## Best practices
+## Staying well under the limit
 
-- **Cache responses** — most data updates every 30-120 seconds
-- **Use cursor pagination** instead of re-fetching full lists
-- **Backoff on 429** — respect the `Retry-After` header
-- **Batch your reads** — fetch what you need in fewer, larger requests (higher `limit`)
+- **Cache.** Most of this data updates every 30-120 seconds. Re-fetching every second is wasted budget.
+- **Paginate, do not re-list.** Use cursors instead of refetching the full leaderboard each loop.
+- **Ask for more per request.** Bump `limit` up to 100 instead of making 10 calls of `limit=10`.
+- **Use batch endpoints when you already know your IDs.** One batch call for 25 traders costs 25 batch-item units, but only one regular request.
+- **Watch `X-RateLimit-Remaining`.** If it crosses below 10, pause your polling for the next reset.
+- **One process owns the polling.** Avoid every container in a fleet polling the same endpoint with the same key.

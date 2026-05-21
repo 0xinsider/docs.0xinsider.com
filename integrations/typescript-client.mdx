@@ -1,23 +1,23 @@
 ---
-title: "TypeScript client"
-description: "Use the repo-owned TypeScript client source for 0xinsider API calls."
+title: "TypeScript Client"
+description: "Drift-tested source client for the 0xinsider API."
 ---
 
-The TypeScript client source lives in the app repo at `web/src/lib/api-client`.
-It is drift-tested against the checked-in OpenAPI spec, but it is not published
-as an npm package yet.
+A typed TypeScript client lives in the app repo at `web/src/lib/api-client`. It is drift-tested against the checked-in OpenAPI spec — when the spec moves, the client either moves with it or its test suite fails.
 
-Use it as source or example code for now. A package release needs a follow-up
-issue that defines package name, semver policy, changelog ownership, and npm
-access.
+It is **not** published to npm yet. Use it as source or as a reference implementation.
+
+<Note>
+  Want a package release? That needs a separate decision on package name, semver policy, changelog ownership, and npm access. Open an issue if you depend on it.
+</Note>
 
 ## What it handles
 
-- `Authorization: Bearer` API key headers
-- Path parameter interpolation
-- Repeated query parameters such as `expand=strategy&expand=categories`
-- JSON request bodies
-- V1 error envelopes as typed exceptions
+- `Authorization: Bearer` header injection.
+- Path parameter interpolation (`/trader/{address}`, `/market/{condition_id}/intel`).
+- Repeated query parameters such as `expand=strategy&expand=categories`. The legacy `expand[]` form is also accepted by the API.
+- JSON request bodies for batch and webhook endpoints.
+- V1 error envelopes as typed exceptions (`code`, `message`, `param`, `request_id`).
 
 ## Example
 
@@ -29,6 +29,7 @@ const client = new OxinsiderApiClient({
   apiKey: process.env.OXINSIDER_API_KEY,
 });
 
+// Wallet address or username — both work.
 const trader = await client.getTrader("swisstony", {
   query: { expand: ["strategy", "categories"] },
 });
@@ -38,7 +39,30 @@ const markets = await client.searchMarkets("NBA", {
 });
 ```
 
-<Note>
-  Keep using the OpenAPI spec as the source of truth. The client operation table
-  must move whenever `api-reference/openapi.json` changes.
-</Note>
+## Handling errors
+
+The client raises typed exceptions instead of returning a generic error object, so you can match on `error.code` directly:
+
+```ts
+import { OxinsiderApiError } from "./api-client";
+
+try {
+  const trader = await client.getTrader("not-a-real-trader");
+} catch (err) {
+  if (err instanceof OxinsiderApiError) {
+    if (err.code === "not_found") {
+      // expected: unknown trader
+    } else if (err.code === "rate_limited") {
+      await new Promise(r => setTimeout(r, err.retryAfterMs ?? 1000));
+    } else {
+      throw err;
+    }
+  } else {
+    throw err;
+  }
+}
+```
+
+## Keep OpenAPI as the source of truth
+
+The client operation table is regenerated from [`api-reference/openapi.json`](https://github.com/0xinsider/docs/blob/main/api-reference/openapi.json). When you change the OpenAPI spec, the client moves with it. Do not edit the client by hand to add new operations without updating the spec.

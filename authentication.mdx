@@ -1,52 +1,77 @@
 ---
 title: "Authentication"
-description: "API key management and security."
+description: "API keys, headers, and what to do if a key leaks."
 ---
 
-## API keys
-
-All authenticated endpoints require a Bearer token in the `Authorization` header:
+Every request (except `/health`) authenticates with a Bearer token:
 
 ```bash
 Authorization: Bearer oxi_sk_live_...
 ```
 
-### Key format
+## The key
 
-Keys follow the format `oxi_sk_live_` followed by 64 hex characters (76 characters total). Example:
+| Property | Value |
+|---|---|
+| Format | `oxi_sk_live_` + 64 hex chars (76 chars total) |
+| Storage on our side | HMAC-SHA256 hash. Plaintext is never stored. |
+| Active keys per account | 1. Regenerating revokes the old key. |
+| Where to generate | [0xinsider.com/developers](https://0xinsider.com/developers) |
 
-```
-<YOUR_API_KEY>
-```
+The key is shown **once**, at generation time. After that the dashboard only shows the prefix (`oxi_sk_live_XXXX`) for identification.
 
-### Generating a key
+## Generate a key
 
-1. Log in at [0xinsider.com](https://0xinsider.com)
-2. Go to [Developers](https://0xinsider.com/developers)
-3. Click **Generate Key**
-4. Copy the key immediately — it's shown only once
+1. Log in at [0xinsider.com](https://0xinsider.com).
+2. Open [Developers](https://0xinsider.com/developers).
+3. Click **Generate Key**.
+4. Copy it immediately.
 
-### Key security
+## Common mistakes
 
-- Keys are hashed (HMAC-SHA256) before storage. We never store plaintext keys.
-- Only the key prefix (`oxi_sk_live_XXXX`) is stored for display.
-- One active key per account. Regenerating revokes the previous key.
-- If compromised, regenerate immediately at [0xinsider.com/developers](https://0xinsider.com/developers).
+<AccordionGroup>
+  <Accordion title="Missing 'Bearer' prefix in the header">
+    Wrong:
+    ```
+    Authorization: oxi_sk_live_...
+    ```
+    Right:
+    ```
+    Authorization: Bearer oxi_sk_live_...
+    ```
+    The API returns `401 invalid_api_key` for either malformed format.
+  </Accordion>
+  <Accordion title="Pasting only part of the key">
+    The full key is 76 characters. Anything shorter is a partial copy.
+  </Accordion>
+  <Accordion title="Hitting an authenticated endpoint without a subscription">
+    Valid key, expired subscription returns `402 subscription_required`. Re-subscribe at [pricing](https://0xinsider.com/pricing); the same key resumes working.
+  </Accordion>
+  <Accordion title="Reusing an old key after regenerating">
+    Regenerating revokes the previous key in the same call. Update every place the old key lives — `.env` files, deployed secrets, MCP configs.
+  </Accordion>
+</AccordionGroup>
 
-### Key management endpoints
+## If a key leaks
+
+Treat it like any production secret:
+
+1. Go to [Developers](https://0xinsider.com/developers).
+2. Click **Regenerate Key**. The old key stops working immediately.
+3. Roll the new key into every consumer (bots, MCP configs, CI secrets, dashboards).
+
+## Key management endpoints
+
+These manage *your own* keys from the dashboard. They authenticate with the session cookie (JWT), not with an API key, so you cannot call them from a script using `oxi_sk_live_...`.
 
 | Action | Method | Endpoint |
-|--------|--------|----------|
+|---|---|---|
 | Create key | `POST` | `/api/keys` |
 | List keys | `GET` | `/api/keys` |
 | Revoke key | `DELETE` | `/api/keys/{id}` |
 | Regenerate | `POST` | `/api/keys/regenerate` |
 
-These endpoints use JWT authentication (session cookies), not API key auth.
-
-## Subscription requirement
-
-API access is bundled with the **Insider** subscription ($89/mo). Requests with a valid key but no active subscription return:
+## What a subscription-blocked response looks like
 
 ```json
 {
@@ -54,7 +79,7 @@ API access is bundled with the **Insider** subscription ($89/mo). Requests with 
   "error": {
     "code": "subscription_required",
     "message": "Active Insider subscription required.",
-    "doc_url": "https://docs.0xinsider.com/api-reference/introduction#authentication"
+    "doc_url": "https://docs.0xinsider.com/authentication"
   }
 }
 ```

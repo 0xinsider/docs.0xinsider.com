@@ -2,3 +2,13 @@
 title: "Verify Webhook"
 openapi: "POST /api/v1/webhooks/{id}/verify"
 ---
+
+Send a signed test payload to your webhook URL so you can confirm signature verification on your side before relying on live deliveries.
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/webhooks/wh_abc123/verify"
+```
+
+The webhook receives a `verify.test` event with an `X-0xinsider-Signature` header. Compute `HMAC_SHA256(secret, raw_body)` on your side and compare in constant time. Reject deliveries with mismatched signatures.
