@@ -2,3 +2,10 @@
 title: "Get Webhook"
 openapi: "GET /api/v1/webhooks/{id}"
 ---
+
+Inspect a single registered webhook — its URL, subscribed events, active flag, and recent delivery status. The signing secret is not returned (it is only shown once at create time).
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/webhooks/wh_abc123"
+```

@@ -2,3 +2,14 @@
 title: "Get Insider Radar"
 openapi: "GET /api/v1/insider-radar"
 ---
+
+Flags wallets behaving like they know something the market does not — pre-resolution accumulation, unusually well-timed entries, or one-sided conviction with no offsetting hedges.
+
+Each flag carries a `suspicion_score` and a reason. High scores are worth a closer look; they are not proof of wrongdoing.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/insider-radar?limit=20"
+```
+
+Cursor-paginated by score. See [Pagination](/concepts/pagination).

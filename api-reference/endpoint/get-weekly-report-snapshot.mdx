@@ -2,3 +2,12 @@
 title: "Get Weekly Report Snapshot"
 openapi: "GET /api/v1/reports/weekly"
 ---
+
+The weekly recap snapshot — top movers, sustained-flow markets, leaderboard shifts — pre-baked for the requested week. Same shape as the [daily report](/api-reference/endpoint/get-daily-report-snapshot), rolled up over seven days.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/reports/weekly?week_of=2026-05-04"
+```
+
+`week_of` accepts any date inside the target week.

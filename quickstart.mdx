@@ -1,28 +1,43 @@
 ---
 title: "Quickstart"
-description: "Get up and running with the 0xinsider API in 2 minutes."
+description: "From zero to your first whale-trade signal in two minutes."
 ---
 
-## 1. Get an API key
+In this quickstart you will:
 
-API access requires an active [Insider subscription](https://0xinsider.com/pricing) ($89/mo).
+1. Generate an API key.
+2. Confirm it works.
+3. Pull a real "follow the smartest traders" workflow end to end.
+
+## 1. Generate your API key
+
+API access is bundled with the [Insider subscription](https://0xinsider.com/pricing) ($89/mo).
 
 <Steps>
   <Step title="Sign up or log in">
-    Go to [0xinsider.com/sign-up](https://0xinsider.com/sign-up)
+    [0xinsider.com/sign-up](https://0xinsider.com/sign-up)
   </Step>
   <Step title="Subscribe to Insider">
-    Go to [Pricing](https://0xinsider.com/pricing) and subscribe to the Insider plan
+    Pick the Insider plan on [Pricing](https://0xinsider.com/pricing).
   </Step>
-  <Step title="Generate your API key">
-    Go to [Developers](https://0xinsider.com/developers) and click **Generate Key**. Copy the key immediately — you won't see it again.
+  <Step title="Generate your key">
+    On [Developers](https://0xinsider.com/developers), click **Generate Key**. The key is shown once — copy it now. Lost keys can be regenerated, but the old key stops working.
   </Step>
 </Steps>
 
-## 2. Make your first request
+Keys look like `oxi_sk_live_` followed by 64 hex characters.
+
+<Tip>
+  Export it once so the rest of this page just works:
+  ```bash
+  export OXINSIDER_API_KEY="oxi_sk_live_..."
+  ```
+</Tip>
+
+## 2. Confirm the key works
 
 ```bash
-curl -H "Authorization: Bearer oxi_sk_live_YOUR_KEY" \
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   https://api.0xinsider.com/api/v1/health
 ```
 
@@ -34,48 +49,135 @@ curl -H "Authorization: Bearer oxi_sk_live_YOUR_KEY" \
 }
 ```
 
-## 3. Fetch the leaderboard
+If you see `status: "ok"`, you are wired up.
+
+## 3. Follow the smartest traders
+
+The interesting question is rarely "who is #1." It is "what are the best traders doing right now, and am I early?"
+
+### Step A: Pull the top 5 S-grade traders
 
 ```bash
-curl -H "Authorization: Bearer oxi_sk_live_YOUR_KEY" \
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/leaderboard?limit=5"
 ```
 
-## 4. Look up a trader
+Each entry includes the trader's wallet address (`id`), grade, score, P&L, and strategy. Pick one to follow.
+
+### Step B: Look up that trader's full profile
+
+The trader endpoint accepts either a wallet address or a known username:
 
 ```bash
-curl -H "Authorization: Bearer oxi_sk_live_YOUR_KEY" \
-  https://api.0xinsider.com/api/v1/trader/0x863134d00841b2e200492805a01e1e2f5defaa53
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/trader/0x863134d00841b2e200492805a01e1e2f5defaa53"
 ```
 
-## 5. Get whale trades
+The response gives you their realized P&L, win rate, category strengths, and current open positions.
+
+### Step C: See what whales are buying right now
+
+Filter to A-grade or better, last 50 trades:
 
 ```bash
-curl -H "Authorization: Bearer oxi_sk_live_YOUR_KEY" \
-  "https://api.0xinsider.com/api/v1/whale-trades?limit=10&min_grade=A"
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&limit=50"
 ```
 
-This returns only trades from A-grade or higher traders, sorted by most recent.
+You can layer filters. For example, A-grade or better, crypto markets only, BUY side:
 
-## Next steps
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&category=crypto&side=buy&limit=50"
+```
+
+### Step D: Drill into one of those markets
+
+Grab the `condition_id` from a whale trade you find interesting (raw hex — not the prefixed `mkt_...` form), then:
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/market/<condition_id>/intel"
+```
+
+Market Intel returns the smart-money breakdown: buy volume vs sell volume from graded traders, top positions, and which side conviction is on.
+
+That is the loop: **leaderboard -> trader profile -> whale trades -> market intel**. Bolt it onto a cron, a chatbot, or a dashboard.
+
+## Same workflow, in code
+
+<CodeGroup>
+```javascript JavaScript
+const KEY = process.env.OXINSIDER_API_KEY;
+const headers = { Authorization: `Bearer ${KEY}` };
+
+const top = await fetch(
+  "https://api.0xinsider.com/api/v1/leaderboard?limit=5",
+  { headers }
+).then(r => r.json());
+
+const topId = top.data[0].id.replace(/^trd_/, "");
+
+const trader = await fetch(
+  `https://api.0xinsider.com/api/v1/trader/${topId}`,
+  { headers }
+).then(r => r.json());
+
+const whales = await fetch(
+  "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&limit=50",
+  { headers }
+).then(r => r.json());
+
+console.log({ top: top.data[0], trader: trader.data, whales: whales.data.length });
+```
+
+```python Python
+import os, requests
+
+KEY = os.environ["OXINSIDER_API_KEY"]
+H = {"Authorization": f"Bearer {KEY}"}
+BASE = "https://api.0xinsider.com/api/v1"
+
+top = requests.get(f"{BASE}/leaderboard", params={"limit": 5}, headers=H).json()
+top_id = top["data"][0]["id"].removeprefix("trd_")
+
+trader = requests.get(f"{BASE}/trader/{top_id}", headers=H).json()
+whales = requests.get(
+    f"{BASE}/whale-trades",
+    params={"min_grade": "A", "limit": 50},
+    headers=H,
+).json()
+
+print(top["data"][0], trader["data"]["grade"], len(whales["data"]))
+```
+</CodeGroup>
+
+## Want the call count even lower? Use a batch endpoint
+
+If you already have the addresses of N traders you care about, fetch them all in one call:
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"addresses": ["0xabc...", "0xdef...", "0x123..."]}' \
+  "https://api.0xinsider.com/api/v1/traders/batch"
+```
+
+Batch reads return the same per-item shape, with per-item error fields when one address fails. They count against a separate batch-item rate-limit budget — see [Rate Limits](/rate-limits).
+
+## Next
 
 <CardGroup cols={2}>
-  <Card title="Authentication" icon="key" href="/authentication">
-    API key format, headers, and security
-  </Card>
-  <Card title="Rate Limits" icon="gauge" href="/rate-limits">
-    100 requests per minute, sliding window
-  </Card>
-  <Card title="API Reference" icon="code" href="/api-reference/introduction">
-    Full endpoint documentation
-  </Card>
-  <Card title="Error Handling" icon="triangle-exclamation" href="/errors">
-    Error codes and troubleshooting
-  </Card>
-  <Card title="MCP Server" icon="robot" href="/integrations/mcp">
-    Install the live npm package for Claude Code, Cursor, Codex, Gemini CLI, and other MCP clients
+  <Card title="Local MCP Server" icon="terminal" href="/integrations/mcp">
+    Skip the HTTP plumbing — give your AI agent the same tools directly.
   </Card>
   <Card title="TypeScript Client" icon="code" href="/integrations/typescript-client">
-    Use the repo-owned source client and OpenAPI drift-tested examples
+    Use the repo-owned source client with typed errors and `expand` helpers.
+  </Card>
+  <Card title="Trader Grades" icon="medal" href="/concepts/grades">
+    What S, A, B, C, D, F actually mean.
+  </Card>
+  <Card title="Errors & Rate Limits" icon="triangle-exclamation" href="/errors">
+    What to do when a request fails.
   </Card>
 </CardGroup>

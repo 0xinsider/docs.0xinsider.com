@@ -2,3 +2,12 @@
 title: "Get Daily Report Snapshot"
 openapi: "GET /api/v1/reports/daily"
 ---
+
+The daily recap snapshot — top traders, biggest whale trades, smart-money rotations — pre-baked for the requested date. Use this to power morning-email digests, Slack briefs, or dashboard "what happened yesterday?" panels without recomputing each query.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/reports/daily?date=2026-05-08"
+```
+
+For longer windows, use [Weekly](/api-reference/endpoint/get-weekly-report-snapshot) or [Monthly](/api-reference/endpoint/get-monthly-report-snapshot). Snapshot payloads carry trust metadata so partial or unavailable sections are explicit.

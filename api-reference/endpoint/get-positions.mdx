@@ -4,3 +4,11 @@ sidebarTitle: "Positions"
 openapi: "GET /api/v1/positions"
 ---
 
+Current positions across traders or markets. Each row carries the trader, the market, the current position value, the side, and trust-metadata fields (source, freshness, completeness) so you can tell the difference between a live provider-backed value and a cached or partial one.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/positions?trader=0x863134d00841b2e200492805a01e1e2f5defaa53&limit=50"
+```
+
+For per-fill history (running amount and average entry price), use [Position Timeline](/api-reference/endpoint/get-position-timeline). When a position value is unavailable from the provider, do not flatten it to `0` — see [Trust metadata](/api-reference/introduction#trust-metadata).

@@ -4,7 +4,13 @@ sidebarTitle: "Remote MCP stream"
 openapi: "GET /api/v1/mcp"
 ---
 
-Open the server-to-client stream with the `Mcp-Session-Id` returned by
-`initialize`. Use `Authorization: Bearer <token>` when the client supports
-headers.
+Open the server-to-client streaming channel for [Remote MCP](/api-reference/endpoint/remote-mcp). Pass the `Mcp-Session-Id` returned by the `initialize` call to attach to your session, plus `Authorization: Bearer ...` if your client supports headers.
 
+```bash
+curl -N \
+  -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  -H "Mcp-Session-Id: $SESSION_ID" \
+  https://api.0xinsider.com/api/v1/mcp
+```
+
+This is the stdio analog over HTTP. Hold the connection open to receive tool responses, progress events, and resource updates streamed from the server.

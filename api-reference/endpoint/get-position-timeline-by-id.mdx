@@ -4,3 +4,4 @@ sidebarTitle: "Position timeline by ID"
 openapi: "GET /api/v1/traders/{id}/position-timeline"
 ---
 
+Same data as [Get Position Timeline](/api-reference/endpoint/get-position-timeline) but keyed on the internal prefixed trader ID (`trd_...`) instead of a raw wallet address. Use this when you are paging through entities returned by other API responses and you already have the prefixed ID.

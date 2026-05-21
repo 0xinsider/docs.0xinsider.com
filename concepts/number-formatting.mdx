@@ -1,27 +1,35 @@
 ---
 title: "Number Formatting"
-description: "How floating-point values are formatted in API responses."
+description: "How numeric values are formatted in API responses."
 ---
 
-All floating-point values are **truncated** (not rounded) at the API boundary for clean, predictable output.
+Numbers come back as plain JSON numbers (not strings). Floating-point values are **truncated** (not rounded) at the API edge so the displayed value never overstates the underlying value.
 
-## Precision rules
+## Precision
 
-| Field type | Decimal places | Example |
-|-----------|---------------|---------|
-| Money (PnL, volume, size_usd) | 2 | `7532409.67` |
-| Scores (score, suspicion_score) | 2 | `97.94` |
-| Rates (win_rate, daily_win_rate) | 4 | `0.4545` |
+| Field type | Decimals | Example |
+|---|---|---|
+| Money (`pnl`, `volume`, `size_usd`) | 2 | `7532409.67` |
+| Scores (`score`, `suspicion_score`) | 2 | `97.94` |
+| Rates (`win_rate`, `daily_win_rate`) | 4 | `0.4545` (= 45.45%) |
 | Prices | 4 | `0.8899` |
 
-## Truncation, not rounding
+## Truncated, not rounded
 
-Values are truncated toward zero. `97.9488...` becomes `97.94`, not `97.95`. This ensures the displayed value never overstates the actual value.
+`97.9488...` becomes `97.94`, not `97.95`. `-12.345` becomes `-12.34`. Always toward zero.
+
+If you need stricter precision for accounting, compute from the source data. The API edge value is the display-safe value.
 
 ## Integer fields
 
-These fields are always exact integers with no decimal component:
+These are exact integers — no decimals, no truncation:
 
 - `markets_traded`
 - `rank`
 - `whale_trade_count`
+
+## Nulls and `unavailable`
+
+Many fields are nullable (e.g. `strategy_type`, `best_category`). Treat them as nullable in your client even when a particular endpoint usually populates them.
+
+Newer builder endpoints additionally surface **trust metadata** — explicit `unavailable` or `partial` markers when a provider-owned value cannot be returned at request time. Do not convert these into `0`, `[]`, or `{}`. Read the metadata field and treat the value as missing.

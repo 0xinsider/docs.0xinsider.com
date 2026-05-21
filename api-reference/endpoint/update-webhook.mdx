@@ -2,3 +2,15 @@
 title: "Update Webhook"
 openapi: "PATCH /api/v1/webhooks/{id}"
 ---
+
+Change a webhook's destination URL, subscribed events, or active flag without recreating it. Useful for promoting a staging URL to production, or for pausing delivery during maintenance without losing the registration.
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"active": false}' \
+  "https://api.0xinsider.com/api/v1/webhooks/wh_abc123"
+```
+
+The signing secret is not affected by `PATCH`. To change it, use [Rotate Webhook Secret](/api-reference/endpoint/rotate-webhook-secret).

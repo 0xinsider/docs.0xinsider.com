@@ -1,56 +1,110 @@
 ---
 title: "Pagination"
-description: "Cursor-based pagination for list endpoints."
+description: "Cursor-based pagination, with a full loop in JS and Python."
 ---
 
-All list endpoints use **cursor-based pagination**. This is more reliable than offset pagination for real-time data.
+Every list endpoint uses **cursor pagination**. There is no `offset` and no `page` number. Cursors are stable while a sort order keeps the same — much more reliable than offsets when data is live.
 
-## How it works
+## The shape
 
-1. Make your first request with a `limit`:
-
-```bash
-curl -H "Authorization: Bearer oxi_sk_live_..." \
-  "https://api.0xinsider.com/api/v1/leaderboard?limit=20"
-```
-
-2. Check `has_more` and `next_cursor` in the response:
+A list response looks like this:
 
 ```json
 {
   "object": "list",
-  "data": [...],
+  "data": [ /* up to `limit` items */ ],
   "has_more": true,
-  "next_cursor": "95.85_0x885783760858e1bd5dd09a3c3f916cfa251ac270"
+  "next_cursor": "95.85_0x885783760858e1bd5dd09a3c3f916cfa251ac270",
+  "meta": { "request_id": "req_abc123", "cached": false }
 }
 ```
 
-3. Pass `next_cursor` as the `cursor` param for the next page:
+To get the next page, pass `next_cursor` back as the `cursor` query param:
 
 ```bash
-curl -H "Authorization: Bearer oxi_sk_live_..." \
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/leaderboard?limit=20&cursor=95.85_0x885..."
 ```
 
-4. Repeat until `has_more` is `false`.
+Repeat until `has_more` is `false`.
 
 ## Parameters
 
 | Parameter | Type | Default | Max |
-|-----------|------|---------|-----|
-| `limit` | integer | 20 | 100 |
+|---|---|---|---|
+| `limit` | integer | `20` | `100` |
 | `cursor` | string | — | — |
 
-## Cursor format
+## Full loop, end to end
 
-Cursors are opaque strings — don't parse or construct them. Always use the `next_cursor` value from the previous response.
+This pulls every page of the leaderboard until exhausted.
 
-Different endpoints use different cursor formats internally:
+<CodeGroup>
+```javascript JavaScript
+const KEY = process.env.OXINSIDER_API_KEY;
+const headers = { Authorization: `Bearer ${KEY}` };
+
+async function listAll(path, params = {}) {
+  const items = [];
+  let cursor;
+  do {
+    const qs = new URLSearchParams({ limit: "100", ...params });
+    if (cursor) qs.set("cursor", cursor);
+
+    const res = await fetch(
+      `https://api.0xinsider.com/api/v1${path}?${qs}`,
+      { headers }
+    );
+    const body = await res.json();
+    items.push(...body.data);
+    cursor = body.has_more ? body.next_cursor : undefined;
+  } while (cursor);
+
+  return items;
+}
+
+const leaders = await listAll("/leaderboard");
+console.log(`Fetched ${leaders.length} traders`);
+```
+
+```python Python
+import os, requests
+
+BASE = "https://api.0xinsider.com/api/v1"
+H = {"Authorization": f"Bearer {os.environ['OXINSIDER_API_KEY']}"}
+
+def list_all(path, **params):
+    items, cursor = [], None
+    while True:
+        p = {"limit": 100, **params}
+        if cursor:
+            p["cursor"] = cursor
+        body = requests.get(f"{BASE}{path}", params=p, headers=H).json()
+        items.extend(body["data"])
+        if not body.get("has_more"):
+            return items
+        cursor = body["next_cursor"]
+
+leaders = list_all("/leaderboard")
+print(f"Fetched {len(leaders)} traders")
+```
+</CodeGroup>
+
+## Cursors are opaque
+
+Do not parse, construct, or store cursors long-term. Always use the `next_cursor` from the response you just received.
+
+Internally, different endpoints use different cursor encodings:
+
 - **Leaderboard**: `{score}_{address}`
 - **Whale trades**: `{timestamp}_{id}` (ISO 8601)
 - **Insider radar**: `{score}_{id}`
 
-## Tips
+You do not need to know this to use the API — just pass the string back.
 
-- Cursors are stable for the current sort order. Don't mix cursors between different filter combinations.
-- If you get a `400` with `"Invalid cursor format"`, you're using a cursor from a different endpoint or an expired cursor.
+## Gotchas
+
+- **Don't mix cursors across filters.** A cursor from `?category=crypto` is not valid on `?category=politics`. Restart pagination when filters change.
+- **Don't mix cursors across endpoints.** A leaderboard cursor will not work on whale trades.
+- **`400 Invalid cursor format` means the cursor came from a different filter set, a different endpoint, or has been mangled.** Drop the cursor and start over.
+- **Stale cursors expire.** If you pause for hours, the underlying sort can shift; expect to restart.
