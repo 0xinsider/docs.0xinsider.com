@@ -6,7 +6,33 @@ openapi: "POST /api/v1/mcp"
 
 Hosted, streamable HTTP MCP endpoint. Use this when your agent runs in an environment that cannot spawn a local `npx` subprocess — for example, a serverless function, a browser-based agent, or a hosted automation runtime.
 
-Same nine read-only tools as the local [`@0xinsider/mcp`](https://www.npmjs.com/package/@0xinsider/mcp) server, same auth, same payload contracts.
+Remote MCP exposes the same read-only public V1 operations as tools. Each tool dispatches to the matching `/api/v1/*` handler in-process, so auth, rate limits, and payload contracts match direct REST calls.
+
+The remote endpoint is tools-only. It supports `initialize`, `notifications/initialized`, `ping`, `tools/list`, and `tools/call`; it does not implement resources or prompts. Webhook mutation operations are intentionally not exposed as tools.
+
+Current tools:
+
+- `get_leaderboard`
+- `get_trader`
+- `batch_get_traders`
+- `get_whale_trades`
+- `get_whale_trades_history`
+- `get_market_intel`
+- `batch_get_market_intel`
+- `get_market_snapshot`
+- `get_insider_radar`
+- `get_positions`
+- `get_position_timeline`
+- `get_position_timeline_by_id`
+- `search_markets`
+- `explore_markets`
+- `get_event_replay_since`
+- `list_webhooks`
+- `get_webhook`
+- `get_daily_report_snapshot`
+- `get_weekly_report_snapshot`
+- `get_monthly_report_snapshot`
+- `get_trader_export_snapshot`
 
 ## Authentication
 

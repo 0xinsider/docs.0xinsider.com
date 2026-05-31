@@ -154,12 +154,12 @@ print(top["data"][0], trader["data"]["grade"], len(whales["data"]))
 
 ## Want the call count even lower? Use a batch endpoint
 
-If you already have the addresses of N traders you care about, fetch them all in one call:
+If you already have the wallet addresses or usernames you care about, fetch them all in one call:
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"addresses": ["0xabc...", "0xdef...", "0x123..."]}' \
+  -d '{"traders": ["0xabc...", "0xdef...", "0x123..."]}' \
   "https://api.0xinsider.com/api/v1/traders/batch"
 ```
 
