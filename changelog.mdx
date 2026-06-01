@@ -5,7 +5,7 @@ description: "Externally visible changes to the 0xinsider REST API."
 rss: true
 ---
 
-Externally visible REST API changes only. Docs-only edits are excluded.
+This changelog tracks externally visible REST API changes only. Documentation-only edits are intentionally excluded.
 
 <Update label="June 1, 2026" description="Remote MCP reaches read parity with public V1 reads">
   [`POST /api/v1/mcp`](/api-reference/endpoint/remote-mcp) now exposes 21 read-only tools through `tools/list`, covering the public V1 read operations including batch reads, history, event replay, webhook reads, reports, market snapshots, and trader exports.
@@ -16,7 +16,7 @@ Externally visible REST API changes only. Docs-only edits are excluded.
 <Update label="June 1, 2026" description="API DX hardening adds usage, ETags, idempotent webhooks, and richer OpenAPI">
   Added [`GET /api/v1`](/api-reference/endpoint/get-api-discovery), a public API-origin discovery document, and [`GET /api/v1/openapi.json`](/api-reference/endpoint/redirect-api-openapi-spec), a redirect to the canonical web-origin OpenAPI spec.
 
-  Added [`GET /api/v1/usage`](/api-reference/endpoint/get-usage), an authenticated peek at your current per-minute limiter window and UTC-day usage. It doesn't spend primary quota, but has its own 100 reads/minute guard.
+  Added [`GET /api/v1/usage`](/api-reference/endpoint/get-usage), an authenticated budget peek for the current per-minute limiter window and UTC-day usage. It does not spend primary quota, but has its own 100 reads/minute guard.
 
   Deterministic reads now document `ETag` / `If-None-Match` conditional GETs, webhook create/update/delete/rotate support `Idempotency-Key`, and OpenAPI operation IDs are codegen-friendly camel-style identifiers with examples, code samples, and response-header metadata.
 </Update>
@@ -24,7 +24,7 @@ Externally visible REST API changes only. Docs-only edits are excluded.
 <Update label="May 8, 2026" description="Remote MCP exposes position and market discovery tools">
   [`POST /api/v1/mcp`](/api-reference/endpoint/remote-mcp) now exposes nine read-only tools through `tools/list`.
 
-  The new tools are `get_positions`, `get_position_timeline`, and `explore_markets`. Each calls the existing public REST handler, so MCP clients get the same auth, pagination, and payload contracts as direct REST callers.
+  The new tools are `get_positions`, `get_position_timeline`, and `explore_markets`. Each dispatches to the existing public REST handler, so MCP clients receive the same auth, pagination, and payload contracts as direct REST callers.
 </Update>
 
 <Update label="May 8, 2026" description="Builder API expansion adds batch, history, events, webhooks, reports, and market snapshots">
@@ -45,7 +45,7 @@ Externally visible REST API changes only. Docs-only edits are excluded.
 <Update label="May 8, 2026" description="TypeScript client source added">
   Added [TypeScript client guidance](/integrations/typescript-client) for the repo-owned client source in `web/src/lib/api-client`.
 
-  Drift-tested against OpenAPI. It handles bearer auth, path params, repeated query params, JSON bodies, and V1 error envelopes. Not a published npm package yet.
+  The client source is drift-tested against OpenAPI and handles bearer auth, path params, repeated query params, JSON bodies, and V1 error envelopes. It is not a published npm package yet.
 </Update>
 
 <Update label="May 7, 2026" description="Market Intel rejects prefixed market IDs">
