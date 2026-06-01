@@ -3,12 +3,13 @@ title: "Explore Markets"
 openapi: "GET /api/v1/markets/explore"
 ---
 
-Browse whale-active markets. This is the "what's going on right now" feed, already filtered to titled, user-facing markets with real activity. Unlike `search`, you don't supply a query.
+Browse whale-active markets. This is the "what's going on right now" feed, already filtered to titled, user-facing markets with real activity. Omit `q` for the full feed, or pass it to narrow by keyword.
 
 Grouped events (e.g. "Next US president by candidate") return one row per event with a primary market injected, so you always have something to link to.
 
 Common filters:
 
+- `q=bitcoin`: keyword search against market titles.
 - `category=crypto`: restrict to a category.
 - `platform=polymarket` or `platform=kalshi`: restrict to one platform.
 - `status=active`: exclude resolved markets.
