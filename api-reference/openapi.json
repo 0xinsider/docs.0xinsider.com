@@ -2966,22 +2966,26 @@
           {
             "lang": "curl",
             "label": "cURL",
-            "source": "curl -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"name\":\"Production webhook\",\"url\":\"https://example.com/0xinsider/webhook\",\"event_types\":[\"whale_trades_inserted\"]}' \\\n  'https://api.0xinsider.com/api/v1/webhooks'"
+            "source": "curl -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  'https://api.0xinsider.com/api/v1/webhooks'"
           }
         ],
         "x-examples": {
           "success": {
-            "object": "webhook",
-            "data": {
-              "id": 1,
-              "object": "webhook",
-              "name": "Production webhook",
-              "url": "https://example.com/0xinsider/webhook",
-              "event_types": [
-                "whale_trades_inserted"
-              ],
-              "status": "pending_verification"
-            },
+            "object": "list",
+            "data": [
+              {
+                "id": 1,
+                "object": "webhook",
+                "name": "Production webhook",
+                "url": "https://example.com/0xinsider/webhook",
+                "event_types": [
+                  "whale_trades_inserted"
+                ],
+                "status": "pending_verification"
+              }
+            ],
+            "has_more": false,
+            "next_cursor": null,
             "meta": {
               "request_id": "req_example",
               "cached": false
