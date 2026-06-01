@@ -66,7 +66,7 @@ Every ID is prefixed with its type, so it's self-describing in logs and chat tra
 | Radar flag | `rf_` | `rf_67890` |
 | Request | `req_` | `req_550e8400` |
 
-When an endpoint takes an address in the path (`/trader/{address}`), strip the `trd_` prefix and pass the raw address. When it takes a `condition_id` (`/market/{condition_id}/intel`), pass the raw on-chain condition ID, not the prefixed `mkt_...` form.
+Trader path endpoints accept raw addresses and valid `trd_...` wallet IDs. Market path endpoints such as `/market/{condition_id}/intel` and `/market/{condition_id}/snapshot` accept either raw provider-backed condition IDs or the `mkt_...` IDs emitted by V1 responses. Single-record whale trade and radar endpoints accept raw integer IDs or their `wt_...` / `rf_...` forms.
 
 ## Rate limits
 

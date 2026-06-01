@@ -1510,6 +1510,147 @@
         }
       }
     },
+    "/api/v1/whale-trades/{id}": {
+      "get": {
+        "operationId": "getWhaleTrade",
+        "summary": "Get whale trade by ID",
+        "description": "Returns one whale trade by raw whale_alerts.id or the wt_-prefixed id emitted by list and history responses.",
+        "tags": [
+          "Whale Trades"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Raw whale_alerts.id or wt_-prefixed whale trade id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "required": false,
+            "description": "Conditional GET validator from a previous ETag. Matching values return 304 Not Modified with an empty body.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Whale trade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "object",
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "whale_trade"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WhaleTrade"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "object": "whale_trade",
+                      "data": {},
+                      "meta": {
+                        "request_id": "req_example",
+                        "cached": false
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified. Returned when If-None-Match matches the current payload.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  'https://api.0xinsider.com/api/v1/whale-trades/wt_123'"
+          }
+        ],
+        "x-examples": {
+          "success": {
+            "object": "whale_trade",
+            "data": {},
+            "meta": {
+              "request_id": "req_example",
+              "cached": false
+            }
+          }
+        }
+      }
+    },
     "/api/v1/leaderboard": {
       "get": {
         "operationId": "listLeaderboard",
@@ -2136,7 +2277,7 @@
             "name": "condition_id",
             "in": "path",
             "required": true,
-            "description": "Market condition ID. Use the condition_id returned by /api/v1/markets/search, not the prefixed market.id value (mkt_...).",
+            "description": "Market condition ID. Accepts the raw provider-backed condition_id returned by /api/v1/markets/search or the mkt_-prefixed market.id emitted by V1 responses.",
             "schema": {
               "type": "string"
             }
@@ -2474,7 +2615,7 @@
             "name": "condition_id",
             "in": "path",
             "required": true,
-            "description": "Market condition ID. Use the condition_id returned by /api/v1/markets/search or /api/v1/markets/explore, not the prefixed market.id value (mkt_...).",
+            "description": "Market condition ID. Accepts the raw provider-backed condition_id returned by /api/v1/markets/search or /api/v1/markets/explore, or the mkt_-prefixed market.id emitted by V1 responses.",
             "schema": {
               "type": "string"
             }
@@ -2772,6 +2913,147 @@
         "x-examples": {
           "success": {
             "object": "insider_radar",
+            "data": {},
+            "meta": {
+              "request_id": "req_example",
+              "cached": false
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/insider-radar/{id}": {
+      "get": {
+        "operationId": "getInsiderRadarFlag",
+        "summary": "Get insider radar flag by ID",
+        "description": "Returns one suspicious-trading radar flag by raw radar_flags.id or the rf_-prefixed id emitted by list responses.",
+        "tags": [
+          "Insider Radar"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Raw radar_flags.id or rf_-prefixed radar flag id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "required": false,
+            "description": "Conditional GET validator from a previous ETag. Matching values return 304 Not Modified with an empty body.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Radar flag",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "object",
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "radar_flag"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/RadarFlag"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "object": "radar_flag",
+                      "data": {},
+                      "meta": {
+                        "request_id": "req_example",
+                        "cached": false
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified. Returned when If-None-Match matches the current payload.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  'https://api.0xinsider.com/api/v1/insider-radar/rf_123'"
+          }
+        ],
+        "x-examples": {
+          "success": {
+            "object": "radar_flag",
             "data": {},
             "meta": {
               "request_id": "req_example",
@@ -5381,7 +5663,7 @@
             ],
             "nullable": true
           },
-          "form_tier": {
+          "streak_tier": {
             "type": "string",
             "enum": [
               "hot",
@@ -5391,7 +5673,7 @@
               "cold"
             ],
             "nullable": true,
-            "description": "Recent-form tier (trailing-7d cross-sectional percentile); a separate axis from the all-time grade. Null when no recent activity."
+            "description": "Hot-streak tier (trailing-7d cross-sectional percentile); a separate axis from the all-time grade. Null when no recent activity."
           },
           "score": {
             "type": "number",
@@ -5786,7 +6068,7 @@
             "type": "string",
             "nullable": true
           },
-          "form_tier": {
+          "streak_tier": {
             "type": "string",
             "enum": [
               "hot",
@@ -5796,7 +6078,7 @@
               "cold"
             ],
             "nullable": true,
-            "description": "Recent-form tier (trailing-7d cross-sectional percentile); a separate axis from the all-time grade. Null when no recent activity."
+            "description": "Hot-streak tier (trailing-7d cross-sectional percentile); a separate axis from the all-time grade. Null when no recent activity."
           },
           "score": {
             "type": "number",

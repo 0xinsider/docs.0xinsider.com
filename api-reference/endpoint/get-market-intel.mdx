@@ -5,7 +5,7 @@ openapi: "GET /api/v1/market/{condition_id}/intel"
 
 Smart-money breakdown for one market: buy vs sell volume from graded traders, top positions, and which side has conviction.
 
-Pass the on-chain `condition_id` in the path, **not** the prefixed `mkt_...` form. A `mkt_...` value returns `400 bad_request`. Raw condition IDs appear in whale trades and in `search` and `explore` responses.
+Pass either the raw provider-backed `condition_id` or the `mkt_...` market ID emitted by V1 responses. The API returns `400 bad_request` for known non-market prefixes such as `trd_`, `wt_`, or `rf_`.
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \

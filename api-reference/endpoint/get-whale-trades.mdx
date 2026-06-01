@@ -17,4 +17,4 @@ curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&category=crypto&side=buy&limit=50"
 ```
 
-Cursor-paginated by timestamp. For a fixed time range, use [Whale Trades History](/api-reference/endpoint/get-whale-trades-history).
+Cursor-paginated by timestamp. For a fixed time range (backtests, recap reports), use [Whale Trades History](/api-reference/endpoint/get-whale-trades-history). To fetch one returned `wt_...` item again, use [Get Whale Trade](/api-reference/endpoint/get-whale-trade).

@@ -5,7 +5,7 @@ openapi: "GET /api/v1/market/{condition_id}/snapshot"
 
 One-shot view of a single market: price, volume, status, recent activity. Trust-metadata fields tell you which values are live and provider-backed and which are cached, partial, or unavailable.
 
-Pass the raw on-chain `condition_id` in the path.
+Pass either the raw provider-backed `condition_id` or the `mkt_...` market ID emitted by V1 responses.
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
