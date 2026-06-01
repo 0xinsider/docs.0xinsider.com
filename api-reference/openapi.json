@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "0xinsider API",
-    "description": "Find your edge on Polymarket and Kalshi. Every wallet graded, every trade scored, every outlier flagged. API exposes trader grades, whale trades, smart money signals, and insider detection for AI agents, trading bots, and research tools. Normal API requests use a 30-second server timeout that returns HTTP 408 Request Timeout with an empty body when exceeded. Successful browser CORS preflight responses advertise Access-Control-Max-Age: 86400.",
+    "description": "Find your edge on Polymarket and Kalshi. Every wallet graded, every trade scored, every outlier flagged. API exposes trader grades, whale trades, smart money signals, and insider detection for AI agents, trading bots, and research tools. Normal API requests use a 30-second server timeout that returns HTTP 408 Request Timeout with an empty body when exceeded. Public /api/v1/* and /api/v1/mcp browser CORS is Bearer-token based and non-credentialed: any Origin may call with Authorization, Content-Type, If-None-Match, and Mcp-Session-Id request headers. Successful browser CORS preflight responses advertise Access-Control-Max-Age: 86400. Browser JavaScript may read X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After, ETag, X-Request-Id, X-Request-Cost, X-Batch-RateLimit-Limit, X-Batch-RateLimit-Remaining, X-Batch-RateLimit-Reset, Mcp-Session-Id, and X-Mcp-Error-Code response headers. Credentialed first-party routes such as /api/keys, /api/billing, and auth endpoints remain restricted to configured 0xinsider origins.",
     "version": "1.0.0",
     "contact": {
       "name": "0xinsider",

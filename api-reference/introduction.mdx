@@ -85,6 +85,37 @@ Trader path endpoints accept raw addresses and valid `trd_...` wallet IDs. Marke
 
 See [Rate Limits](/rate-limits) for backoff patterns.
 
+## Browser CORS
+
+Public `/api/v1/*` endpoints and remote MCP (`/api/v1/mcp`) are callable from
+third-party browser origins with `Authorization: Bearer ...`. Do not send
+cookies or `credentials: "include"` on public API calls.
+
+Allowed public request headers:
+
+- `Authorization`
+- `Content-Type`
+- `If-None-Match`
+- `Mcp-Session-Id`
+
+Browser JavaScript may read these response headers:
+
+- `X-RateLimit-Limit`
+- `X-RateLimit-Remaining`
+- `X-RateLimit-Reset`
+- `Retry-After`
+- `ETag`
+- `X-Request-Id`
+- `X-Request-Cost`
+- `X-Batch-RateLimit-Limit`
+- `X-Batch-RateLimit-Remaining`
+- `X-Batch-RateLimit-Reset`
+- `Mcp-Session-Id`
+- `X-Mcp-Error-Code`
+
+Credentialed first-party routes such as `/api/keys`, `/api/billing`, and auth
+endpoints remain restricted to configured 0xinsider origins.
+
 ## Trust metadata
 
 Newer builder endpoints (snapshots, history ranges, batch reads, reports) attach metadata to provider-owned values so you can tell provider-backed, cached, partial, stale, and unavailable data apart.

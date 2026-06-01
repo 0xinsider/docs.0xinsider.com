@@ -47,6 +47,16 @@ curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
 
 `status: "ok"` means you're wired up.
 
+<Tip>
+  Browser apps can call `https://api.0xinsider.com/api/v1/*` directly from any
+  origin with `Authorization: Bearer ...`; do not send cookies or
+  `credentials: "include"`. Browser JavaScript can read `X-RateLimit-*`,
+  `Retry-After`, `ETag`, `X-Request-Id`, `X-Request-Cost`,
+  `X-Batch-RateLimit-*`, `Mcp-Session-Id`, and `X-Mcp-Error-Code` response
+  headers. Account/key-management routes such as `/api/keys` stay
+  first-party-only and credentialed.
+</Tip>
+
 ## 3. Follow the smartest traders
 
 Not "who's #1," but "what are the best traders doing right now, and am I early?"
