@@ -7,7 +7,7 @@ rss: true
 
 This changelog tracks externally visible REST API changes only. Documentation-only edits are intentionally excluded.
 
-<Update label="June 1, 2026" description="Remote MCP read parity, usage and caching headers, and easier discovery">
+<Update label="June 1, 2026" description="Remote MCP read parity, round-trippable IDs, usage and caching headers, and easier discovery">
   **Remote MCP read parity.** [`POST /api/v1/mcp`](/api-reference/endpoint/remote-mcp) now exposes 21 read-only tools through `tools/list`, covering the public V1 reads: batch reads, history, event replay, webhook reads, reports, market snapshots, and trader exports. Webhook mutations stay REST-only, and the endpoint is tools-only (no resources or prompts).
 
   **See your usage.** Added [`GET /api/v1/usage`](/api-reference/endpoint/get-usage), an authenticated peek at your current per-minute limiter window and UTC-day usage. It doesn't spend primary quota, but has its own 100 reads/minute guard.
@@ -15,6 +15,8 @@ This changelog tracks externally visible REST API changes only. Documentation-on
   **Cheaper polling, safe retries.** Deterministic reads now support `ETag` / `If-None-Match` conditional GETs, so an unchanged read returns `304` with no body. Webhook create/update/delete/rotate accept an `Idempotency-Key`.
 
   **Easier discovery.** Added [`GET /api/v1`](/api-reference/endpoint/get-api-discovery) (an API discovery document) and [`GET /api/v1/openapi.json`](/api-reference/endpoint/redirect-api-openapi-spec) (a redirect to the canonical OpenAPI spec). Operation IDs are now codegen-friendly, with examples, code samples, and response-header metadata.
+
+  **Round-trippable IDs.** Market Intel and Market Snapshot now accept the `mkt_...` market ID or the raw `condition_id`. New [`GET /api/v1/whale-trades/{id}`](/api-reference/endpoint/get-whale-trade) and [`GET /api/v1/insider-radar/{id}`](/api-reference/endpoint/get-insider-radar-flag) dereference a single `wt_...` / `rf_...` record. Non-market prefixes return `400 bad_request`.
 </Update>
 
 <Update label="May 8, 2026" description="Remote MCP exposes position and market discovery tools">
