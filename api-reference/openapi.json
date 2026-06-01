@@ -130,7 +130,7 @@
       "get": {
         "operationId": "getTrader",
         "summary": "Get trader intelligence",
-        "description": "Returns a trader's grade (S through F), P&L, win rate, and optional strategy/category data. The path accepts either an Ethereum wallet address or a known trader username. Unknown lookups return sync_status \"unknown\" instead of 404.",
+        "description": "Returns a trader's grade (S through F), P&L, win rate, and optional strategy/category data. The path accepts either an Ethereum wallet address, a known trader username, or a trd_-prefixed trader ID emitted by this API. Unknown lookups return sync_status \"unknown\" instead of 404.",
         "tags": [
           "Traders"
         ],
@@ -139,7 +139,7 @@
             "name": "address",
             "in": "path",
             "required": true,
-            "description": "Ethereum wallet address (0x...) or known trader username",
+            "description": "Ethereum wallet address (0x...), known trader username, or trd_-prefixed trader ID emitted by this API.",
             "schema": {
               "type": "string"
             }
@@ -221,8 +221,28 @@
                   "success": {
                     "summary": "Successful response",
                     "value": {
-                      "object": "traders",
-                      "data": {},
+                      "object": "trader",
+                      "data": {
+                                              "id": "trd_0x863134d00841b2e200492805a01e1e2f5defaa53",
+                                              "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
+                                              "username": "RepTrump",
+                                              "grade": "S",
+                                              "score": 97.94,
+                                              "rank": 1,
+                                              "pnl": {
+                                                "total": 7532409.67,
+                                                "realized": 7401234.56,
+                                                "unrealized": 131175.11,
+                                                "last_7d": 84210.5,
+                                                "last_30d": 512033.18
+                                              },
+                                              "stats": {
+                                                "markets_traded": 28,
+                                                "win_rate": 1.0,
+                                                "daily_win_rate": 0.92,
+                                                "total_volume": 18400000.0
+                                              }
+                                            },
                       "meta": {
                         "request_id": "req_example",
                         "cached": false
@@ -292,8 +312,28 @@
         ],
         "x-examples": {
           "success": {
-            "object": "traders",
-            "data": {},
+            "object": "trader",
+            "data": {
+                          "id": "trd_0x863134d00841b2e200492805a01e1e2f5defaa53",
+                          "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
+                          "username": "RepTrump",
+                          "grade": "S",
+                          "score": 97.94,
+                          "rank": 1,
+                          "pnl": {
+                            "total": 7532409.67,
+                            "realized": 7401234.56,
+                            "unrealized": 131175.11,
+                            "last_7d": 84210.5,
+                            "last_30d": 512033.18
+                          },
+                          "stats": {
+                            "markets_traded": 28,
+                            "win_rate": 1.0,
+                            "daily_win_rate": 0.92,
+                            "total_volume": 18400000.0
+                          }
+                        },
             "meta": {
               "request_id": "req_example",
               "cached": false
@@ -424,8 +464,35 @@
                   "success": {
                     "summary": "Successful response",
                     "value": {
-                      "object": "traders",
-                      "data": {},
+                      "object": "trader_batch",
+                      "data": [
+                                              {
+                                                "index": 0,
+                                                "input": "0x863134d00841b2e200492805a01e1e2f5defaa53",
+                                                "status": "ok",
+                                                "data": {
+                                                  "id": "trd_0x863134d00841b2e200492805a01e1e2f5defaa53",
+                                                  "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
+                                                  "username": "RepTrump",
+                                                  "grade": "S",
+                                                  "score": 97.94,
+                                                  "rank": 1,
+                                                  "pnl": {
+                                                    "total": 7532409.67,
+                                                    "realized": 7401234.56,
+                                                    "unrealized": 131175.11,
+                                                    "last_7d": 84210.5,
+                                                    "last_30d": 512033.18
+                                                  },
+                                                  "stats": {
+                                                    "markets_traded": 28,
+                                                    "win_rate": 1.0,
+                                                    "daily_win_rate": 0.92,
+                                                    "total_volume": 18400000.0
+                                                  }
+                                                }
+                                              }
+                                            ],
                       "meta": {
                         "request_id": "req_example",
                         "cached": false
@@ -473,8 +540,35 @@
         ],
         "x-examples": {
           "success": {
-            "object": "traders",
-            "data": {},
+            "object": "trader_batch",
+            "data": [
+                          {
+                            "index": 0,
+                            "input": "0x863134d00841b2e200492805a01e1e2f5defaa53",
+                            "status": "ok",
+                            "data": {
+                              "id": "trd_0x863134d00841b2e200492805a01e1e2f5defaa53",
+                              "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
+                              "username": "RepTrump",
+                              "grade": "S",
+                              "score": 97.94,
+                              "rank": 1,
+                              "pnl": {
+                                "total": 7532409.67,
+                                "realized": 7401234.56,
+                                "unrealized": 131175.11,
+                                "last_7d": 84210.5,
+                                "last_30d": 512033.18
+                              },
+                              "stats": {
+                                "markets_traded": 28,
+                                "win_rate": 1.0,
+                                "daily_win_rate": 0.92,
+                                "total_volume": 18400000.0
+                              }
+                            }
+                          }
+                        ],
             "meta": {
               "request_id": "req_example",
               "cached": false
@@ -496,7 +590,7 @@
             "name": "address",
             "in": "path",
             "required": true,
-            "description": "Trader wallet address (0x...). Case-insensitive — addresses are lowercased server-side.",
+            "description": "Trader wallet address (0x...) or trd_-prefixed trader ID emitted by this API. Case-insensitive wallet addresses are lowercased server-side.",
             "schema": {
               "type": "string"
             }
@@ -1510,6 +1604,147 @@
         }
       }
     },
+    "/api/v1/whale-trades/{id}": {
+      "get": {
+        "operationId": "getWhaleTrade",
+        "summary": "Get whale trade by ID",
+        "description": "Returns one whale trade by raw whale_alerts.id or the wt_-prefixed id emitted by list and history responses.",
+        "tags": [
+          "Whale Trades"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Raw whale_alerts.id or wt_-prefixed whale trade id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "required": false,
+            "description": "Conditional GET validator from a previous ETag. Matching values return 304 Not Modified with an empty body.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Whale trade",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "object",
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "whale_trade"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WhaleTrade"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "object": "whale_trade",
+                      "data": {},
+                      "meta": {
+                        "request_id": "req_example",
+                        "cached": false
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified. Returned when If-None-Match matches the current payload.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  'https://api.0xinsider.com/api/v1/whale-trades/wt_123'"
+          }
+        ],
+        "x-examples": {
+          "success": {
+            "object": "whale_trade",
+            "data": {},
+            "meta": {
+              "request_id": "req_example",
+              "cached": false
+            }
+          }
+        }
+      }
+    },
     "/api/v1/leaderboard": {
       "get": {
         "operationId": "listLeaderboard",
@@ -2136,7 +2371,7 @@
             "name": "condition_id",
             "in": "path",
             "required": true,
-            "description": "Market condition ID. Use the condition_id returned by /api/v1/markets/search, not the prefixed market.id value (mkt_...).",
+            "description": "Market condition ID. Accepts the raw provider-backed condition_id returned by /api/v1/markets/search or the mkt_-prefixed market.id emitted by V1 responses.",
             "schema": {
               "type": "string"
             }
@@ -2474,7 +2709,7 @@
             "name": "condition_id",
             "in": "path",
             "required": true,
-            "description": "Market condition ID. Use the condition_id returned by /api/v1/markets/search or /api/v1/markets/explore, not the prefixed market.id value (mkt_...).",
+            "description": "Market condition ID. Accepts the raw provider-backed condition_id returned by /api/v1/markets/search or /api/v1/markets/explore, or the mkt_-prefixed market.id emitted by V1 responses.",
             "schema": {
               "type": "string"
             }
@@ -2772,6 +3007,147 @@
         "x-examples": {
           "success": {
             "object": "insider_radar",
+            "data": {},
+            "meta": {
+              "request_id": "req_example",
+              "cached": false
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/insider-radar/{id}": {
+      "get": {
+        "operationId": "getInsiderRadarFlag",
+        "summary": "Get insider radar flag by ID",
+        "description": "Returns one suspicious-trading radar flag by raw radar_flags.id or the rf_-prefixed id emitted by list responses.",
+        "tags": [
+          "Insider Radar"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Raw radar_flags.id or rf_-prefixed radar flag id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "required": false,
+            "description": "Conditional GET validator from a previous ETag. Matching values return 304 Not Modified with an empty body.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Radar flag",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "object",
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "radar_flag"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/RadarFlag"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "object": "radar_flag",
+                      "data": {},
+                      "meta": {
+                        "request_id": "req_example",
+                        "cached": false
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified. Returned when If-None-Match matches the current payload.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  'https://api.0xinsider.com/api/v1/insider-radar/rf_123'"
+          }
+        ],
+        "x-examples": {
+          "success": {
+            "object": "radar_flag",
             "data": {},
             "meta": {
               "request_id": "req_example",
@@ -4389,7 +4765,7 @@
             "name": "address",
             "in": "path",
             "required": true,
-            "description": "Trader wallet address (0x...) or known trader username-style lookup accepted by the export read model.",
+            "description": "Trader wallet address (0x...), known trader username-style lookup, or trd_-prefixed trader ID emitted by this API.",
             "schema": {
               "type": "string"
             }
@@ -4424,8 +4800,42 @@
                   "success": {
                     "summary": "Successful response",
                     "value": {
-                      "object": "traders",
-                      "data": {},
+                      "object": "trader_export_snapshot",
+                      "data": {
+                                              "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
+                                              "generated_at": "2026-06-01T00:00:00Z",
+                                              "source_range": {
+                                                "first_pnl_date": "2025-01-04",
+                                                "last_pnl_date": "2026-05-31",
+                                                "latest_trade_at": "2026-05-31T18:22:05Z",
+                                                "latest_market_activity_at": "2026-05-31T18:22:05Z"
+                                              },
+                                              "completeness": {
+                                                "status": "complete",
+                                                "reason": "fully_synced",
+                                                "sync_coverage": 1.0
+                                              },
+                                              "reconciliation": {
+                                                "provider_lifetime_volume": 18650000.0,
+                                                "exported_activity_volume": 18400000.0,
+                                                "exported_market_cost_basis": 9200000.0,
+                                                "provider_activity_volume_gap": 250000.0,
+                                                "activity_volume_coverage": 0.9866
+                                              },
+                                              "counts": {
+                                                "pnl_days": 513,
+                                                "exported_markets": 28,
+                                                "estimated_trade_rows": 1420,
+                                                "estimated_size_mb": 2.4
+                                              },
+                                              "large_export_policy": {
+                                                "mode": "direct_streaming",
+                                                "current_internal_route": "stream",
+                                                "direct_streaming": {},
+                                                "async_job": {},
+                                                "rate_limit": {}
+                                              }
+                                            },
                       "meta": {
                         "request_id": "req_example",
                         "cached": false
@@ -4490,8 +4900,42 @@
         ],
         "x-examples": {
           "success": {
-            "object": "traders",
-            "data": {},
+            "object": "trader_export_snapshot",
+            "data": {
+                          "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
+                          "generated_at": "2026-06-01T00:00:00Z",
+                          "source_range": {
+                            "first_pnl_date": "2025-01-04",
+                            "last_pnl_date": "2026-05-31",
+                            "latest_trade_at": "2026-05-31T18:22:05Z",
+                            "latest_market_activity_at": "2026-05-31T18:22:05Z"
+                          },
+                          "completeness": {
+                            "status": "complete",
+                            "reason": "fully_synced",
+                            "sync_coverage": 1.0
+                          },
+                          "reconciliation": {
+                            "provider_lifetime_volume": 18650000.0,
+                            "exported_activity_volume": 18400000.0,
+                            "exported_market_cost_basis": 9200000.0,
+                            "provider_activity_volume_gap": 250000.0,
+                            "activity_volume_coverage": 0.9866
+                          },
+                          "counts": {
+                            "pnl_days": 513,
+                            "exported_markets": 28,
+                            "estimated_trade_rows": 1420,
+                            "estimated_size_mb": 2.4
+                          },
+                          "large_export_policy": {
+                            "mode": "direct_streaming",
+                            "current_internal_route": "stream",
+                            "direct_streaming": {},
+                            "async_job": {},
+                            "rate_limit": {}
+                          }
+                        },
             "meta": {
               "request_id": "req_example",
               "cached": false
@@ -4567,7 +5011,7 @@
             }
           },
           "401": {
-            "$ref": "#/components/responses/InvalidApiKey"
+            "$ref": "#/components/responses/Unauthorized"
           },
           "402": {
             "$ref": "#/components/responses/SubscriptionRequired"
@@ -5381,7 +5825,7 @@
             ],
             "nullable": true
           },
-          "form_tier": {
+          "streak_tier": {
             "type": "string",
             "enum": [
               "hot",
@@ -5391,7 +5835,7 @@
               "cold"
             ],
             "nullable": true,
-            "description": "Recent-form tier (trailing-7d cross-sectional percentile); a separate axis from the all-time grade. Null when no recent activity."
+            "description": "Hot-streak tier (trailing-7d cross-sectional percentile); a separate axis from the all-time grade. Null when no recent activity."
           },
           "score": {
             "type": "number",
@@ -5584,7 +6028,7 @@
             "properties": {
               "id": {
                 "type": "string",
-                "description": "Prefixed ID (`trd_0x...`)."
+                "description": "Prefixed ID (`trd_...`)."
               },
               "address": {
                 "type": "string"
@@ -5786,7 +6230,7 @@
             "type": "string",
             "nullable": true
           },
-          "form_tier": {
+          "streak_tier": {
             "type": "string",
             "enum": [
               "hot",
@@ -5796,7 +6240,7 @@
               "cold"
             ],
             "nullable": true,
-            "description": "Recent-form tier (trailing-7d cross-sectional percentile); a separate axis from the all-time grade. Null when no recent activity."
+            "description": "Hot-streak tier (trailing-7d cross-sectional percentile); a separate axis from the all-time grade. Null when no recent activity."
           },
           "score": {
             "type": "number",

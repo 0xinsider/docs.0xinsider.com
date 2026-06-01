@@ -103,8 +103,8 @@ Batch endpoints (e.g. `POST /api/v1/traders/batch`) return `200 OK` even when in
   <Accordion title="429 rate_limited">
     Sleep `Retry-After` seconds, then retry. See the backoff example in [Rate Limits](/rate-limits).
   </Accordion>
-  <Accordion title="400 bad_request on Market Intel with mkt_... prefix">
-    Market Intel takes the raw `condition_id`, not the prefixed `mkt_...` ID. Look up the market via [`/markets/search`](/api-reference/endpoint/search-markets) and pass the returned `condition_id`.
+  <Accordion title="400 bad_request on Market Intel with a prefixed ID">
+    Market Intel takes the raw `condition_id` or the `mkt_...` market ID from V1 responses. It rejects non-market prefixes (`trd_`, `wt_`, `rf_`) with `400 bad_request`. If you only have one of those, resolve the market first via [`/markets/search`](/api-reference/endpoint/search-markets).
   </Accordion>
   <Accordion title="500 internal_error">
     Retry once. If it persists, email [support@0xinsider.com](mailto:support@0xinsider.com) with the `meta.request_id` from the response.

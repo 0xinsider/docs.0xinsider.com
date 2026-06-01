@@ -82,13 +82,15 @@
             "group": "Whale Trades",
             "pages": [
               "api-reference/endpoint/get-whale-trades",
+              "api-reference/endpoint/get-whale-trade",
               "api-reference/endpoint/get-whale-trades-history"
             ]
           },
           {
             "group": "Insider Radar",
             "pages": [
-              "api-reference/endpoint/get-insider-radar"
+              "api-reference/endpoint/get-insider-radar",
+              "api-reference/endpoint/get-insider-radar-flag"
             ]
           },
           {

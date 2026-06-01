@@ -1,0 +1,13 @@
+---
+title: "Get Insider Radar Flag"
+openapi: "GET /api/v1/insider-radar/{id}"
+---
+
+Fetch one radar flag by ID. Use either the raw `radar_flags.id` or the `rf_...` ID returned by insider-radar list responses.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/insider-radar/rf_123"
+```
+
+The response is a single `radar_flag` envelope with the same item shape as [Get Insider Radar](/api-reference/endpoint/get-insider-radar).
