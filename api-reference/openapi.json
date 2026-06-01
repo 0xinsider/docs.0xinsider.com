@@ -22,6 +22,258 @@
     }
   ],
   "paths": {
+    "/api/v1/markets/smart-money-flows": {
+      "get": {
+        "operationId": "listSmartMoneyFlows",
+        "summary": "List ranked smart-money flows",
+        "description": "Ranks markets by absolute net S/A/B-grade whale flow over a requested timeframe. Use this discovery endpoint to answer where smart money is flowing before drilling into a specific market with /api/v1/market/{condition_id}/intel. Pagination is anchored by an opaque cursor carrying the first page as_of timestamp so new whale trades do not reorder page 2.",
+        "tags": [
+          "Markets"
+        ],
+        "parameters": [
+          {
+            "name": "timeframe",
+            "in": "query",
+            "description": "Lookback window for grade-filtered whale flow aggregation.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1h",
+                "4h",
+                "24h",
+                "7d"
+              ],
+              "default": "24h"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Page size.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Opaque cursor from previous response's next_cursor. Encodes the first-page as_of timestamp plus the last row's absolute net flow and condition_id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Case-insensitive exact match against provider-backed market_canonical.category.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "platform",
+            "in": "query",
+            "description": "Filter by source platform. all is a request-side no-op.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "polymarket",
+                "kalshi",
+                "all"
+              ],
+              "default": "all"
+            }
+          },
+          {
+            "name": "min_grade",
+            "in": "query",
+            "description": "Minimum latest trader grade included in the flow. Default B means S/A/B only; unranked traders are excluded.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "S",
+                "A",
+                "B",
+                "C",
+                "D",
+                "F"
+              ],
+              "default": "B"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Optional post-aggregate flow direction filter.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "YES",
+                "NO"
+              ]
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "required": false,
+            "description": "Conditional GET validator from a previous ETag. Matching values return 304 Not Modified with an empty body.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ranked market smart-money flows",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "object",
+                    "data",
+                    "has_more",
+                    "meta"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "list"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SmartMoneyFlowMarket"
+                      }
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "total": {
+                      "type": "integer",
+                      "nullable": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "object": "list",
+                      "data": [
+                        {
+                          "market": {
+                            "id": "mkt_0x123",
+                            "condition_id": "0x123",
+                            "title": "Will BTC close above $100k this week?",
+                            "slug": "btc-close-above-100k-this-week",
+                            "category": "Crypto",
+                            "platform": "polymarket"
+                          },
+                          "smart_money": {
+                            "net_flow_usd": 12345.67,
+                            "direction": "YES",
+                            "whale_trade_count": 7,
+                            "buy_volume_usd": 20000,
+                            "sell_volume_usd": 7654.33
+                          },
+                          "timeframe": "24h"
+                        }
+                      ],
+                      "has_more": false,
+                      "next_cursor": null,
+                      "meta": {
+                        "request_id": "req_example",
+                        "cached": false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified. Returned when If-None-Match matches the current payload.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  'https://api.0xinsider.com/api/v1/markets/smart-money-flows?timeframe=7d&min_grade=B&limit=10'"
+          }
+        ],
+        "x-examples": {
+          "success": {
+            "object": "list",
+            "data": [],
+            "has_more": false,
+            "next_cursor": null,
+            "meta": {
+              "request_id": "req_example",
+              "cached": false
+            }
+          }
+        }
+      }
+    },
     "/api/v1": {
       "get": {
         "operationId": "getApiDiscovery",
@@ -5097,6 +5349,85 @@
       }
     },
     "schemas": {
+      "SmartMoneyFlowMarket": {
+        "type": "object",
+        "required": [
+          "market",
+          "smart_money",
+          "timeframe"
+        ],
+        "properties": {
+          "market": {
+            "type": "object",
+            "required": [
+              "id",
+              "condition_id",
+              "title",
+              "slug",
+              "category",
+              "platform"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "condition_id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "nullable": true
+              },
+              "slug": {
+                "type": "string",
+                "nullable": true
+              },
+              "category": {
+                "type": "string",
+                "nullable": true
+              },
+              "platform": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "smart_money": {
+            "type": "object",
+            "required": [
+              "net_flow_usd",
+              "direction",
+              "whale_trade_count",
+              "buy_volume_usd",
+              "sell_volume_usd"
+            ],
+            "properties": {
+              "net_flow_usd": {
+                "type": "number"
+              },
+              "direction": {
+                "type": "string",
+                "enum": [
+                  "YES",
+                  "NO"
+                ]
+              },
+              "whale_trade_count": {
+                "type": "integer"
+              },
+              "buy_volume_usd": {
+                "type": "number"
+              },
+              "sell_volume_usd": {
+                "type": "number"
+              }
+            }
+          },
+          "timeframe": {
+            "type": "string"
+          }
+        }
+      },
       "WebhookEventType": {
         "type": "string",
         "enum": [
