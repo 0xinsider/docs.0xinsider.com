@@ -6,9 +6,9 @@ openapi: "POST /api/v1/mcp"
 
 Hosted, streamable HTTP MCP endpoint. Use this when your agent runs in an environment that cannot spawn a local `npx` subprocess — for example, a serverless function, a browser-based agent, or a hosted automation runtime.
 
-Remote MCP exposes the same read-only public V1 operations as tools. Each tool dispatches to the matching `/api/v1/*` handler in-process, so auth, rate limits, and payload contracts match direct REST calls.
+Remote MCP exposes the 21 read-only V1 data operations below as tools. Each tool dispatches to the matching `/api/v1/*` handler in-process, so auth, rate limits, and payload contracts match direct REST calls. Meta endpoints (`/usage`, `/health`) and webhook mutations are not exposed as tools.
 
-The remote endpoint is tools-only. It supports `initialize`, `notifications/initialized`, `ping`, `tools/list`, and `tools/call`; it does not implement resources or prompts. Webhook mutation operations are intentionally not exposed as tools.
+The remote endpoint is tools-only. It supports `initialize`, `notifications/initialized`, `ping`, `tools/list`, and `tools/call`; it does not implement resources or prompts.
 
 Current tools:
 
