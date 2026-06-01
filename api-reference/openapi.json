@@ -221,8 +221,28 @@
                   "success": {
                     "summary": "Successful response",
                     "value": {
-                      "object": "traders",
-                      "data": {},
+                      "object": "trader",
+                      "data": {
+                                              "id": "trd_0x863134d00841b2e200492805a01e1e2f5defaa53",
+                                              "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
+                                              "username": "RepTrump",
+                                              "grade": "S",
+                                              "score": 97.94,
+                                              "rank": 1,
+                                              "pnl": {
+                                                "total": 7532409.67,
+                                                "realized": 7401234.56,
+                                                "unrealized": 131175.11,
+                                                "last_7d": 84210.5,
+                                                "last_30d": 512033.18
+                                              },
+                                              "stats": {
+                                                "markets_traded": 28,
+                                                "win_rate": 1.0,
+                                                "daily_win_rate": 0.92,
+                                                "total_volume": 18400000.0
+                                              }
+                                            },
                       "meta": {
                         "request_id": "req_example",
                         "cached": false
@@ -292,8 +312,28 @@
         ],
         "x-examples": {
           "success": {
-            "object": "traders",
-            "data": {},
+            "object": "trader",
+            "data": {
+                          "id": "trd_0x863134d00841b2e200492805a01e1e2f5defaa53",
+                          "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
+                          "username": "RepTrump",
+                          "grade": "S",
+                          "score": 97.94,
+                          "rank": 1,
+                          "pnl": {
+                            "total": 7532409.67,
+                            "realized": 7401234.56,
+                            "unrealized": 131175.11,
+                            "last_7d": 84210.5,
+                            "last_30d": 512033.18
+                          },
+                          "stats": {
+                            "markets_traded": 28,
+                            "win_rate": 1.0,
+                            "daily_win_rate": 0.92,
+                            "total_volume": 18400000.0
+                          }
+                        },
             "meta": {
               "request_id": "req_example",
               "cached": false
@@ -424,8 +464,35 @@
                   "success": {
                     "summary": "Successful response",
                     "value": {
-                      "object": "traders",
-                      "data": {},
+                      "object": "trader_batch",
+                      "data": [
+                                              {
+                                                "index": 0,
+                                                "input": "0x863134d00841b2e200492805a01e1e2f5defaa53",
+                                                "status": "ok",
+                                                "data": {
+                                                  "id": "trd_0x863134d00841b2e200492805a01e1e2f5defaa53",
+                                                  "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
+                                                  "username": "RepTrump",
+                                                  "grade": "S",
+                                                  "score": 97.94,
+                                                  "rank": 1,
+                                                  "pnl": {
+                                                    "total": 7532409.67,
+                                                    "realized": 7401234.56,
+                                                    "unrealized": 131175.11,
+                                                    "last_7d": 84210.5,
+                                                    "last_30d": 512033.18
+                                                  },
+                                                  "stats": {
+                                                    "markets_traded": 28,
+                                                    "win_rate": 1.0,
+                                                    "daily_win_rate": 0.92,
+                                                    "total_volume": 18400000.0
+                                                  }
+                                                }
+                                              }
+                                            ],
                       "meta": {
                         "request_id": "req_example",
                         "cached": false
@@ -473,8 +540,35 @@
         ],
         "x-examples": {
           "success": {
-            "object": "traders",
-            "data": {},
+            "object": "trader_batch",
+            "data": [
+                          {
+                            "index": 0,
+                            "input": "0x863134d00841b2e200492805a01e1e2f5defaa53",
+                            "status": "ok",
+                            "data": {
+                              "id": "trd_0x863134d00841b2e200492805a01e1e2f5defaa53",
+                              "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
+                              "username": "RepTrump",
+                              "grade": "S",
+                              "score": 97.94,
+                              "rank": 1,
+                              "pnl": {
+                                "total": 7532409.67,
+                                "realized": 7401234.56,
+                                "unrealized": 131175.11,
+                                "last_7d": 84210.5,
+                                "last_30d": 512033.18
+                              },
+                              "stats": {
+                                "markets_traded": 28,
+                                "win_rate": 1.0,
+                                "daily_win_rate": 0.92,
+                                "total_volume": 18400000.0
+                              }
+                            }
+                          }
+                        ],
             "meta": {
               "request_id": "req_example",
               "cached": false
@@ -4706,8 +4800,42 @@
                   "success": {
                     "summary": "Successful response",
                     "value": {
-                      "object": "traders",
-                      "data": {},
+                      "object": "trader_export_snapshot",
+                      "data": {
+                                              "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
+                                              "generated_at": "2026-06-01T00:00:00Z",
+                                              "source_range": {
+                                                "first_pnl_date": "2025-01-04",
+                                                "last_pnl_date": "2026-05-31",
+                                                "latest_trade_at": "2026-05-31T18:22:05Z",
+                                                "latest_market_activity_at": "2026-05-31T18:22:05Z"
+                                              },
+                                              "completeness": {
+                                                "status": "complete",
+                                                "reason": "fully_synced",
+                                                "sync_coverage": 1.0
+                                              },
+                                              "reconciliation": {
+                                                "provider_lifetime_volume": 18650000.0,
+                                                "exported_activity_volume": 18400000.0,
+                                                "exported_market_cost_basis": 9200000.0,
+                                                "provider_activity_volume_gap": 250000.0,
+                                                "activity_volume_coverage": 0.9866
+                                              },
+                                              "counts": {
+                                                "pnl_days": 513,
+                                                "exported_markets": 28,
+                                                "estimated_trade_rows": 1420,
+                                                "estimated_size_mb": 2.4
+                                              },
+                                              "large_export_policy": {
+                                                "mode": "direct_streaming",
+                                                "current_internal_route": "stream",
+                                                "direct_streaming": {},
+                                                "async_job": {},
+                                                "rate_limit": {}
+                                              }
+                                            },
                       "meta": {
                         "request_id": "req_example",
                         "cached": false
@@ -4772,8 +4900,42 @@
         ],
         "x-examples": {
           "success": {
-            "object": "traders",
-            "data": {},
+            "object": "trader_export_snapshot",
+            "data": {
+                          "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
+                          "generated_at": "2026-06-01T00:00:00Z",
+                          "source_range": {
+                            "first_pnl_date": "2025-01-04",
+                            "last_pnl_date": "2026-05-31",
+                            "latest_trade_at": "2026-05-31T18:22:05Z",
+                            "latest_market_activity_at": "2026-05-31T18:22:05Z"
+                          },
+                          "completeness": {
+                            "status": "complete",
+                            "reason": "fully_synced",
+                            "sync_coverage": 1.0
+                          },
+                          "reconciliation": {
+                            "provider_lifetime_volume": 18650000.0,
+                            "exported_activity_volume": 18400000.0,
+                            "exported_market_cost_basis": 9200000.0,
+                            "provider_activity_volume_gap": 250000.0,
+                            "activity_volume_coverage": 0.9866
+                          },
+                          "counts": {
+                            "pnl_days": 513,
+                            "exported_markets": 28,
+                            "estimated_trade_rows": 1420,
+                            "estimated_size_mb": 2.4
+                          },
+                          "large_export_policy": {
+                            "mode": "direct_streaming",
+                            "current_internal_route": "stream",
+                            "direct_streaming": {},
+                            "async_job": {},
+                            "rate_limit": {}
+                          }
+                        },
             "meta": {
               "request_id": "req_example",
               "cached": false
@@ -4849,7 +5011,7 @@
             }
           },
           "401": {
-            "$ref": "#/components/responses/InvalidApiKey"
+            "$ref": "#/components/responses/Unauthorized"
           },
           "402": {
             "$ref": "#/components/responses/SubscriptionRequired"
