@@ -45,6 +45,13 @@
             ]
           },
           {
+            "group": "Discovery",
+            "pages": [
+              "api-reference/endpoint/get-api-discovery",
+              "api-reference/endpoint/redirect-api-openapi-spec"
+            ]
+          },
+          {
             "group": "Traders",
             "pages": [
               "api-reference/endpoint/get-trader",

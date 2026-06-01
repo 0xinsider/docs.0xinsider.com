@@ -22,6 +22,110 @@
     }
   ],
   "paths": {
+    "/api/v1": {
+      "get": {
+        "operationId": "getApiDiscovery",
+        "summary": "API discovery",
+        "description": "Unauthenticated API-origin discovery document pointing agents to the canonical API base URL, full docs, web-origin OpenAPI spec, health check, and representative authenticated data routes.",
+        "tags": ["System"],
+        "security": [],
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "cURL",
+            "source": "curl 'https://api.0xinsider.com/api/v1'"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "API discovery document",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["object", "data", "meta"],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "api_discovery"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApiDiscovery"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                },
+                "example": {
+                  "object": "api_discovery",
+                  "data": {
+                    "api_base_url": "https://api.0xinsider.com",
+                    "docs_url": "https://0xinsider.com/llms-full.txt",
+                    "openapi_url": "https://0xinsider.com/api/v1/openapi.json",
+                    "health_url": "https://api.0xinsider.com/api/v1/health",
+                    "authentication": "Bearer API key required for data endpoints; discovery and health are public.",
+                    "authenticated_routes": ["GET /api/v1/markets/search"]
+                  },
+                  "meta": {
+                    "request_id": "req_550e8400-e29b-41d4-a716-446655440000",
+                    "cached": false,
+                    "cache_age_s": null
+                  }
+                }
+              }
+            }
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/api/v1/openapi.json": {
+      "get": {
+        "operationId": "redirectApiOpenapiSpec",
+        "summary": "Redirect to the canonical OpenAPI spec",
+        "description": "Unauthenticated API-origin compatibility redirect to the canonical web-origin OpenAPI JSON document at https://0xinsider.com/api/v1/openapi.json.",
+        "tags": ["System"],
+        "security": [],
+        "x-codeSamples": [
+          {
+            "lang": "Shell",
+            "label": "cURL",
+            "source": "curl -I 'https://api.0xinsider.com/api/v1/openapi.json'"
+          }
+        ],
+        "responses": {
+          "307": {
+            "description": "Temporary redirect to the canonical web-origin OpenAPI spec.",
+            "headers": {
+              "Location": {
+                "description": "Canonical OpenAPI spec URL.",
+                "schema": {
+                  "type": "string",
+                  "format": "uri",
+                  "const": "https://0xinsider.com/api/v1/openapi.json"
+                },
+                "example": "https://0xinsider.com/api/v1/openapi.json"
+              }
+            }
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
     "/api/v1/trader/{address}": {
       "get": {
         "operationId": "getTrader",
@@ -4745,6 +4849,50 @@
             "type": "integer",
             "nullable": true,
             "description": "Cache age in seconds, null if not cached."
+          }
+        }
+      },
+      "ApiDiscovery": {
+        "type": "object",
+        "required": [
+          "api_base_url",
+          "docs_url",
+          "openapi_url",
+          "health_url",
+          "authentication",
+          "authenticated_routes"
+        ],
+        "properties": {
+          "api_base_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Canonical API origin for public V1 requests."
+          },
+          "docs_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Full agent-readable API reference."
+          },
+          "openapi_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Canonical web-origin OpenAPI JSON document."
+          },
+          "health_url": {
+            "type": "string",
+            "format": "uri",
+            "description": "Unauthenticated API health endpoint."
+          },
+          "authentication": {
+            "type": "string",
+            "const": "Bearer API key required for data endpoints; discovery and health are public."
+          },
+          "authenticated_routes": {
+            "type": "array",
+            "description": "Representative authenticated data routes. Full route coverage lives in OpenAPI and llms-full.txt.",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
