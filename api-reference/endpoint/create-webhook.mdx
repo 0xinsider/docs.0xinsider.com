@@ -7,12 +7,16 @@ Register a webhook endpoint to receive whale trade and radar events as they happ
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  -H "Idempotency-Key: webhook-create-2026-06-01" \
   -H "Content-Type: application/json" \
   -d '{
+    "name": "Production webhook",
     "url": "https://api.yourapp.com/webhooks/0xinsider",
-    "events": ["whale_trade.created", "radar_flag.created"]
+    "event_types": ["whale_trades_inserted"]
   }' \
   "https://api.0xinsider.com/api/v1/webhooks"
 ```
 
 The response includes a one-time signing secret. **Copy it immediately** — you cannot retrieve it later. Use it to verify the `X-0xinsider-Signature` header on every delivery; see [Verify Webhook](/api-reference/endpoint/verify-webhook). If the secret leaks, [rotate it](/api-reference/endpoint/rotate-webhook-secret).
+
+Use `Idempotency-Key` when retrying create after a timeout. Reusing the same key with the same body returns the original webhook; reusing it with a different body returns `422`.

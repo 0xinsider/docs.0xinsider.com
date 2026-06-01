@@ -24,6 +24,7 @@ Every authenticated response carries:
 X-RateLimit-Limit:     100
 X-RateLimit-Remaining: 87
 X-RateLimit-Reset:     1774450631
+X-Request-Id:          req_550e8400
 ```
 
 | Header | Meaning |
@@ -31,6 +32,7 @@ X-RateLimit-Reset:     1774450631
 | `X-RateLimit-Limit` | Max requests per minute. |
 | `X-RateLimit-Remaining` | Remaining slots in the current window. |
 | `X-RateLimit-Reset` | Unix timestamp (seconds) when the window resets. |
+| `X-Request-Id` | Request identifier to include when reporting a support issue. |
 
 Batch responses additionally carry:
 
@@ -107,4 +109,11 @@ body = get_with_backoff(
 - **Ask for more per request.** Bump `limit` up to 100 instead of making 10 calls of `limit=10`.
 - **Use batch endpoints when you already know your IDs.** One batch call for 25 traders costs 25 batch-item units, but only one regular request.
 - **Watch `X-RateLimit-Remaining`.** If it crosses below 10, pause your polling for the next reset.
+- **Use `/usage` for budget checks.** `GET /api/v1/usage` reads the current limiter window without incrementing it.
 - **One process owns the polling.** Avoid every container in a fleet polling the same endpoint with the same key.
+
+## Conditional GETs
+
+Deterministic read endpoints return an `ETag` header. Re-send it as `If-None-Match` to receive `304 Not Modified` with an empty body when the payload is unchanged.
+
+This applies to trader, positions, whale-trades, whale-trades/history, leaderboard, markets/explore, market intel, market snapshot, insider-radar, position-timeline, and health responses. Report snapshot endpoints are not conditional yet because their body includes request-time `generated_at`.

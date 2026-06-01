@@ -1,0 +1,15 @@
+---
+title: "Get Usage"
+openapi: "GET /api/v1/usage"
+---
+
+Read your current request budget without spending a request against it.
+
+`GET /api/v1/usage` returns the live per-minute limiter window plus UTC-day usage. The daily `limit` and `remaining` fields are `null` because V1 does not have a daily hard cap.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/usage"
+```
+
+Use this endpoint for quota introspection instead of polling another data endpoint just to infer remaining budget.

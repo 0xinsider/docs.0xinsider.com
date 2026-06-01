@@ -8,9 +8,12 @@ Change a webhook's destination URL, subscribed events, or active flag without re
 ```bash
 curl -X PATCH \
   -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  -H "Idempotency-Key: webhook-update-2026-06-01" \
   -H "Content-Type: application/json" \
-  -d '{"active": false}' \
+  -d '{"enabled": false}' \
   "https://api.0xinsider.com/api/v1/webhooks/wh_abc123"
 ```
 
 The signing secret is not affected by `PATCH`. To change it, use [Rotate Webhook Secret](/api-reference/endpoint/rotate-webhook-secret).
+
+Use `Idempotency-Key` when retrying the same update body. A matching retry replays the original response; a different body with the same key returns `422`.

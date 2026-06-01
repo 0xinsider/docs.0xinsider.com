@@ -91,6 +91,12 @@
             ]
           },
           {
+            "group": "Usage",
+            "pages": [
+              "api-reference/endpoint/get-usage"
+            ]
+          },
+          {
             "group": "Webhooks",
             "pages": [
               "api-reference/endpoint/list-webhooks",

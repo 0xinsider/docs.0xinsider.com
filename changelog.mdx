@@ -7,6 +7,12 @@ rss: true
 
 This changelog tracks externally visible REST API changes only. Documentation-only edits are intentionally excluded.
 
+<Update label="June 1, 2026" description="API DX hardening adds usage, ETags, idempotent webhooks, and richer OpenAPI">
+  Added [`GET /api/v1/usage`](/api-reference/endpoint/get-usage), a zero-cost authenticated budget peek for the current per-minute limiter window and UTC-day usage.
+
+  Deterministic reads now document `ETag` / `If-None-Match` conditional GETs, webhook create/update/delete/rotate support `Idempotency-Key`, and OpenAPI operation IDs are codegen-friendly camel-style identifiers with examples, code samples, and response-header metadata.
+</Update>
+
 <Update label="May 8, 2026" description="Remote MCP exposes position and market discovery tools">
   [`POST /api/v1/mcp`](/api-reference/endpoint/remote-mcp) now exposes nine read-only tools through `tools/list`.
 
