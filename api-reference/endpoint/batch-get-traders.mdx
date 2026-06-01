@@ -3,7 +3,7 @@ title: "Batch Get Traders"
 openapi: "POST /api/v1/traders/batch"
 ---
 
-Fetch up to 25 trader profiles in one round trip. Each item in the response carries the same shape as [Get Trader](/api-reference/endpoint/get-trader), plus a per-item `error` field if that specific address failed.
+Fetch up to 25 trader profiles in one call. Each item has the same shape as [Get Trader](/api-reference/endpoint/get-trader), plus a per-item `error` field when an address fails.
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
@@ -12,4 +12,4 @@ curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/traders/batch"
 ```
 
-Costs item units against the batch budget: a 25-address batch reserves 25 item units. The top-level HTTP status is `200` even when some items fail — check `data[i].error` per item. See [Rate Limits](/rate-limits).
+Each item costs one unit against the batch budget: a 25-address batch reserves 25 units. The top-level status stays `200` even when some items fail, so check `data[i].error` per item. See [Rate Limits](/rate-limits).

@@ -3,11 +3,11 @@ title: "Search Markets"
 openapi: "GET /api/v1/markets/search"
 ---
 
-Keyword search across Polymarket and Kalshi markets. Best when you already know what you are looking for and need the raw `condition_id` to pass into other endpoints.
+Keyword search across Polymarket and Kalshi markets. Best when you know what you want and need the raw `condition_id` for other endpoints.
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/markets/search?q=trump&category=politics&status=active"
 ```
 
-Pass the returned `condition_id` (raw on-chain, not the `mkt_...` prefixed form) into [Market Intel](/api-reference/endpoint/get-market-intel) or [Market Snapshot](/api-reference/endpoint/get-market-snapshot). For browsing rather than searching, use [Explore Markets](/api-reference/endpoint/explore-markets).
+Pass the returned `condition_id` (raw on-chain, not the `mkt_...` form) into [Market Intel](/api-reference/endpoint/get-market-intel) or [Market Snapshot](/api-reference/endpoint/get-market-snapshot). To browse instead of search, use [Explore Markets](/api-reference/endpoint/explore-markets).

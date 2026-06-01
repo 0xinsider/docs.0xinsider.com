@@ -3,7 +3,7 @@ title: "Errors"
 description: "How errors come back, what each code means, and how to recover."
 ---
 
-Errors are returned with a non-2xx HTTP status and a consistent JSON envelope:
+Errors come back with a non-2xx HTTP status and the same JSON envelope every time:
 
 ```json
 {
@@ -20,7 +20,7 @@ Errors are returned with a non-2xx HTTP status and a consistent JSON envelope:
 }
 ```
 
-The two fields to read in production: `error.code` (machine-readable) and `meta.request_id` (the ID you give us when you write to support).
+Two fields matter in production: `error.code` (machine-readable) and `meta.request_id` (the ID you give us when you contact support).
 
 ## Error codes
 
@@ -87,26 +87,26 @@ def call(path, **params):
 
 ## Per-item batch errors
 
-Batch endpoints (e.g. `POST /api/v1/traders/batch`) return `200 OK` even when individual items fail. Each item carries its own `error` field — read `data[i].error` per item, not just the top-level status.
+Batch endpoints (e.g. `POST /api/v1/traders/batch`) return `200 OK` even when individual items fail. Each item carries its own `error` field. Read `data[i].error` per item, not just the top-level status.
 
 ## Quick troubleshooting
 
 <AccordionGroup>
   <Accordion title="401 invalid_api_key">
-    - Header literally needs `Authorization: Bearer oxi_sk_live_...`.
-    - Key is 76 characters end to end — confirm you copied the full string.
-    - If you regenerated, the previous key is dead. Update every consumer.
+    - The header needs `Authorization: Bearer oxi_sk_live_...`.
+    - The key is 76 characters. Confirm you copied the full string.
+    - If you regenerated, the old key is dead. Update every consumer.
   </Accordion>
   <Accordion title="402 subscription_required">
-    Key is fine; billing is not. Re-subscribe at [pricing](https://0xinsider.com/pricing) and the same key resumes.
+    The key is fine; billing is not. Re-subscribe at [pricing](https://0xinsider.com/pricing) and the same key resumes.
   </Accordion>
   <Accordion title="429 rate_limited">
     Sleep `Retry-After` seconds, then retry. See the backoff example in [Rate Limits](/rate-limits).
   </Accordion>
   <Accordion title="400 bad_request on Market Intel with mkt_... prefix">
-    Market Intel takes the raw `condition_id`, not the prefixed `mkt_...` ID. Look up the market via [`/markets/search`](/api-reference/endpoint/search-markets) and use the returned `condition_id`.
+    Market Intel takes the raw `condition_id`, not the prefixed `mkt_...` ID. Look up the market via [`/markets/search`](/api-reference/endpoint/search-markets) and pass the returned `condition_id`.
   </Accordion>
   <Accordion title="500 internal_error">
-    Retry once. If it keeps happening, email [support@0xinsider.com](mailto:support@0xinsider.com) with the `meta.request_id` from the response.
+    Retry once. If it persists, email [support@0xinsider.com](mailto:support@0xinsider.com) with the `meta.request_id` from the response.
   </Accordion>
 </AccordionGroup>

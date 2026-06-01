@@ -3,7 +3,7 @@ title: "List Webhooks"
 openapi: "GET /api/v1/webhooks"
 ---
 
-List every webhook endpoint registered on your account. Each entry includes the destination URL, the events it subscribes to, its delivery status, and metadata for signature verification.
+List every webhook registered on your account. Each entry has the destination URL, subscribed events, delivery status, and signature-verification metadata.
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \

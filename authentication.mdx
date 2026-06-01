@@ -3,7 +3,7 @@ title: "Authentication"
 description: "API keys, headers, and what to do if a key leaks."
 ---
 
-Every request (except `/health`) authenticates with a Bearer token:
+Every request except `/health` uses a Bearer token:
 
 ```bash
 Authorization: Bearer oxi_sk_live_...
@@ -14,11 +14,11 @@ Authorization: Bearer oxi_sk_live_...
 | Property | Value |
 |---|---|
 | Format | `oxi_sk_live_` + 64 hex chars (76 chars total) |
-| Storage on our side | HMAC-SHA256 hash. Plaintext is never stored. |
+| Storage on our side | HMAC-SHA256 hash. We never store plaintext. |
 | Active keys per account | 1. Regenerating revokes the old key. |
 | Where to generate | [0xinsider.com/developers](https://0xinsider.com/developers) |
 
-The key is shown **once**, at generation time. After that the dashboard only shows the prefix (`oxi_sk_live_XXXX`) for identification.
+The key shows **once**, at generation. After that the dashboard shows only the prefix (`oxi_sk_live_XXXX`) so you can identify it.
 
 ## Generate a key
 
@@ -39,16 +39,16 @@ The key is shown **once**, at generation time. After that the dashboard only sho
     ```
     Authorization: Bearer oxi_sk_live_...
     ```
-    The API returns `401 invalid_api_key` for either malformed format.
+    Either form returns `401 invalid_api_key`.
   </Accordion>
   <Accordion title="Pasting only part of the key">
     The full key is 76 characters. Anything shorter is a partial copy.
   </Accordion>
   <Accordion title="Hitting an authenticated endpoint without a subscription">
-    Valid key, expired subscription returns `402 subscription_required`. Re-subscribe at [pricing](https://0xinsider.com/pricing); the same key resumes working.
+    A valid key with an expired subscription returns `402 subscription_required`. Re-subscribe at [pricing](https://0xinsider.com/pricing); the same key resumes.
   </Accordion>
   <Accordion title="Reusing an old key after regenerating">
-    Regenerating revokes the previous key in the same call. Update every place the old key lives — `.env` files, deployed secrets, MCP configs.
+    Regenerating revokes the old key in the same call. Update every place it lives: `.env` files, deployed secrets, MCP configs.
   </Accordion>
 </AccordionGroup>
 
@@ -57,12 +57,12 @@ The key is shown **once**, at generation time. After that the dashboard only sho
 Treat it like any production secret:
 
 1. Go to [Developers](https://0xinsider.com/developers).
-2. Click **Regenerate Key**. The old key stops working immediately.
-3. Roll the new key into every consumer (bots, MCP configs, CI secrets, dashboards).
+2. Click **Regenerate Key**. The old key dies immediately.
+3. Roll the new key into every consumer: bots, MCP configs, CI secrets, dashboards.
 
 ## Key management endpoints
 
-These manage *your own* keys from the dashboard. They authenticate with the session cookie (JWT), not with an API key, so you cannot call them from a script using `oxi_sk_live_...`.
+These manage *your own* keys from the dashboard. They use the session cookie (JWT), not an API key, so you can't call them from a script with `oxi_sk_live_...`.
 
 | Action | Method | Endpoint |
 |---|---|---|
@@ -71,7 +71,7 @@ These manage *your own* keys from the dashboard. They authenticate with the sess
 | Revoke key | `DELETE` | `/api/keys/{id}` |
 | Regenerate | `POST` | `/api/keys/regenerate` |
 
-## What a subscription-blocked response looks like
+## A subscription-blocked response
 
 ```json
 {

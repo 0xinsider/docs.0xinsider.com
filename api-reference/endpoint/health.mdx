@@ -3,7 +3,7 @@ title: "Health Check"
 openapi: "GET /api/v1/health"
 ---
 
-A liveness probe. Returns `200` with database and cache status when the API is up. No authentication required — handy as a smoke test from CI or a status dashboard.
+A liveness probe. Returns `200` with database and cache status when the API is up. No auth required, so it works as a smoke test from CI or a status dashboard.
 
 ```bash
 curl https://api.0xinsider.com/api/v1/health

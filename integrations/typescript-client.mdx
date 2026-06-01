@@ -3,19 +3,19 @@ title: "TypeScript Client"
 description: "Drift-tested source client for the 0xinsider API."
 ---
 
-A typed TypeScript client lives in the app repo at `web/src/lib/api-client`. It is drift-tested against the checked-in OpenAPI spec — when the spec moves, the client either moves with it or its test suite fails.
+A typed TypeScript client lives in the app repo at `web/src/lib/api-client`. It's drift-tested against the checked-in OpenAPI spec: when the spec moves, the client moves with it or the test suite fails.
 
-It is **not** published to npm yet. Use it as source or as a reference implementation.
+It's **not** on npm yet. Use it as source or as a reference implementation.
 
 <Note>
-  Want a package release? That needs a separate decision on package name, semver policy, changelog ownership, and npm access. Open an issue if you depend on it.
+  Want a package release? That needs decisions on package name, semver policy, changelog ownership, and npm access. Open an issue if you depend on it.
 </Note>
 
 ## What it handles
 
 - `Authorization: Bearer` header injection.
 - Path parameter interpolation (`/trader/{address}`, `/market/{condition_id}/intel`).
-- Repeated query parameters such as `expand=strategy&expand=categories`. The legacy `expand[]` form is also accepted by the API.
+- Repeated query parameters like `expand=strategy&expand=categories`. The API also accepts the legacy `expand[]` form.
 - JSON request bodies for batch and webhook endpoints.
 - V1 error envelopes as typed exceptions (`code`, `message`, `param`, `request_id`).
 
@@ -41,7 +41,7 @@ const markets = await client.searchMarkets("NBA", {
 
 ## Handling errors
 
-The client raises typed exceptions instead of returning a generic error object, so you can match on `error.code` directly:
+The client throws typed exceptions instead of a generic error object, so you match on `error.code` directly:
 
 ```ts
 import { OxinsiderApiError } from "./api-client";
@@ -65,4 +65,4 @@ try {
 
 ## Keep OpenAPI as the source of truth
 
-The client operation table is regenerated from [`api-reference/openapi.json`](https://github.com/0xinsider/docs/blob/main/api-reference/openapi.json). When you change the OpenAPI spec, the client moves with it. Do not edit the client by hand to add new operations without updating the spec.
+The client operation table regenerates from [`api-reference/openapi.json`](https://github.com/0xinsider/docs/blob/main/api-reference/openapi.json). Change the spec and the client follows. Don't hand-edit the client to add operations without updating the spec.

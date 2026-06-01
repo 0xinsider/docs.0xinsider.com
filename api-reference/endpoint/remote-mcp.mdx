@@ -4,7 +4,7 @@ sidebarTitle: "Remote MCP"
 openapi: "POST /api/v1/mcp"
 ---
 
-Hosted, streamable HTTP MCP endpoint. Use this when your agent runs in an environment that cannot spawn a local `npx` subprocess — for example, a serverless function, a browser-based agent, or a hosted automation runtime.
+Hosted, streamable HTTP MCP endpoint. Use it when your agent can't spawn a local `npx` subprocess: a serverless function, a browser-based agent, or a hosted automation runtime.
 
 Remote MCP exposes the 21 read-only V1 data operations below as tools. Each tool dispatches to the matching `/api/v1/*` handler in-process, so auth, rate limits, and payload contracts match direct REST calls. Meta endpoints (`/usage`, `/health`) and webhook mutations are not exposed as tools.
 
@@ -46,6 +46,6 @@ curl -X POST \
   https://api.0xinsider.com/api/v1/mcp
 ```
 
-A `?token=...` query parameter remains available for URL-only clients but is **legacy** — URL secrets leak into shell history, browser history, proxies, and logs. Use headers wherever possible.
+A `?token=...` query parameter is still available for URL-only clients but is **legacy**. URL secrets leak into shell history, browser history, proxies, and logs. Use headers wherever you can.
 
 For the streaming response, see [Remote MCP Stream](/api-reference/endpoint/remote-mcp-stream).

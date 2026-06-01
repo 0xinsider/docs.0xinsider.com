@@ -3,7 +3,7 @@ title: "Pagination"
 description: "Cursor-based pagination, with a full loop in JS and Python."
 ---
 
-Every list endpoint uses **cursor pagination**. There is no `offset` and no `page` number. Cursors are stable while a sort order keeps the same — much more reliable than offsets when data is live.
+Every list endpoint uses **cursor pagination**. No `offset`, no `page` number. Cursors stay stable as long as the sort order holds, so they beat offsets on live data.
 
 ## The shape
 
@@ -37,7 +37,7 @@ Repeat until `has_more` is `false`.
 
 ## Full loop, end to end
 
-This pulls every page of the leaderboard until exhausted.
+This pulls every page of the leaderboard.
 
 <CodeGroup>
 ```javascript JavaScript
@@ -92,19 +92,19 @@ print(f"Fetched {len(leaders)} traders")
 
 ## Cursors are opaque
 
-Do not parse, construct, or store cursors long-term. Always use the `next_cursor` from the response you just received.
+Don't parse, construct, or store cursors long-term. Always use the `next_cursor` from the response you just got.
 
-Internally, different endpoints use different cursor encodings:
+Different endpoints encode cursors differently:
 
 - **Leaderboard**: `{score}_{address}`
 - **Whale trades**: `{timestamp}_{id}` (ISO 8601)
 - **Insider radar**: `{score}_{id}`
 
-You do not need to know this to use the API — just pass the string back.
+You don't need to know this. Just pass the string back.
 
 ## Gotchas
 
-- **Don't mix cursors across filters.** A cursor from `?category=crypto` is not valid on `?category=politics`. Restart pagination when filters change.
-- **Don't mix cursors across endpoints.** A leaderboard cursor will not work on whale trades.
-- **`400 Invalid cursor format` means the cursor came from a different filter set, a different endpoint, or has been mangled.** Drop the cursor and start over.
-- **Stale cursors expire.** If you pause for hours, the underlying sort can shift; expect to restart.
+- **Don't mix cursors across filters.** A cursor from `?category=crypto` won't work on `?category=politics`. Restart pagination when filters change.
+- **Don't mix cursors across endpoints.** A leaderboard cursor won't work on whale trades.
+- **`400 Invalid cursor format`** means the cursor came from a different filter set, a different endpoint, or got mangled. Drop it and start over.
+- **Stale cursors expire.** Pause for hours and the underlying sort can shift. Expect to restart.
