@@ -130,7 +130,7 @@
       "get": {
         "operationId": "getTrader",
         "summary": "Get trader intelligence",
-        "description": "Returns a trader's grade (S through F), P&L, win rate, and optional strategy/category data. The path accepts either an Ethereum wallet address or a known trader username. Unknown lookups return sync_status \"unknown\" instead of 404.",
+        "description": "Returns a trader's grade (S through F), P&L, win rate, and optional strategy/category data. The path accepts either an Ethereum wallet address, a known trader username, or a trd_-prefixed trader ID emitted by this API. Unknown lookups return sync_status \"unknown\" instead of 404.",
         "tags": [
           "Traders"
         ],
@@ -139,7 +139,7 @@
             "name": "address",
             "in": "path",
             "required": true,
-            "description": "Ethereum wallet address (0x...) or known trader username",
+            "description": "Ethereum wallet address (0x...), known trader username, or trd_-prefixed trader ID emitted by this API.",
             "schema": {
               "type": "string"
             }
@@ -496,7 +496,7 @@
             "name": "address",
             "in": "path",
             "required": true,
-            "description": "Trader wallet address (0x...). Case-insensitive — addresses are lowercased server-side.",
+            "description": "Trader wallet address (0x...) or trd_-prefixed trader ID emitted by this API. Case-insensitive wallet addresses are lowercased server-side.",
             "schema": {
               "type": "string"
             }
@@ -4671,7 +4671,7 @@
             "name": "address",
             "in": "path",
             "required": true,
-            "description": "Trader wallet address (0x...) or known trader username-style lookup accepted by the export read model.",
+            "description": "Trader wallet address (0x...), known trader username-style lookup, or trd_-prefixed trader ID emitted by this API.",
             "schema": {
               "type": "string"
             }
@@ -5866,7 +5866,7 @@
             "properties": {
               "id": {
                 "type": "string",
-                "description": "Prefixed ID (`trd_0x...`)."
+                "description": "Prefixed ID (`trd_...`)."
               },
               "address": {
                 "type": "string"
