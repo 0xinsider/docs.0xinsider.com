@@ -7,6 +7,12 @@ rss: true
 
 This changelog tracks externally visible REST API changes only. Documentation-only edits are intentionally excluded.
 
+<Update label="June 1, 2026" description="Remote MCP reaches read parity with public V1 reads">
+  [`POST /api/v1/mcp`](/api-reference/endpoint/remote-mcp) now exposes 21 read-only tools through `tools/list`, covering the public V1 read operations including batch reads, history, event replay, webhook reads, reports, market snapshots, and trader exports.
+
+  Webhook mutation operations remain REST-only, and the remote MCP endpoint remains tools-only: it does not implement resources or prompts.
+</Update>
+
 <Update label="June 1, 2026" description="API DX hardening adds usage, ETags, idempotent webhooks, and richer OpenAPI">
   Added [`GET /api/v1`](/api-reference/endpoint/get-api-discovery), a public API-origin discovery document, and [`GET /api/v1/openapi.json`](/api-reference/endpoint/redirect-api-openapi-spec), a redirect to the canonical web-origin OpenAPI spec.
 

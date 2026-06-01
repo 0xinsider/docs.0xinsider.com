@@ -8,7 +8,7 @@ Fetch up to 25 trader profiles in one round trip. Each item in the response carr
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"addresses": ["0xabc...", "0xdef...", "swisstony"]}' \
+  -d '{"traders": ["0xabc...", "0xdef...", "swisstony"]}' \
   "https://api.0xinsider.com/api/v1/traders/batch"
 ```
 
