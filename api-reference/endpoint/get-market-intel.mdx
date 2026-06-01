@@ -3,9 +3,9 @@ title: "Get Market Intel"
 openapi: "GET /api/v1/market/{condition_id}/intel"
 ---
 
-Smart-money breakdown for a single market: buy vs sell volume from graded traders, top positions, and which side conviction is on.
+Smart-money breakdown for one market: buy vs sell volume from graded traders, top positions, and which side has conviction.
 
-Pass the on-chain `condition_id` in the path — **not** the prefixed `mkt_...` form. The API returns `400 bad_request` if you pass `mkt_...`. You can find raw condition IDs in whale trades and in `search` / `explore` responses.
+Pass the on-chain `condition_id` in the path, **not** the prefixed `mkt_...` form. A `mkt_...` value returns `400 bad_request`. Raw condition IDs appear in whale trades and in `search` and `explore` responses.
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \

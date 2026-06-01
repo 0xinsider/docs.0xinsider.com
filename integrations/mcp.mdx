@@ -3,23 +3,23 @@ title: "Local MCP Server"
 description: "Give your AI agent direct, read-only access to 0xinsider intelligence over stdio."
 ---
 
-[`@0xinsider/mcp`](https://www.npmjs.com/package/@0xinsider/mcp) is the official local Model Context Protocol server. It exposes the same intelligence as the REST API — trader grades, whale trades, smart-money flow, positions, insider detection — as MCP tools your agent can call directly.
+[`@0xinsider/mcp`](https://www.npmjs.com/package/@0xinsider/mcp) is the official local Model Context Protocol server. It exposes the same data as the REST API (trader grades, whale trades, smart-money flow, positions, insider detection) as MCP tools your agent calls directly.
 
-Works with **Claude Code, Cursor, Codex, Gemini CLI**, and any client that speaks stdio MCP.
+Works with **Claude Code, Cursor, Codex, Gemini CLI**, and any stdio MCP client.
 
 <Note>
   Need a hosted HTTP endpoint instead of a local subprocess? See [Remote MCP](/api-reference/endpoint/remote-mcp).
 </Note>
 
-## Install — one command
+## Install in one command
 
 ```bash
 npx -y @0xinsider/mcp init
 ```
 
-`init` auto-detects which clients you have installed and writes the right config block in the right place. You will be asked for your API key once.
+`init` detects your installed clients and writes the right config in the right place. It asks for your API key once.
 
-If you prefer to edit configs by hand, the per-client paths and snippets are below.
+Prefer to edit configs by hand? The per-client paths and snippets are below.
 
 ## Manual install per client
 
@@ -104,7 +104,7 @@ If you prefer to edit configs by hand, the per-client paths and snippets are bel
 
 | Tool | What it does |
 |---|---|
-| `get_trader` | Wallet profile — grade, P&L, win rate, strategy, category strengths. |
+| `get_trader` | Wallet profile: grade, P&L, win rate, strategy, category strengths. |
 | `get_whale_trades` | Recent large trades, filterable by size, category, grade. |
 | `get_leaderboard` | Top-ranked traders (S/A/B) with optional category/strategy filter. |
 | `get_positions` | Current positions across traders or markets. |
@@ -114,14 +114,14 @@ If you prefer to edit configs by hand, the per-client paths and snippets are bel
 | `get_market_intel` | Smart-money breakdown for a single market. |
 | `get_insider_radar` | Suspicious accumulation and timing patterns. |
 
-All tools advertise `readOnlyHint: true`. The server cannot place trades or write data.
+Every tool advertises `readOnlyHint: true`. The server can't place trades or write data.
 
 ### Resources (auto-attached context)
 
 | URI | What you get |
 |---|---|
 | `oxinsider://docs/api` | Full API reference, ready for the model to read. |
-| `oxinsider://docs/agents` | Decision tree for agents — when to use which tool. |
+| `oxinsider://docs/agents` | Decision tree for agents: when to use which tool. |
 | `oxinsider://data/leaderboard` | Live top 20 traders. |
 | `oxinsider://data/whale-trades` | Live latest 20 whale trades. |
 
@@ -135,15 +135,15 @@ All tools advertise `readOnlyHint: true`. The server cannot place trades or writ
 
 ## Try it
 
-After install, ask your agent things like:
+After install, ask your agent:
 
 - "Who are the top prediction-market traders right now?"
 - "What are A-grade or better whales buying in crypto markets today?"
-- "Analyze trader `0x863134d00841b2e200492805a01e1e2f5defaa53` — is their strategy worth following?"
+- "Analyze trader `0x863134d00841b2e200492805a01e1e2f5defaa53`. Is their strategy worth following?"
 - "Are there suspicious accumulation patterns on the Trump election market?"
 - "Show me the position timeline for that whale on the Ethereum market."
 
-The agent will pick the right tool and call it for you.
+The agent picks the right tool and calls it for you.
 
 ## Environment variables
 
@@ -153,5 +153,5 @@ The agent will pick the right tool and call it for you.
 | `OXINSIDER_API_URL` | No | Override the base URL (mostly for self-hosted dev). |
 
 <Note>
-  The MCP server uses your normal API key and shares the 100 req/min rate limit with direct API access. One key, one budget. Get yours at [0xinsider.com/developers](https://0xinsider.com/developers).
+  The MCP server uses your normal API key and shares the 100 req/min rate limit with direct API calls. One key, one budget. Get yours at [0xinsider.com/developers](https://0xinsider.com/developers).
 </Note>

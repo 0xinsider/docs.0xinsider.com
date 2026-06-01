@@ -3,11 +3,7 @@ title: "Quickstart"
 description: "From zero to your first whale-trade signal in two minutes."
 ---
 
-In this quickstart you will:
-
-1. Generate an API key.
-2. Confirm it works.
-3. Pull a real "follow the smartest traders" workflow end to end.
+Generate a key, confirm it works, then run a real "follow the smartest traders" workflow.
 
 ## 1. Generate your API key
 
@@ -21,7 +17,7 @@ API access is bundled with the [Insider subscription](https://0xinsider.com/pric
     Pick the Insider plan on [Pricing](https://0xinsider.com/pricing).
   </Step>
   <Step title="Generate your key">
-    On [Developers](https://0xinsider.com/developers), click **Generate Key**. The key is shown once — copy it now. Lost keys can be regenerated, but the old key stops working.
+    On [Developers](https://0xinsider.com/developers), click **Generate Key**. It's shown once, so copy it now. You can regenerate a lost key, but the old one stops working.
   </Step>
 </Steps>
 
@@ -49,11 +45,11 @@ curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
 }
 ```
 
-If you see `status: "ok"`, you are wired up.
+`status: "ok"` means you're wired up.
 
 ## 3. Follow the smartest traders
 
-The interesting question is rarely "who is #1." It is "what are the best traders doing right now, and am I early?"
+Not "who's #1," but "what are the best traders doing right now, and am I early?"
 
 ### Step A: Pull the top 5 S-grade traders
 
@@ -62,47 +58,47 @@ curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/leaderboard?limit=5"
 ```
 
-Each entry includes the trader's wallet address (`id`), grade, score, P&L, and strategy. Pick one to follow.
+Each entry has the wallet address (`id`), grade, score, P&L, and strategy. Pick one to follow.
 
 ### Step B: Look up that trader's full profile
 
-The trader endpoint accepts either a wallet address or a known username:
+The trader endpoint takes a wallet address or a known username:
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/trader/0x863134d00841b2e200492805a01e1e2f5defaa53"
 ```
 
-The response gives you their realized P&L, win rate, category strengths, and current open positions.
+You get their realized P&L, win rate, category strengths, and current open positions.
 
-### Step C: See what whales are buying right now
+### Step C: See what whales are buying now
 
-Filter to A-grade or better, last 50 trades:
+A-grade or better, last 50 trades:
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&limit=50"
 ```
 
-You can layer filters. For example, A-grade or better, crypto markets only, BUY side:
+Layer filters. A-grade or better, crypto only, buy side:
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&category=crypto&side=buy&limit=50"
 ```
 
-### Step D: Drill into one of those markets
+### Step D: Drill into one market
 
-Grab the `condition_id` from a whale trade you find interesting (raw hex — not the prefixed `mkt_...` form), then:
+Grab the `condition_id` from a trade you like (raw hex, not the prefixed `mkt_...` form), then:
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/market/<condition_id>/intel"
 ```
 
-Market Intel returns the smart-money breakdown: buy volume vs sell volume from graded traders, top positions, and which side conviction is on.
+Market Intel returns the smart-money breakdown: buy volume vs sell volume from graded traders, top positions, and which side has conviction.
 
-That is the loop: **leaderboard -> trader profile -> whale trades -> market intel**. Bolt it onto a cron, a chatbot, or a dashboard.
+The loop: **leaderboard -> trader profile -> whale trades -> market intel**. Wire it to a cron, a chatbot, or a dashboard.
 
 ## Same workflow, in code
 
@@ -152,9 +148,9 @@ print(top["data"][0], trader["data"]["grade"], len(whales["data"]))
 ```
 </CodeGroup>
 
-## Want the call count even lower? Use a batch endpoint
+## Lower the call count with a batch endpoint
 
-If you already have the wallet addresses or usernames you care about, fetch them all in one call:
+Already have the wallet addresses or usernames you care about? Fetch them in one call:
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
@@ -163,13 +159,13 @@ curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/traders/batch"
 ```
 
-Batch reads return the same per-item shape, with per-item error fields when one address fails. They count against a separate batch-item rate-limit budget — see [Rate Limits](/rate-limits).
+Batch reads return the same per-item shape, with per-item error fields when an address fails. They count against a separate batch-item rate-limit budget. See [Rate Limits](/rate-limits).
 
 ## Next
 
 <CardGroup cols={2}>
   <Card title="Local MCP Server" icon="terminal" href="/integrations/mcp">
-    Skip the HTTP plumbing — give your AI agent the same tools directly.
+    Skip the HTTP plumbing. Give your AI agent the same tools directly.
   </Card>
   <Card title="TypeScript Client" icon="code" href="/integrations/typescript-client">
     Use the repo-owned source client with typed errors and `expand` helpers.

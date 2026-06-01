@@ -4,7 +4,7 @@ sidebarTitle: "Remote MCP stream"
 openapi: "GET /api/v1/mcp"
 ---
 
-Open the server-to-client streaming channel for [Remote MCP](/api-reference/endpoint/remote-mcp). Pass the `Mcp-Session-Id` returned by the `initialize` call to attach to your session, plus `Authorization: Bearer ...` if your client supports headers.
+Open the server-to-client streaming channel for [Remote MCP](/api-reference/endpoint/remote-mcp). Pass the `Mcp-Session-Id` from the `initialize` call to attach to your session, plus `Authorization: Bearer ...` if your client supports headers.
 
 ```bash
 curl -N \
@@ -13,4 +13,4 @@ curl -N \
   https://api.0xinsider.com/api/v1/mcp
 ```
 
-This is the stdio analog over HTTP. Hold the connection open to receive tool responses, progress events, and resource updates streamed from the server.
+This is the stdio analog over HTTP. Hold the connection open to receive streamed tool responses, progress events, and resource updates.

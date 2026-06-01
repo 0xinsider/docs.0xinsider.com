@@ -3,7 +3,7 @@ title: "Number Formatting"
 description: "How numeric values are formatted in API responses."
 ---
 
-Numbers come back as plain JSON numbers (not strings). Floating-point values are **truncated** (not rounded) at the API edge so the displayed value never overstates the underlying value.
+Numbers come back as plain JSON numbers, not strings. Floating-point values are **truncated**, not rounded, at the API edge. The displayed value never overstates the real one.
 
 ## Precision
 
@@ -18,11 +18,11 @@ Numbers come back as plain JSON numbers (not strings). Floating-point values are
 
 `97.9488...` becomes `97.94`, not `97.95`. `-12.345` becomes `-12.34`. Always toward zero.
 
-If you need stricter precision for accounting, compute from the source data. The API edge value is the display-safe value.
+Need stricter precision for accounting? Compute from the source data. The edge value is display-safe, not accounting-grade.
 
 ## Integer fields
 
-These are exact integers — no decimals, no truncation:
+These are exact integers. No decimals, no truncation:
 
 - `markets_traded`
 - `rank`
@@ -30,6 +30,6 @@ These are exact integers — no decimals, no truncation:
 
 ## Nulls and `unavailable`
 
-Many fields are nullable (e.g. `strategy_type`, `best_category`). Treat them as nullable in your client even when a particular endpoint usually populates them.
+Many fields are nullable (e.g. `strategy_type`, `best_category`). Treat them as nullable even when an endpoint usually populates them.
 
-Newer builder endpoints additionally surface **trust metadata** — explicit `unavailable` or `partial` markers when a provider-owned value cannot be returned at request time. Do not convert these into `0`, `[]`, or `{}`. Read the metadata field and treat the value as missing.
+Newer builder endpoints also return **trust metadata**: explicit `unavailable` or `partial` markers when a provider-owned value can't be returned at request time. Don't convert these into `0`, `[]`, or `{}`. Read the metadata field and treat the value as missing.

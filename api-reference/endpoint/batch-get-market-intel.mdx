@@ -3,7 +3,7 @@ title: "Batch Get Market Intel"
 openapi: "POST /api/v1/markets/intel/batch"
 ---
 
-Fetch market intel for up to 25 markets in one round trip. Same payload shape per item as [Get Market Intel](/api-reference/endpoint/get-market-intel), plus a per-item `error` field when one condition ID fails.
+Fetch market intel for up to 25 markets in one call. Each item has the same shape as [Get Market Intel](/api-reference/endpoint/get-market-intel), plus a per-item `error` field when a condition ID fails.
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
@@ -12,4 +12,4 @@ curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/markets/intel/batch"
 ```
 
-Costs item units against the batch budget: a 25-market batch reserves 25 item units. The top-level HTTP status is `200` even when some items fail — check `data[i].error` per item. See [Rate Limits](/rate-limits).
+Each item costs one unit against the batch budget: a 25-market batch reserves 25 units. The top-level status stays `200` even when some items fail, so check `data[i].error` per item. See [Rate Limits](/rate-limits).

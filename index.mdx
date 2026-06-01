@@ -4,39 +4,43 @@ sidebarTitle: "Introduction"
 description: "Prediction market intelligence for AI agents, trading bots, and research tools."
 ---
 
-The 0xinsider API gives your code access to the same intelligence layer powering the [0xinsider terminal](https://0xinsider.com) — trader grades, whale trade signals, smart-money flow, positions, and insider detection across Polymarket and Kalshi.
+Trader grades, whale-trade signals, smart-money flow, positions, and insider detection for Polymarket and Kalshi. The same data behind the [0xinsider terminal](https://0xinsider.com), as an API.
 
-Same data, three ways in:
+Three ways in:
 
-- **REST API** — `https://api.0xinsider.com/api/v1/` for bots, dashboards, and research code.
-- **Local MCP server** — [`@0xinsider/mcp`](https://www.npmjs.com/package/@0xinsider/mcp) on stdio for Claude Code, Cursor, Codex, Gemini CLI.
-- **Remote MCP** — streamable HTTP MCP for agents that cannot run a local subprocess.
+- **REST API**: `https://api.0xinsider.com/api/v1/` for bots, dashboards, and research code.
+- **Local MCP server**: [`@0xinsider/mcp`](https://www.npmjs.com/package/@0xinsider/mcp) on stdio for Claude Code, Cursor, Codex, Gemini CLI.
+- **Remote MCP**: streamable HTTP for agents that can't run a local subprocess.
 
 One [Insider subscription](https://0xinsider.com/pricing) covers all three.
 
-## What problem this solves
+<Tip>
+  Working in Claude Code, Cursor, or another AI agent? Feed it [llms-full.txt](https://docs.0xinsider.com/llms-full.txt), the whole docs site as one plain-text file. Drop it into context and ask the model to wire up calls, draft a bot, or surface ideas you can build on the data.
+</Tip>
 
-You want to answer questions like:
+## What it solves
 
-- "Which traders consistently beat the market on crypto resolution events?"
-- "Did anyone buy big into this market in the last hour, and are they sharp money?"
-- "Has someone been accumulating shares in a market that hasn't resolved yet — is this insider behavior?"
-- "Where is smart money flowing this week?"
-- "When that S-grade trader took their position, what price did they get filled at?"
+Polymarket and Kalshi publish raw trades. They don't publish grades, signal scores, smart-money breakdowns, position timelines, or pattern detection. 0xinsider builds that layer. The API exposes it.
 
-Polymarket and Kalshi publish raw trades. They do not publish grades, signal scores, smart-money breakdowns, position timelines, or pattern detection. That layer is what 0xinsider builds. The API exposes it.
+So you can answer:
+
+- Which traders consistently beat the market on crypto resolution events?
+- Did anyone buy big into this market in the last hour, and are they sharp?
+- Is someone accumulating shares in a market that hasn't resolved yet?
+- Where is smart money flowing this week?
+- What price did that S-grade trader get filled at?
 
 ## What you can build
 
-- **Trading bots** that fire on whale buys from S-grade traders in a chosen category.
-- **AI agents** that summarize who is winning, what they hold, and at what cost basis.
-- **Research tools** that pull leaderboards, batch trader profiles, history ranges, and category performance.
-- **Dashboards** that visualize where capital is rotating across prediction markets.
+- **Trading bots** that fire on whale buys from S-grade traders in a category.
+- **AI agents** that summarize who's winning, what they hold, and at what cost.
+- **Research tools** that pull leaderboards, trader profiles, history ranges, and category performance.
+- **Dashboards** that show where capital is rotating across prediction markets.
 - **Webhooks** that push whale-trade and radar events to your stack in real time.
 
 ## A real response
 
-Top 1 trader by composite score, right now:
+The top trader by composite score, right now:
 
 ```bash
 curl -H "Authorization: Bearer oxi_sk_live_..." \
@@ -63,13 +67,13 @@ curl -H "Authorization: Bearer oxi_sk_live_..." \
 }
 ```
 
-That is one trader. The leaderboard ranks thousands.
+One trader. The leaderboard ranks thousands.
 
 ## Endpoints
 
 <CardGroup cols={2}>
   <Card title="Get Trader" icon="user" href="/api-reference/endpoint/get-trader">
-    Full profile for a wallet — grade, P&L, win rate, strategy, category strengths.
+    Full profile for a wallet: grade, P&L, win rate, strategy, category strengths.
   </Card>
   <Card title="Batch Get Traders" icon="layer-group" href="/api-reference/endpoint/batch-get-traders">
     Up to 25 trader profiles in one round trip.
@@ -102,7 +106,7 @@ That is one trader. The leaderboard ranks thousands.
     Keyword search across markets with filters.
   </Card>
   <Card title="Insider Radar" icon="radar" href="/api-reference/endpoint/get-insider-radar">
-    Suspicious patterns — pre-resolution accumulation, unusual timing.
+    Suspicious patterns: pre-resolution accumulation, unusual timing.
   </Card>
   <Card title="Event Replay" icon="rotate-right" href="/api-reference/endpoint/get-event-replay-since">
     Replay missed feed events after a disconnection.
@@ -122,7 +126,7 @@ That is one trader. The leaderboard ranks thousands.
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="rocket" href="/quickstart">
-    Generate a key, fire your first request, and walk through a real "follow the whales" workflow.
+    Generate a key, fire your first request, and follow the whales end to end.
   </Card>
   <Card title="Local MCP Server" icon="terminal" href="/integrations/mcp">
     Plug 0xinsider into Claude Code, Cursor, Codex, or Gemini CLI in two minutes.
@@ -131,6 +135,6 @@ That is one trader. The leaderboard ranks thousands.
     Drift-tested source client with typed errors and repeated `expand` params.
   </Card>
   <Card title="Trader Grades" icon="medal" href="/concepts/grades">
-    What S, A, B, C, D, F actually mean — with real profile examples.
+    What S, A, B, C, D, F actually mean, with real profile examples.
   </Card>
 </CardGroup>

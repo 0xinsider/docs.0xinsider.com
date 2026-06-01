@@ -3,13 +3,13 @@ title: "Get Trader"
 openapi: "GET /api/v1/trader/{address}"
 ---
 
-Full profile for a single wallet — grade, realized P&L, win rate, strategy classification, category strengths, and current open positions.
+Full profile for a single wallet: grade, realized P&L, win rate, strategy classification, category strengths, and current open positions.
 
-The path accepts either a raw wallet address (strip the `trd_` prefix) or a known trader username. Heavy fields can be opted into with repeated `expand` query params (`expand=strategy&expand=categories`). The legacy `expand[]` form remains supported.
+The path takes a raw wallet address (strip the `trd_` prefix) or a known trader username. Opt into heavy fields with repeated `expand` query params (`expand=strategy&expand=categories`). The legacy `expand[]` form still works.
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/trader/0x863134d00841b2e200492805a01e1e2f5defaa53?expand=strategy&expand=categories"
 ```
 
-Use this when you already have an address (from the leaderboard or a whale trade) and want the full story behind it. For multiple traders in one call, see [Batch Get Traders](/api-reference/endpoint/batch-get-traders).
+Use this when you have an address (from the leaderboard or a whale trade) and want the full story. For multiple traders in one call, see [Batch Get Traders](/api-reference/endpoint/batch-get-traders).

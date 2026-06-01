@@ -3,16 +3,17 @@ title: "Explore Markets"
 openapi: "GET /api/v1/markets/explore"
 ---
 
-Browse whale-active markets. Unlike `search`, this is the "show me what is going on" feed — already filtered to titled, user-facing markets with real activity.
+Browse whale-active markets. This is the "what's going on right now" feed, already filtered to titled, user-facing markets with real activity. Omit `q` for the full feed, or pass it to narrow by keyword.
 
-Cluster behaviour: grouped events (e.g. "Next US president — by candidate") return one row per event with a primary market injected so you have something to link to.
+Grouped events (e.g. "Next US president by candidate") return one row per event with a primary market injected, so you always have something to link to.
 
 Common filters:
 
-- `category=crypto` — restrict to a category.
-- `platform=polymarket` or `platform=kalshi`.
-- `status=active` — exclude resolved markets.
-- `sort=volume` — sort by recent volume.
+- `q=bitcoin`: keyword search against market titles.
+- `category=crypto`: restrict to a category.
+- `platform=polymarket` or `platform=kalshi`: restrict to one platform.
+- `status=active`: exclude resolved markets.
+- `sort=volume`: sort by recent volume.
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \

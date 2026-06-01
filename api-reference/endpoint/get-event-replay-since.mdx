@@ -3,11 +3,11 @@ title: "Get Event Replay Since"
 openapi: "GET /api/v1/events/feed/since"
 ---
 
-Replay feed events your subscription missed during a disconnection. Pass the timestamp (or event ID) of the last event you successfully processed; the response is everything that came after.
+Replay feed events you missed during a disconnection. Pass the timestamp (or event ID) of the last event you processed, and the response is everything after it.
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/events/feed/since?since=2026-05-08T12:34:56Z&limit=100"
 ```
 
-Cursor-paginated. Use this to catch your worker back up after a crash or deploy — no need to back-fill from the live feed. Pair with [Webhooks](/api-reference/endpoint/list-webhooks) when you would rather not poll at all.
+Cursor-paginated. Catch a worker back up after a crash or deploy without back-filling from the live feed. Pair with [Webhooks](/api-reference/endpoint/list-webhooks) if you'd rather not poll at all.

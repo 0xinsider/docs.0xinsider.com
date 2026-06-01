@@ -12,7 +12,7 @@ https://api.0xinsider.com/api/v1/
 
 ## Authentication
 
-Every endpoint except `/health` requires a Bearer token:
+Every endpoint except `/health` needs a Bearer token:
 
 ```bash
 Authorization: Bearer oxi_sk_live_...
@@ -47,8 +47,8 @@ List endpoints add pagination fields:
 | Field | Meaning |
 |---|---|
 | `object` | Shape of `data`. A singular type (`trader`, `market`, `health`, ...) or `list`. |
-| `data` | The actual payload — an object or an array. |
-| `meta.request_id` | Give us this when you write to support. |
+| `data` | The payload: an object or an array. |
+| `meta.request_id` | Give us this when you contact support. |
 | `meta.cached` | `true` when the response came from cache. |
 | `has_more` / `next_cursor` | Present on list responses. See [Pagination](/concepts/pagination). |
 
@@ -56,7 +56,7 @@ Errors share the same envelope, with `"object": "error"`. See [Errors](/errors).
 
 ## Prefixed IDs
 
-Every ID is prefixed with its type, so an ID is self-describing in logs and chat transcripts.
+Every ID is prefixed with its type, so it's self-describing in logs and chat transcripts.
 
 | Entity | Prefix | Example |
 |---|---|---|
@@ -66,7 +66,7 @@ Every ID is prefixed with its type, so an ID is self-describing in logs and chat
 | Radar flag | `rf_` | `rf_67890` |
 | Request | `req_` | `req_550e8400` |
 
-When an endpoint accepts an address in the path (`/trader/{address}`), pass the raw address — strip the `trd_` prefix. When an endpoint accepts a `condition_id` in the path (`/market/{condition_id}/intel`), pass the raw on-chain condition ID — not the prefixed `mkt_...` form.
+When an endpoint takes an address in the path (`/trader/{address}`), strip the `trd_` prefix and pass the raw address. When it takes a `condition_id` (`/market/{condition_id}/intel`), pass the raw on-chain condition ID, not the prefixed `mkt_...` form.
 
 ## Rate limits
 
@@ -87,13 +87,13 @@ See [Rate Limits](/rate-limits) for backoff patterns.
 
 ## Trust metadata
 
-Newer builder endpoints (snapshots, history ranges, batch reads, reports) attach metadata to provider-owned values so clients can distinguish provider-backed, cached, partial, stale, and unavailable data.
+Newer builder endpoints (snapshots, history ranges, batch reads, reports) attach metadata to provider-owned values so you can tell provider-backed, cached, partial, stale, and unavailable data apart.
 
-The shape per value is:
+Per value:
 
-- `source` — where the value came from (`provider`, `cache`, `computed`).
-- `freshness` — how stale the value is (e.g. an ISO timestamp or `live`).
-- `reconciliation` — whether the value has been cross-checked against the source of truth.
-- `completeness` — `full`, `partial`, or `unavailable`.
+- `source`: where the value came from (`provider`, `cache`, `computed`).
+- `freshness`: how stale it is (an ISO timestamp or `live`).
+- `reconciliation`: whether it's been cross-checked against the source of truth.
+- `completeness`: `full`, `partial`, or `unavailable`.
 
-Rule of thumb: **do not flatten unavailable values into `0`, `[]`, or `{}`.** Read the metadata, and surface "unavailable" to your consumer instead of inventing a zero. Provider data that quietly turns into `0` produces silent bugs downstream.
+Rule of thumb: **don't flatten unavailable values into `0`, `[]`, or `{}`.** Read the metadata and surface "unavailable" to your consumer instead of inventing a zero. Provider data that quietly becomes `0` causes silent bugs downstream.

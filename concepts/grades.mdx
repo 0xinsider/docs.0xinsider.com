@@ -1,11 +1,11 @@
 ---
 title: "Trader Grades"
-description: "What S, A, B, C, D, F mean — with real profile examples."
+description: "What S, A, B, C, D, F mean, with real profile examples."
 ---
 
-Every trader 0xinsider tracks gets a single letter grade. The grade is the short, opinionated answer to "should I pay attention to this wallet?"
+Every trader gets one letter grade. It answers one question: should you pay attention to this wallet?
 
-You will see grades on the leaderboard, on every trader profile, and inside every whale trade object.
+Grades show up on the leaderboard, on every trader profile, and inside every whale trade object.
 
 ## The scale
 
@@ -18,19 +18,19 @@ You will see grades on the leaderboard, on every trader profile, and inside ever
 | **D** | Net losing across the sample. | No |
 | **F** | Persistently losing. Often coin-flip or chasing resolved markets. | No |
 
-The leaderboard only ranks S, A, and B — those are the wallets worth following.
+The leaderboard ranks only S, A, and B. Those are the wallets worth following.
 
 ## What goes into the grade
 
 The score is a composite (0-100) of five inputs:
 
-1. **Realized P&L** — actual profit from closed positions, not unrealized markings.
-2. **Win rate** — share of markets that resolved in their favor.
-3. **Volume** — total traded size. More volume = more signal per trade.
-4. **Market count** — how many distinct markets they have touched (diversification).
-5. **Recency** — penalizes wallets that have not traded in a long time.
+1. **Realized P&L**: actual profit from closed positions, not unrealized markings.
+2. **Win rate**: share of markets that resolved in their favor.
+3. **Volume**: total traded size. More volume means more signal per trade.
+4. **Market count**: distinct markets they have touched (diversification).
+5. **Recency**: penalizes wallets that have not traded in a long time.
 
-The letter is then assigned by score thresholds, with leaderboard eligibility capped at B or better.
+Score thresholds assign the letter. Only B or better makes the leaderboard.
 
 ## Two real profiles, side by side
 
@@ -53,7 +53,7 @@ The letter is then assigned by score thresholds, with leaderboard eligibility ca
 }
 ```
 
-Signals: very high realized P&L, perfect or near-perfect win rate, classifiable strategy, an identifiable category strength.
+Very high realized P&L, near-perfect win rate, a classifiable strategy, a clear category strength.
 
 ### C-grade: noisy and small
 
@@ -74,7 +74,7 @@ Signals: very high realized P&L, perfect or near-perfect win rate, classifiable 
 }
 ```
 
-Signals: P&L around breakeven, a coin-flip win rate, no detectable strategy. Visible in the API, but not in the leaderboard.
+P&L near breakeven, a coin-flip win rate, no detectable strategy. Visible in the API, but not on the leaderboard.
 
 ## Using grades in the API
 
@@ -98,7 +98,7 @@ curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/leaderboard?strategy=swing_trader"
 ```
 
-Some traders are good enough to make the leaderboard but lack a classifiable strategy. In that case `strategy_type` is `null` — treat it as nullable when filtering client-side.
+Some traders make the leaderboard but lack a classifiable strategy. Their `strategy_type` is `null`, so treat the field as nullable when filtering client-side.
 
 ### Combine grade + category
 
@@ -111,4 +111,4 @@ curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
 
 ## A note on null strategies
 
-A trader on the leaderboard without a strategy classification just means we have not detected a stable pattern. They are still a graded trader. Do not filter them out unless your use case actually requires a labeled strategy.
+A leaderboard trader without a strategy classification just means we haven't detected a stable pattern yet. They are still a graded trader. Don't filter them out unless you actually need a labeled strategy.

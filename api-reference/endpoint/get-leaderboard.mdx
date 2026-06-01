@@ -3,9 +3,9 @@ title: "Get Leaderboard"
 openapi: "GET /api/v1/leaderboard"
 ---
 
-Top-ranked traders by composite score. Only S, A, and B grades appear — see [Trader Grades](/concepts/grades).
+Top traders by composite score. Only S, A, and B grades appear; see [Trader Grades](/concepts/grades).
 
-Filter by category (e.g. `crypto`, `politics`, `sports`) or by strategy (`swing_trader`, etc.). Some traders rank but have no detected strategy; `strategy_type` is nullable.
+Filter by category (`crypto`, `politics`, `sports`) or strategy (`swing_trader`, and others). Some traders rank with no detected strategy, so `strategy_type` is nullable.
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \

@@ -3,9 +3,9 @@ title: "Get Insider Radar"
 openapi: "GET /api/v1/insider-radar"
 ---
 
-Flags wallets behaving like they know something the market does not — pre-resolution accumulation, unusually well-timed entries, or one-sided conviction with no offsetting hedges.
+Flags wallets that look like they know something the market doesn't: pre-resolution accumulation, well-timed entries, or one-sided conviction with no hedges.
 
-Each flag carries a `suspicion_score` and a reason. High scores are worth a closer look; they are not proof of wrongdoing.
+Each flag carries a `suspicion_score` and a reason. A high score is worth a closer look, not proof of wrongdoing.
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
