@@ -3,9 +3,11 @@ title: "Get Usage"
 openapi: "GET /api/v1/usage"
 ---
 
-Read your current request budget without spending a request against it.
+Read your current request budget without spending primary request quota.
 
-`GET /api/v1/usage` returns the live per-minute limiter window plus UTC-day usage. The daily `limit` and `remaining` fields are `null` because V1 does not have a daily hard cap.
+`GET /api/v1/usage` returns the live per-minute primary limiter window plus UTC-day usage. It does not increment the primary request counter and does not log itself into daily usage. To protect the usage-count query, the endpoint has its own 100 reads/minute per-user guard; a 429 from this endpoint is a backoff signal, not evidence that primary quota was spent.
+
+The daily `limit` and `remaining` fields are `null` because V1 does not have a daily hard cap.
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \

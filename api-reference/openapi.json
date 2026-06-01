@@ -4504,8 +4504,8 @@
           "Usage"
         ],
         "operationId": "getUsage",
-        "summary": "Inspect current API usage without spending a request",
-        "description": "Returns the authenticated caller sliding-window request budget and UTC-day usage. This endpoint is authenticated but does not increment the Redis rate-limit counter or log itself into the API usage table.",
+        "summary": "Inspect current API usage without spending primary request quota",
+        "description": "Returns the authenticated caller sliding-window request budget and UTC-day usage. This endpoint is authenticated and does not increment the primary Redis rate-limit counter or log itself into the API usage table; it is separately throttled at 100 reads/minute per user to protect the usage-count query.",
         "security": [
           {
             "bearerAuth": []
@@ -4575,6 +4575,9 @@
           },
           "423": {
             "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
           },
           "503": {
             "$ref": "#/components/responses/RateLimitUnavailable"
