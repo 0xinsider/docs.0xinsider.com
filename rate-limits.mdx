@@ -46,11 +46,12 @@ Batch responses additionally carry:
 | `X-Batch-RateLimit-Remaining` | Item units remaining in the window. |
 | `X-Batch-RateLimit-Reset` | Unix timestamp when the batch window resets. |
 
-Browser clients can read these headers on `/api/v1/*` responses because the
-public API exposes them through CORS. The public API also exposes `Retry-After`,
-`ETag`, `X-Request-Id`, `X-Request-Cost`, `Mcp-Session-Id`, and
-`X-Mcp-Error-Code`. Do not use credentialed CORS for public API calls; send only
-the Bearer token header.
+Browser clients can read these headers on public REST `/api/v1/*` responses
+because the public API exposes them through CORS. The public API also exposes
+`Retry-After`, `ETag`, `X-Request-Id`, `X-Request-Cost`, `Mcp-Session-Id`, and
+`X-Mcp-Error-Code`. Remote MCP at `/api/v1/mcp` still validates `Origin`
+against the 0xinsider/localhost allowlist. Do not use credentialed CORS for
+public API calls; send only the Bearer token header.
 
 If you go over either budget, you get a `429` plus a `Retry-After` header in seconds:
 

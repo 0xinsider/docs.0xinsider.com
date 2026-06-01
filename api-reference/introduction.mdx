@@ -87,9 +87,13 @@ See [Rate Limits](/rate-limits) for backoff patterns.
 
 ## Browser CORS
 
-Public `/api/v1/*` endpoints and remote MCP (`/api/v1/mcp`) are callable from
-third-party browser origins with `Authorization: Bearer ...`. Do not send
-cookies or `credentials: "include"` on public API calls.
+Public REST `/api/v1/*` endpoints, excluding remote MCP (`/api/v1/mcp`), are
+callable from third-party browser origins with `Authorization: Bearer ...`. Do
+not send cookies or `credentials: "include"` on public API calls.
+
+Remote MCP at `/api/v1/mcp` is also non-credentialed, but still validates
+`Origin` against the 0xinsider/localhost allowlist per the MCP Streamable HTTP
+DNS-rebinding guidance.
 
 Allowed public request headers:
 

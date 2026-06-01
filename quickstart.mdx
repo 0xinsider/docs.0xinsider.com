@@ -48,9 +48,11 @@ curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
 `status: "ok"` means you're wired up.
 
 <Tip>
-  Browser apps can call `https://api.0xinsider.com/api/v1/*` directly from any
-  origin with `Authorization: Bearer ...`; do not send cookies or
-  `credentials: "include"`. Browser JavaScript can read `X-RateLimit-*`,
+  Browser apps can call REST endpoints under
+  `https://api.0xinsider.com/api/v1/*` directly from any origin with
+  `Authorization: Bearer ...`; do not send cookies or `credentials: "include"`.
+  Remote MCP at `/api/v1/mcp` still validates `Origin` against the
+  0xinsider/localhost allowlist. Browser JavaScript can read `X-RateLimit-*`,
   `Retry-After`, `ETag`, `X-Request-Id`, `X-Request-Cost`,
   `X-Batch-RateLimit-*`, `Mcp-Session-Id`, and `X-Mcp-Error-Code` response
   headers. Account/key-management routes such as `/api/keys` stay
