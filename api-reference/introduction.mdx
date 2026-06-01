@@ -70,7 +70,7 @@ When an endpoint accepts an address in the path (`/trader/{address}`), pass the 
 
 ## Rate limits
 
-100 requests per minute per user, sliding window. Batch endpoints have an additional 100-item-unit-per-minute budget.
+100 requests per minute per user, sliding window. Batch endpoints have an additional 100-item-unit-per-minute budget. `GET /api/v1/usage` does not spend primary quota, but it has its own 100 reads/minute guard.
 
 | Header | Meaning |
 |---|---|

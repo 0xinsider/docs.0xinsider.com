@@ -45,6 +45,13 @@
             ]
           },
           {
+            "group": "Discovery",
+            "pages": [
+              "api-reference/endpoint/get-api-discovery",
+              "api-reference/endpoint/redirect-api-openapi-spec"
+            ]
+          },
+          {
             "group": "Traders",
             "pages": [
               "api-reference/endpoint/get-trader",
@@ -88,6 +95,12 @@
             "group": "Events",
             "pages": [
               "api-reference/endpoint/get-event-replay-since"
+            ]
+          },
+          {
+            "group": "Usage",
+            "pages": [
+              "api-reference/endpoint/get-usage"
             ]
           },
           {

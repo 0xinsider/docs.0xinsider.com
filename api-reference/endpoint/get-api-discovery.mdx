@@ -1,0 +1,14 @@
+---
+title: "Get API Discovery"
+openapi: "GET /api/v1"
+---
+
+Discover the public V1 API surface without an API key.
+
+`GET /api/v1` returns the canonical API base URL, full docs URL, OpenAPI URL, unauthenticated health URL, and representative authenticated data routes.
+
+```bash
+curl "https://api.0xinsider.com/api/v1"
+```
+
+Use this endpoint as the first API-origin probe for agents, SDK setup flows, and uptime checks that need to find the docs and health endpoints before authenticating.

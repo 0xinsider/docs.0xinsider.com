@@ -1,0 +1,14 @@
+---
+title: "Redirect OpenAPI Spec"
+openapi: "GET /api/v1/openapi.json"
+---
+
+Resolve the canonical OpenAPI document from the API origin.
+
+`GET /api/v1/openapi.json` returns a temporary redirect to the web-origin spec at `https://0xinsider.com/api/v1/openapi.json`. The redirect avoids duplicating OpenAPI ownership while still letting API-origin probes discover the spec.
+
+```bash
+curl -I "https://api.0xinsider.com/api/v1/openapi.json"
+```
+
+Use the `Location` header as the canonical OpenAPI URL for code generation and docs tooling.

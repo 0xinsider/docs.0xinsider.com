@@ -7,9 +7,12 @@ The API allows **100 requests per minute** on a sliding window. The limit is **p
 
 Batch read endpoints (e.g. `POST /api/v1/traders/batch`, `POST /api/v1/markets/intel/batch`) have a **separate** budget measured in *item units*, also 100 per minute. A 25-item batch reserves 25 item units before it executes.
 
+`GET /api/v1/usage` does not spend primary request quota or log itself into daily usage. It has a separate 100 reads/minute per-user guard so quota introspection cannot create unbounded usage-count load.
+
 | Setting | Value |
 |---|---|
 | Requests per minute | 100 |
+| Usage reads per minute | 100 |
 | Batch item units per minute | 100 |
 | Window type | Sliding (not bucket-of-60-seconds) |
 | Scope | Per user (sum of all keys) |
@@ -24,6 +27,7 @@ Every authenticated response carries:
 X-RateLimit-Limit:     100
 X-RateLimit-Remaining: 87
 X-RateLimit-Reset:     1774450631
+X-Request-Id:          req_550e8400
 ```
 
 | Header | Meaning |
@@ -31,6 +35,7 @@ X-RateLimit-Reset:     1774450631
 | `X-RateLimit-Limit` | Max requests per minute. |
 | `X-RateLimit-Remaining` | Remaining slots in the current window. |
 | `X-RateLimit-Reset` | Unix timestamp (seconds) when the window resets. |
+| `X-Request-Id` | Request identifier to include when reporting a support issue. |
 
 Batch responses additionally carry:
 
@@ -107,4 +112,11 @@ body = get_with_backoff(
 - **Ask for more per request.** Bump `limit` up to 100 instead of making 10 calls of `limit=10`.
 - **Use batch endpoints when you already know your IDs.** One batch call for 25 traders costs 25 batch-item units, but only one regular request.
 - **Watch `X-RateLimit-Remaining`.** If it crosses below 10, pause your polling for the next reset.
+- **Use `/usage` for budget checks.** `GET /api/v1/usage` reads the current primary limiter window without incrementing it. Respect its own 100 reads/minute cap instead of using another endpoint as a quota probe.
 - **One process owns the polling.** Avoid every container in a fleet polling the same endpoint with the same key.
+
+## Conditional GETs
+
+Deterministic read endpoints return an `ETag` header. Re-send it as `If-None-Match` to receive `304 Not Modified` with an empty body when the payload is unchanged.
+
+This applies to trader, positions, whale-trades, whale-trades/history, leaderboard, markets/explore, market intel, market snapshot, insider-radar, position-timeline, and health responses. Report snapshot endpoints are not conditional yet because their body includes request-time `generated_at`.
