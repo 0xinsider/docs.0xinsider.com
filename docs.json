@@ -48,6 +48,7 @@
             "group": "Discovery",
             "pages": [
               "api-reference/endpoint/get-api-discovery",
+              "api-reference/endpoint/get-platforms",
               "api-reference/endpoint/redirect-api-openapi-spec"
             ]
           },
@@ -56,10 +57,13 @@
             "pages": [
               "api-reference/endpoint/get-trader",
               "api-reference/endpoint/batch-get-traders",
+              "api-reference/endpoint/get-trader-pnl",
               "api-reference/endpoint/get-position-timeline",
-              "api-reference/endpoint/get-position-timeline-by-id",
+              "api-reference/endpoint/get-trader-position-timeline",
+              "api-reference/endpoint/list-large-positions",
               "api-reference/endpoint/get-trader-export-snapshot",
-              "api-reference/endpoint/get-leaderboard"
+              "api-reference/endpoint/get-leaderboard",
+              "api-reference/endpoint/list-trending-wallets"
             ]
           },
           {
@@ -75,7 +79,8 @@
               "api-reference/endpoint/explore-markets",
               "api-reference/endpoint/get-market-intel",
               "api-reference/endpoint/batch-get-market-intel",
-              "api-reference/endpoint/get-market-snapshot"
+              "api-reference/endpoint/get-market-snapshot",
+              "api-reference/endpoint/list-smart-money-flows"
             ]
           },
           {
@@ -100,6 +105,12 @@
             ]
           },
           {
+            "group": "Streaming",
+            "pages": [
+              "api-reference/endpoint/get-stream"
+            ]
+          },
+          {
             "group": "Usage",
             "pages": [
               "api-reference/endpoint/get-usage"
@@ -120,6 +131,7 @@
           {
             "group": "Reports",
             "pages": [
+              "api-reference/endpoint/get-reports",
               "api-reference/endpoint/get-daily-report-snapshot",
               "api-reference/endpoint/get-weekly-report-snapshot",
               "api-reference/endpoint/get-monthly-report-snapshot"

@@ -1,0 +1,20 @@
+---
+title: "List Smart Money Flows"
+openapi: "GET /api/v1/markets/smart-money-flows"
+---
+
+Markets ranked by absolute net S/A/B-grade whale flow over a requested timeframe. The discovery endpoint for "where is smart money flowing right now" before you drill into one market with [Get Market Intel](/api-reference/endpoint/get-market-intel).
+
+Useful filters:
+
+- `timeframe=24h`: lookback window for the grade-filtered flow aggregation.
+- `min_grade=A`: minimum trader grade. Default `B` means S/A/B only; unranked traders are excluded.
+- `category=basketball`: case-insensitive market category. A canonical bucket name matches every provider member it covers.
+- `direction=buy`: optional post-aggregate flow direction filter.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/markets/smart-money-flows?timeframe=24h&min_grade=A&limit=50"
+```
+
+Pagination is anchored by an opaque cursor that carries the first page's `as_of` timestamp, so new whale trades do not reorder page 2. Send `If-None-Match` with a prior `ETag` to get `304 Not Modified` when nothing changed. See [Pagination](/concepts/pagination).

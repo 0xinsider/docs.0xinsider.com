@@ -1,0 +1,20 @@
+---
+title: "List Large Positions"
+openapi: "GET /api/v1/large-positions"
+---
+
+The largest current open positions held by graded traders, value-descending, with opaque cursor pagination. Polymarket-only by design: the scanner filters on `platform = 'polymarket'`, so a Kalshi or unknown `condition_id` filter returns an empty list rather than fabricated rows.
+
+Useful filters:
+
+- `min_size=25000`: floor on position value in USD.
+- `min_grade=A`: minimum trader grade.
+- `category=crypto`: provider-backed market category.
+- `condition_id=...`: scope to one market. Accepts the raw provider `condition_id` or the `mkt_`-prefixed market id.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/large-positions?min_grade=A&min_size=25000&limit=50"
+```
+
+The API key already proves an active subscription, so authed callers get full access with no teaser cap. Cursor-paginated: pass `next_cursor` from one response as `cursor` on the next. See [Pagination](/concepts/pagination).

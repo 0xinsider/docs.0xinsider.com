@@ -1,0 +1,15 @@
+---
+title: "List Trending Wallets"
+openapi: "GET /api/v1/leaderboard/trending"
+---
+
+Wallets ranked by trailing-window realized P&L, with opaque page-cursor pagination. Each row carries window P&L, volume, distinct markets traded, grade, hot-streak tier, and a zero-filled daily P&L series. Polymarket-only discovery.
+
+Set the lookback with `window`. Pick a wider window for durable performers, a tighter one for who is hot right now.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/leaderboard/trending?window=7d&limit=20"
+```
+
+The ranking is served from a warmed read model. A cold read returns `503` with a `Retry-After`, never a fabricated ranking, so retry after the hint and the warmed result follows. Cursor-paginated: pass `next_cursor` as `cursor`. See [Pagination](/concepts/pagination).
