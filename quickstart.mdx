@@ -92,11 +92,11 @@ curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&limit=50"
 ```
 
-Layer filters. A-grade or better, crypto only, buy side:
+Layer filters. A-grade or better, crypto only, $10k+ notional:
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
-  "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&category=crypto&side=buy&limit=50"
+  "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&category=crypto&min_size=10000&limit=50"
 ```
 
 ### Step D: Drill into one market

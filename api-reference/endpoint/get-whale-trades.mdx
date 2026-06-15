@@ -9,12 +9,13 @@ Useful filters:
 
 - `min_grade=A`: only trades from S/A-grade traders (set `B` to widen).
 - `category=crypto`: restrict to a market category.
-- `side=buy`: `buy` or `sell`.
-- `min_size_usd=10000`: floor on trade size.
+- `min_size=10000`: floor on trade notional in USD.
+
+Each item carries the trade's `side` (`buy`/`sell`) in the response; there is no `side` request filter.
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
-  "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&category=crypto&side=buy&limit=50"
+  "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&category=crypto&min_size=10000&limit=50"
 ```
 
 Cursor-paginated by timestamp. For a fixed time range (backtests, recap reports), use [Whale Trades History](/api-reference/endpoint/get-whale-trades-history). To fetch one returned `wt_...` item again, use [Get Whale Trade](/api-reference/endpoint/get-whale-trade).
