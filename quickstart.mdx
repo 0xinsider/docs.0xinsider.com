@@ -47,6 +47,18 @@ curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
 
 `status: "ok"` means you're wired up.
 
+<Tip>
+  Browser apps can call REST endpoints under
+  `https://api.0xinsider.com/api/v1/*` directly from any origin with
+  `Authorization: Bearer ...`; do not send cookies or `credentials: "include"`.
+  Remote MCP at `/api/v1/mcp` still validates `Origin` against the
+  0xinsider/localhost allowlist. Browser JavaScript can read `X-RateLimit-*`,
+  `Retry-After`, `ETag`, `X-Request-Id`, `X-Request-Cost`,
+  `X-Batch-RateLimit-*`, `Mcp-Session-Id`, and `X-Mcp-Error-Code` response
+  headers. Account/key-management routes such as `/api/keys` stay
+  first-party-only and credentialed.
+</Tip>
+
 ## 3. Follow the smartest traders
 
 Not "who's #1," but "what are the best traders doing right now, and am I early?"
@@ -80,11 +92,11 @@ curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&limit=50"
 ```
 
-Layer filters. A-grade or better, crypto only, buy side:
+Layer filters. A-grade or better, crypto only, $10k+ notional:
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
-  "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&category=crypto&side=buy&limit=50"
+  "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&category=crypto&min_size=10000&limit=50"
 ```
 
 ### Step D: Drill into one market
