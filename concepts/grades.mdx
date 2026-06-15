@@ -102,11 +102,11 @@ Some traders make the leaderboard but lack a classifiable strategy. Their `strat
 
 ### Combine grade + category
 
-What are A-grade or better crypto traders buying right now?
+What are A-grade or better crypto traders trading right now? (Each item carries its `side` in the response, so you can split buys from sells client-side.)
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
-  "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&category=crypto&side=buy&limit=50"
+  "https://api.0xinsider.com/api/v1/whale-trades?min_grade=A&category=crypto&limit=50"
 ```
 
 ## A note on null strategies
