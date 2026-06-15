@@ -1,0 +1,19 @@
+---
+title: "Get Reports"
+openapi: "GET /api/v1/reports"
+---
+
+One route for every report granularity. Pass `granularity` (`daily`, `weekly`, or `monthly`) and the matching `period` token, and the response is byte-identical to the legacy `/api/v1/reports/{daily,weekly,monthly}` route for the same window.
+
+The `period` token shape depends on the granularity:
+
+- `daily`: a UTC date, `YYYY-MM-DD`.
+- `weekly`: an ISO week `YYYY-WW`, or a `from,to` pair of `YYYY-MM-DD` dates.
+- `monthly`: a calendar month, `YYYY-MM`.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/reports?granularity=daily&period=2026-05-08"
+```
+
+The per-granularity caps match the legacy routes (daily 50, weekly 100, monthly 200), and the three legacy routes stay live. Snapshots carry trust metadata, so partial or unavailable sections are explicit. The singular [Daily](/api-reference/endpoint/get-daily-report-snapshot), [Weekly](/api-reference/endpoint/get-weekly-report-snapshot), and [Monthly](/api-reference/endpoint/get-monthly-report-snapshot) routes return the same bodies.

@@ -1,0 +1,14 @@
+---
+title: "Get Platforms"
+openapi: "GET /api/v1/platforms"
+---
+
+The platform capability matrix: which V1 intelligence surfaces are supported, partial, or unsupported per provider platform. Read it once at integration time so you know which endpoints return data for Polymarket versus Kalshi before you call them.
+
+This is an unauthenticated discovery endpoint, so you can fetch it without an API key.
+
+```bash
+curl "https://api.0xinsider.com/api/v1/platforms"
+```
+
+Use it to gate features client-side instead of hardcoding per-platform assumptions that drift as coverage expands.

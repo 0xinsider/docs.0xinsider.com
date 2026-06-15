@@ -1,0 +1,15 @@
+---
+title: "Get Stream"
+openapi: "GET /api/v1/stream"
+---
+
+A resumable Server-Sent Events stream of the live feed envelopes the platform broadcasts: whale-trade pulses and other public and insider feed events. This is a long-lived `text/event-stream` response. Keep the connection open and read frames as they arrive. It forwards the same backend-owned envelope shape as the internal feed, with no provider data recomputed.
+
+Authenticate with your `oxi_sk` Bearer key like every other `/api/v1` endpoint. Connection counts are limited per API key and across the cluster: when either cap is exceeded you get `429` with a `Retry-After`, and `503` with a `Retry-After` if the admission backend is briefly unavailable.
+
+```bash
+curl -N -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/stream"
+```
+
+Every frame carries an SSE `id` equal to the envelope sequence. To resume after a disconnect, reconnect with the `Last-Event-ID` header (or the `last_event_id` / `seq` query fallback when you cannot set the header); the stream replays the strictly-newer window before resuming live. If your resume point predates the retained window, the stream emits one `event: resync` marker instead of silently skipping frames. Idle connections receive periodic `: keep-alive` comment lines.

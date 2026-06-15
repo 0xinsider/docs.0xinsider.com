@@ -53,6 +53,17 @@ entry:
 python3 scripts/check-openapi-parity.py
 ```
 
+The docs OpenAPI spec (`api-reference/openapi.json`) is a synced copy of the
+app's canonical spec (`web/public/api/v1/openapi.json` in the 0xinsider repo),
+which is the single source of truth. After re-syncing it, confirm the two specs
+are structurally identical (run from a sibling checkout, or adjust the path):
+
+```bash
+cp ../0xinsider/web/public/api/v1/openapi.json api-reference/openapi.json
+python3 scripts/check-spec-sync.py --app-spec ../0xinsider/web/public/api/v1/openapi.json
+python3 scripts/check-openapi-parity.py
+```
+
 ## Links
 
 - [API docs](https://docs.0xinsider.com)

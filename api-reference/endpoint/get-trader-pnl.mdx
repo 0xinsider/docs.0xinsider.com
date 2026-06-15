@@ -1,0 +1,15 @@
+---
+title: "Get Trader P&L"
+openapi: "GET /api/v1/trader/{address}/pnl"
+---
+
+A trader's daily P&L time series plus pre-derived stats, read from the precomputed `daily_pnl` read model rather than a per-request equity replay. The response carries daily cumulative P&L entries, period stats (all-time, 90d, 30d, 7d), monthly aggregation, per-year totals, and the drawdown series.
+
+`{address}` accepts a `0x...` wallet address, a username, or a `trd_`-prefixed trader id.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/trader/0x863134d00841b2e200492805a01e1e2f5defaa53/pnl"
+```
+
+A resolved trader with no daily P&L returns an empty structured object with `200`; an unknown address returns `404`. The series spans both providers wherever the read model has it.

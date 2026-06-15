@@ -12,7 +12,6 @@ This changelog tracks externally visible REST API changes only. Documentation-on
 
   It ranks markets by absolute net flow from S, A, and B grade traders over a `1h`, `4h`, `24h`, or `7d` window, with `platform`, `category`, `min_grade`, and `direction` filters. Pagination uses an opaque cursor anchored to the first page's `as_of`, so new whale trades do not reorder later pages. Drill into a single market with [`GET /api/v1/market/{condition_id}/intel`](/api-reference/endpoint/get-market-intel).
 </Update>
-
 <Update label="June 1, 2026" description="Remote MCP read parity, round-trippable IDs, usage and caching headers, and easier discovery">
   **Remote MCP read parity.** [`POST /api/v1/mcp`](/api-reference/endpoint/remote-mcp) now exposes 21 read-only tools through `tools/list`, covering the public V1 reads: batch reads, history, event replay, webhook reads, reports, market snapshots, and trader exports. Webhook mutations stay REST-only, and the endpoint is tools-only (no resources or prompts).
 

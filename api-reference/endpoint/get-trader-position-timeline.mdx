@@ -1,0 +1,23 @@
+---
+title: "Get Trader Position Timeline"
+sidebarTitle: "Trader position timeline"
+openapi: "GET /api/v1/traders/{trader}/position-timeline"
+---
+
+Per-market fill history for one trader, newest first, with a server-computed `running_amount` and `running_avg_price` on each fill so you can see how a position was built or unwound without recomputing it client-side. Polymarket fills only.
+
+`{trader}` accepts all four identity shapes, resolved by a single shared trader-identity resolver:
+
+- a `0x...` wallet address
+- a username
+- a `trd_`-prefixed trader id
+- a bare integer `traders.id` (use this when you are paging other API responses and already hold the numeric id)
+
+`condition_id` is required: one timeline per `(trader, market)`.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/traders/0x863134d00841b2e200492805a01e1e2f5defaa53/position-timeline?condition_id=0xabc..."
+```
+
+Only HOT and WARM tier traders are tracked; other traders return `404`. The body is byte-identical to the wallet-keyed [Get Position Timeline](/api-reference/endpoint/get-position-timeline) for the same `(trader, market)`. Cursor-paginated: pass `next_cursor` as `cursor`. Send `If-None-Match` with a prior `ETag` to get `304 Not Modified` when nothing changed.

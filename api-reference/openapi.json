@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "0xinsider API",
-    "description": "Find your edge on Polymarket and Kalshi. Every wallet graded, every trade scored, every outlier flagged. API exposes trader grades, whale trades, smart money signals, and insider detection for AI agents, trading bots, and research tools. Normal API requests use a 30-second server timeout that returns HTTP 408 Request Timeout with an empty body when exceeded. Public REST /api/v1/* endpoints, excluding /api/v1/mcp, use Bearer-token based non-credentialed browser CORS: any Origin may call with Authorization, Content-Type, If-None-Match, and Mcp-Session-Id request headers. Remote MCP at /api/v1/mcp is non-credentialed, but still validates Origin against the 0xinsider/localhost allowlist per MCP Streamable HTTP DNS-rebinding guidance. Successful browser CORS preflight responses advertise Access-Control-Max-Age: 86400. Browser JavaScript may read X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After, ETag, X-Request-Id, X-Request-Cost, X-Batch-RateLimit-Limit, X-Batch-RateLimit-Remaining, X-Batch-RateLimit-Reset, Mcp-Session-Id, and X-Mcp-Error-Code response headers. Credentialed first-party routes such as /api/keys, /api/billing, and auth endpoints remain restricted to configured 0xinsider origins.",
+    "description": "Find your edge on Polymarket and Kalshi. Every wallet graded, every trade scored, every outlier flagged. API exposes trader grades, whale trades, smart money signals, and insider detection for AI agents, trading bots, and research tools. Normal API requests use a 30-second server timeout that returns HTTP 408 Request Timeout with an empty body when exceeded. Public REST /api/v1/* endpoints, excluding /api/v1/mcp, use Bearer-token based non-credentialed browser CORS: any Origin may call with Authorization, Content-Type, If-None-Match, Idempotency-Key, and Mcp-Session-Id request headers. Remote MCP at /api/v1/mcp is non-credentialed, but still validates Origin against the 0xinsider/localhost allowlist per MCP Streamable HTTP DNS-rebinding guidance. Successful browser CORS preflight responses advertise Access-Control-Max-Age: 86400. Browser JavaScript may read X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After, ETag, X-Request-Id, X-Request-Cost, X-Batch-RateLimit-Limit, X-Batch-RateLimit-Remaining, X-Batch-RateLimit-Reset, Mcp-Session-Id, and X-Mcp-Error-Code response headers. Credentialed first-party routes such as /api/keys, /api/billing, and auth endpoints remain restricted to configured 0xinsider origins.",
     "version": "1.0.0",
     "contact": {
       "name": "0xinsider",
@@ -13,7 +13,11 @@
   "servers": [
     {
       "url": "https://api.0xinsider.com",
-      "description": "Production"
+      "description": "Production (live data). Authenticate with a live key (oxi_sk_live_...); requires an active Insider subscription."
+    },
+    {
+      "url": "https://api.0xinsider.com",
+      "description": "Sandbox / test mode (deterministic fixture data, no live rows). Authenticate with a test key (oxi_sk_test_...) on a free account. Same base URL and paths as production: the key class selects live vs sandbox. Test keys are billing-exempt, served from a fixed fixture dataset, and never read live data or persist writes; webhooks, usage, and MCP responses show the response shape only."
     }
   ],
   "security": [
@@ -22,264 +26,14 @@
     }
   ],
   "paths": {
-    "/api/v1/markets/smart-money-flows": {
-      "get": {
-        "operationId": "listSmartMoneyFlows",
-        "summary": "List ranked smart-money flows",
-        "description": "Ranks markets by absolute net S/A/B-grade whale flow over a requested timeframe. Use this discovery endpoint to answer where smart money is flowing before drilling into a specific market with /api/v1/market/{condition_id}/intel. Pagination is anchored by an opaque cursor carrying the first page as_of timestamp so new whale trades do not reorder page 2.",
-        "tags": [
-          "Markets"
-        ],
-        "parameters": [
-          {
-            "name": "timeframe",
-            "in": "query",
-            "description": "Lookback window for grade-filtered whale flow aggregation.",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "1h",
-                "4h",
-                "24h",
-                "7d"
-              ],
-              "default": "24h"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "description": "Page size.",
-            "schema": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 100,
-              "default": 20
-            }
-          },
-          {
-            "name": "cursor",
-            "in": "query",
-            "description": "Opaque cursor from previous response's next_cursor. Encodes the first-page as_of timestamp plus the last row's absolute net flow and condition_id.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "category",
-            "in": "query",
-            "description": "Case-insensitive exact match against provider-backed market_canonical.category.",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "platform",
-            "in": "query",
-            "description": "Filter by source platform. all is a request-side no-op.",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "polymarket",
-                "kalshi",
-                "all"
-              ],
-              "default": "all"
-            }
-          },
-          {
-            "name": "min_grade",
-            "in": "query",
-            "description": "Minimum latest trader grade included in the flow. Default B means S/A/B only; unranked traders are excluded.",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "S",
-                "A",
-                "B",
-                "C",
-                "D",
-                "F"
-              ],
-              "default": "B"
-            }
-          },
-          {
-            "name": "direction",
-            "in": "query",
-            "description": "Optional post-aggregate flow direction filter.",
-            "schema": {
-              "type": "string",
-              "enum": [
-                "YES",
-                "NO"
-              ]
-            }
-          },
-          {
-            "name": "If-None-Match",
-            "in": "header",
-            "required": false,
-            "description": "Conditional GET validator from a previous ETag. Matching values return 304 Not Modified with an empty body.",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Ranked market smart-money flows",
-            "headers": {
-              "X-RateLimit-Limit": {
-                "$ref": "#/components/headers/X-RateLimit-Limit"
-              },
-              "X-RateLimit-Remaining": {
-                "$ref": "#/components/headers/X-RateLimit-Remaining"
-              },
-              "X-RateLimit-Reset": {
-                "$ref": "#/components/headers/X-RateLimit-Reset"
-              },
-              "X-Request-Id": {
-                "$ref": "#/components/headers/X-Request-Id"
-              },
-              "ETag": {
-                "$ref": "#/components/headers/ETag"
-              }
-            },
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "object",
-                    "data",
-                    "has_more",
-                    "meta"
-                  ],
-                  "properties": {
-                    "object": {
-                      "type": "string",
-                      "const": "list"
-                    },
-                    "data": {
-                      "type": "array",
-                      "items": {
-                        "$ref": "#/components/schemas/SmartMoneyFlowMarket"
-                      }
-                    },
-                    "has_more": {
-                      "type": "boolean"
-                    },
-                    "next_cursor": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "total": {
-                      "type": "integer",
-                      "nullable": true
-                    },
-                    "meta": {
-                      "$ref": "#/components/schemas/ResponseMeta"
-                    }
-                  }
-                },
-                "examples": {
-                  "success": {
-                    "summary": "Successful response",
-                    "value": {
-                      "object": "list",
-                      "data": [
-                        {
-                          "market": {
-                            "id": "mkt_0x123",
-                            "condition_id": "0x123",
-                            "title": "Will BTC close above $100k this week?",
-                            "slug": "btc-close-above-100k-this-week",
-                            "category": "Crypto",
-                            "platform": "polymarket"
-                          },
-                          "smart_money": {
-                            "net_flow_usd": 12345.67,
-                            "direction": "YES",
-                            "whale_trade_count": 7,
-                            "buy_volume_usd": 20000,
-                            "sell_volume_usd": 7654.33
-                          },
-                          "timeframe": "24h"
-                        }
-                      ],
-                      "has_more": false,
-                      "next_cursor": null,
-                      "meta": {
-                        "request_id": "req_example",
-                        "cached": false
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "304": {
-            "description": "Not Modified. Returned when If-None-Match matches the current payload.",
-            "headers": {
-              "ETag": {
-                "$ref": "#/components/headers/ETag"
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequest"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "402": {
-            "$ref": "#/components/responses/SubscriptionRequired"
-          },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
-          },
-          "408": {
-            "$ref": "#/components/responses/RequestTimeout"
-          },
-          "423": {
-            "$ref": "#/components/responses/Locked"
-          },
-          "429": {
-            "$ref": "#/components/responses/RateLimited"
-          },
-          "503": {
-            "$ref": "#/components/responses/RateLimitUnavailable"
-          }
-        },
-        "x-codeSamples": [
-          {
-            "lang": "curl",
-            "label": "cURL",
-            "source": "curl -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  'https://api.0xinsider.com/api/v1/markets/smart-money-flows?timeframe=7d&min_grade=B&limit=10'"
-          }
-        ],
-        "x-examples": {
-          "success": {
-            "object": "list",
-            "data": [],
-            "has_more": false,
-            "next_cursor": null,
-            "meta": {
-              "request_id": "req_example",
-              "cached": false
-            }
-          }
-        }
-      }
-    },
     "/api/v1": {
       "get": {
         "operationId": "getApiDiscovery",
         "summary": "API discovery",
         "description": "Unauthenticated API-origin discovery document pointing agents to the canonical API base URL, full docs, web-origin OpenAPI spec, health check, and representative authenticated data routes.",
-        "tags": ["System"],
+        "tags": [
+          "System"
+        ],
         "security": [],
         "x-codeSamples": [
           {
@@ -295,7 +49,11 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["object", "data", "meta"],
+                  "required": [
+                    "object",
+                    "data",
+                    "meta"
+                  ],
                   "properties": {
                     "object": {
                       "type": "string",
@@ -316,8 +74,10 @@
                     "docs_url": "https://0xinsider.com/llms-full.txt",
                     "openapi_url": "https://0xinsider.com/api/v1/openapi.json",
                     "health_url": "https://api.0xinsider.com/api/v1/health",
-                    "authentication": "Bearer API key required for data endpoints; discovery and health are public.",
-                    "authenticated_routes": ["GET /api/v1/markets/search"]
+                    "authentication": "Bearer API key required for data endpoints; discovery (/api/v1), health, and /api/v1/platforms are public.",
+                    "authenticated_routes": [
+                      "GET /api/v1/markets/search"
+                    ]
                   },
                   "meta": {
                     "request_id": "req_550e8400-e29b-41d4-a716-446655440000",
@@ -342,7 +102,9 @@
         "operationId": "redirectApiOpenapiSpec",
         "summary": "Redirect to the canonical OpenAPI spec",
         "description": "Unauthenticated API-origin compatibility redirect to the canonical web-origin OpenAPI JSON document at https://0xinsider.com/api/v1/openapi.json.",
-        "tags": ["System"],
+        "tags": [
+          "System"
+        ],
         "security": [],
         "x-codeSamples": [
           {
@@ -382,7 +144,7 @@
       "get": {
         "operationId": "getTrader",
         "summary": "Get trader intelligence",
-        "description": "Returns a trader's grade (S through F), P&L, win rate, and optional strategy/category data. The path accepts either an Ethereum wallet address, a known trader username, or a trd_-prefixed trader ID emitted by this API. Unknown lookups return sync_status \"unknown\" instead of 404.",
+        "description": "Returns a trader's cohort-relative skill grade (S through F; calibration, risk-adjusted returns, and consistency, not profit size), P&L, win rate, and optional strategy/category data. The path accepts either an Ethereum wallet address, a known trader username, or a trd_-prefixed trader ID emitted by this API. Unknown lookups return sync_status \"unknown\" instead of 404.",
         "tags": [
           "Traders"
         ],
@@ -400,7 +162,7 @@
             "name": "expand[]",
             "in": "query",
             "required": false,
-            "description": "Backward-compatible alias for expand. Repeatable: strategy, categories, quant_metrics.",
+            "description": "Backward-compatible alias for expand. Repeatable: strategy, categories, quant_metrics, trust.",
             "schema": {
               "type": "array",
               "items": {
@@ -408,7 +170,8 @@
                 "enum": [
                   "strategy",
                   "categories",
-                  "quant_metrics"
+                  "quant_metrics",
+                  "trust"
                 ]
               }
             },
@@ -419,7 +182,7 @@
             "name": "expand",
             "in": "query",
             "required": false,
-            "description": "Include heavy fields. Repeatable: strategy, categories, quant_metrics.",
+            "description": "Include heavy fields and trust metadata. Repeatable: strategy, categories, quant_metrics, trust.",
             "schema": {
               "type": "array",
               "items": {
@@ -427,7 +190,8 @@
                 "enum": [
                   "strategy",
                   "categories",
-                  "quant_metrics"
+                  "quant_metrics",
+                  "trust"
                 ]
               }
             },
@@ -473,28 +237,8 @@
                   "success": {
                     "summary": "Successful response",
                     "value": {
-                      "object": "trader",
-                      "data": {
-                                              "id": "trd_0x863134d00841b2e200492805a01e1e2f5defaa53",
-                                              "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
-                                              "username": "RepTrump",
-                                              "grade": "S",
-                                              "score": 97.94,
-                                              "rank": 1,
-                                              "pnl": {
-                                                "total": 7532409.67,
-                                                "realized": 7401234.56,
-                                                "unrealized": 131175.11,
-                                                "last_7d": 84210.5,
-                                                "last_30d": 512033.18
-                                              },
-                                              "stats": {
-                                                "markets_traded": 28,
-                                                "win_rate": 1.0,
-                                                "daily_win_rate": 0.92,
-                                                "total_volume": 18400000.0
-                                              }
-                                            },
+                      "object": "traders",
+                      "data": {},
                       "meta": {
                         "request_id": "req_example",
                         "cached": false
@@ -530,6 +274,9 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -564,28 +311,8 @@
         ],
         "x-examples": {
           "success": {
-            "object": "trader",
-            "data": {
-                          "id": "trd_0x863134d00841b2e200492805a01e1e2f5defaa53",
-                          "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
-                          "username": "RepTrump",
-                          "grade": "S",
-                          "score": 97.94,
-                          "rank": 1,
-                          "pnl": {
-                            "total": 7532409.67,
-                            "realized": 7401234.56,
-                            "unrealized": 131175.11,
-                            "last_7d": 84210.5,
-                            "last_30d": 512033.18
-                          },
-                          "stats": {
-                            "markets_traded": 28,
-                            "win_rate": 1.0,
-                            "daily_win_rate": 0.92,
-                            "total_volume": 18400000.0
-                          }
-                        },
+            "object": "traders",
+            "data": {},
             "meta": {
               "request_id": "req_example",
               "cached": false
@@ -627,7 +354,8 @@
                       "enum": [
                         "strategy",
                         "categories",
-                        "quant_metrics"
+                        "quant_metrics",
+                        "trust"
                       ]
                     },
                     "description": "Shared expand flags applied to every trader item."
@@ -716,35 +444,8 @@
                   "success": {
                     "summary": "Successful response",
                     "value": {
-                      "object": "trader_batch",
-                      "data": [
-                                              {
-                                                "index": 0,
-                                                "input": "0x863134d00841b2e200492805a01e1e2f5defaa53",
-                                                "status": "ok",
-                                                "data": {
-                                                  "id": "trd_0x863134d00841b2e200492805a01e1e2f5defaa53",
-                                                  "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
-                                                  "username": "RepTrump",
-                                                  "grade": "S",
-                                                  "score": 97.94,
-                                                  "rank": 1,
-                                                  "pnl": {
-                                                    "total": 7532409.67,
-                                                    "realized": 7401234.56,
-                                                    "unrealized": 131175.11,
-                                                    "last_7d": 84210.5,
-                                                    "last_30d": 512033.18
-                                                  },
-                                                  "stats": {
-                                                    "markets_traded": 28,
-                                                    "win_rate": 1.0,
-                                                    "daily_win_rate": 0.92,
-                                                    "total_volume": 18400000.0
-                                                  }
-                                                }
-                                              }
-                                            ],
+                      "object": "traders",
+                      "data": {},
                       "meta": {
                         "request_id": "req_example",
                         "cached": false
@@ -792,35 +493,8 @@
         ],
         "x-examples": {
           "success": {
-            "object": "trader_batch",
-            "data": [
-                          {
-                            "index": 0,
-                            "input": "0x863134d00841b2e200492805a01e1e2f5defaa53",
-                            "status": "ok",
-                            "data": {
-                              "id": "trd_0x863134d00841b2e200492805a01e1e2f5defaa53",
-                              "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
-                              "username": "RepTrump",
-                              "grade": "S",
-                              "score": 97.94,
-                              "rank": 1,
-                              "pnl": {
-                                "total": 7532409.67,
-                                "realized": 7401234.56,
-                                "unrealized": 131175.11,
-                                "last_7d": 84210.5,
-                                "last_30d": 512033.18
-                              },
-                              "stats": {
-                                "markets_traded": 28,
-                                "win_rate": 1.0,
-                                "daily_win_rate": 0.92,
-                                "total_volume": 18400000.0
-                              }
-                            }
-                          }
-                        ],
+            "object": "traders",
+            "data": {},
             "meta": {
               "request_id": "req_example",
               "cached": false
@@ -1017,23 +691,221 @@
         }
       }
     },
-    "/api/v1/traders/{id}/position-timeline": {
+    "/api/v1/trader/{address}/pnl": {
       "get": {
-        "operationId": "getPositionTimelineById",
-        "summary": "Get a trader's position timeline by integer id",
-        "description": "Id-keyed alias of GET /api/v1/trader/{address}/position-timeline. Response body is byte-identical for the same underlying trader. Useful for worker tasks and agent clients already holding a numeric traders.id.",
+        "operationId": "getTraderPnl",
+        "summary": "Get trader P&L time series",
+        "description": "Returns a trader's daily P&L time series and pre-derived stats from the precomputed daily_pnl read model: entries (daily cumulative P&L), period stats (all/90d/30d/7d), monthly aggregation, per-year totals, and the drawdown series. Reads the refreshed read model, not a per-request equity replay. A resolved trader with no daily P&L returns an empty structured object (HTTP 200); an unknown address returns 404. Spans both providers wherever the read model has the trader's series.",
         "tags": [
           "Traders"
         ],
         "parameters": [
           {
-            "name": "id",
+            "name": "address",
             "in": "path",
             "required": true,
-            "description": "Internal traders.id (integer). Returns 404 when the trader is not HOT or WARM tier, identical to the address-keyed route.",
+            "description": "Wallet address (0x...), username, or trd_-prefixed trader id.",
             "schema": {
-              "type": "integer",
-              "format": "int32"
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trader P&L object",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              },
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "object",
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "trader_pnl"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/TraderPnl"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                },
+                "example": {
+                  "object": "trader_pnl",
+                  "data": {
+                    "id": "trd_0xabc123",
+                    "entries": [
+                      {
+                        "date": "2026-05-12",
+                        "markets_traded": 3,
+                        "total_volume": 10000.0,
+                        "cumulative_profit": 50000.0,
+                        "total_pnl": 50000.0,
+                        "daily_change": 250.0
+                      }
+                    ],
+                    "stats": {
+                      "all": {
+                        "current": 50000.0,
+                        "change": 50000.0,
+                        "change_pct": 0.0,
+                        "best_day": 5000.0,
+                        "worst_day": -2000.0,
+                        "win_days": 30,
+                        "loss_days": 10,
+                        "avg_day": 250.0,
+                        "rebase_anchor": 0.0
+                      },
+                      "d90": {
+                        "current": 12000.0,
+                        "change": 12000.0,
+                        "change_pct": 31.5,
+                        "best_day": 5000.0,
+                        "worst_day": -2000.0,
+                        "win_days": 18,
+                        "loss_days": 6,
+                        "avg_day": 500.0,
+                        "rebase_anchor": 38000.0
+                      },
+                      "d30": {
+                        "current": 4000.0,
+                        "change": 4000.0,
+                        "change_pct": 8.7,
+                        "best_day": 2500.0,
+                        "worst_day": -800.0,
+                        "win_days": 9,
+                        "loss_days": 3,
+                        "avg_day": 333.0,
+                        "rebase_anchor": 46000.0
+                      },
+                      "d7": {
+                        "current": 900.0,
+                        "change": 900.0,
+                        "change_pct": 1.8,
+                        "best_day": 600.0,
+                        "worst_day": -150.0,
+                        "win_days": 4,
+                        "loss_days": 1,
+                        "avg_day": 180.0,
+                        "rebase_anchor": 49100.0
+                      }
+                    },
+                    "monthly": [
+                      {
+                        "year": 2026,
+                        "month": 5,
+                        "pnl": 12000.0,
+                        "markets_traded": 18
+                      }
+                    ],
+                    "year_totals": [
+                      {
+                        "year": 2026,
+                        "pnl": 50000.0
+                      }
+                    ],
+                    "drawdown": [
+                      {
+                        "date": "2026-05-12",
+                        "cumulative_profit": 50000.0,
+                        "drawdown": -1500.0
+                      }
+                    ]
+                  },
+                  "meta": {
+                    "request_id": "req_example",
+                    "cached": false
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified. Returned when If-None-Match matches the current payload.",
+            "headers": {
+              "ETag": {
+                "description": "Validator for the unchanged payload.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  'https://api.0xinsider.com/api/v1/trader/0xabc123/pnl'"
+          }
+        ]
+      }
+    },
+    "/api/v1/traders/{trader}/position-timeline": {
+      "get": {
+        "operationId": "getPositionTimelineById",
+        "summary": "Get a trader's position timeline (unified identity resolver)",
+        "description": "Unified trader-timeline route (#4975). {trader} accepts all four identity shapes - 0x... wallet, username, trd_-prefixed trader id, and bare integer id - resolved by the single shared trader-identity resolver. Returns every Polymarket fill for one trader in one market, newest first, with server-computed running_amount and running_avg_price. Only HOT and WARM tier traders are tracked; other traders return 404. Response body is byte-identical to the singular GET /api/v1/trader/{address}/position-timeline route for the same (trader, market). The prior integer-id-only variant is preserved: the same path now accepts every identity shape.",
+        "tags": [
+          "Traders"
+        ],
+        "parameters": [
+          {
+            "name": "trader",
+            "in": "path",
+            "required": true,
+            "description": "Trader identity: 0x... wallet address, username, trd_-prefixed trader id, or bare integer traders.id. Resolved with precedence wallet -> trd_ -> integer -> username. Unknown identities return 404.",
+            "schema": {
+              "type": "string"
             }
           },
           {
@@ -1415,6 +1287,197 @@
         }
       }
     },
+    "/api/v1/large-positions": {
+      "get": {
+        "operationId": "listLargePositions",
+        "summary": "List large positions",
+        "description": "Returns the largest current open positions from graded traders, value-descending, with opaque cursor pagination. Polymarket-only by design: the large-positions scanner filters platform = 'polymarket' (backend/src/large_positions/scanner.rs:238,245), so no Kalshi rows are ever scanned and a Kalshi or unknown condition_id filter returns an empty list (never fabricated rows). The teaser cap that the internal product UI applies to anonymous viewers does not apply here: the API key already proves an active insider/annual subscription, so authed API callers get full access.",
+        "tags": [
+          "Large Positions"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Opaque pagination cursor from a previous response.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_size",
+            "in": "query",
+            "description": "Minimum position value in USD.",
+            "schema": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Filter by provider-backed market category.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "min_grade",
+            "in": "query",
+            "description": "Minimum trader grade.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "S",
+                "A",
+                "B",
+                "C",
+                "D",
+                "F"
+              ]
+            }
+          },
+          {
+            "name": "condition_id",
+            "in": "query",
+            "description": "Scope to one market. Accepts the raw provider condition_id or the mkt_-prefixed market id (round-trips a value from a list response). Polymarket-only; a Kalshi or unknown id returns [].",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Large positions list",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              },
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "object",
+                    "data",
+                    "has_more",
+                    "meta"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "list"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/LargePosition"
+                      }
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Opaque cursor for the next page; absent on the last page."
+                    },
+                    "total": {
+                      "type": "integer",
+                      "nullable": true,
+                      "description": "Total ranked rows when the read model exposes a count; may be absent."
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "object": "list",
+                      "data": [],
+                      "has_more": false,
+                      "next_cursor": null,
+                      "meta": {
+                        "request_id": "req_example",
+                        "cached": false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified. Returned when If-None-Match matches the current payload.",
+            "headers": {
+              "ETag": {
+                "description": "Validator for the unchanged payload.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  'https://api.0xinsider.com/api/v1/large-positions?min_grade=A&limit=10'"
+          }
+        ]
+      }
+    },
     "/api/v1/whale-trades": {
       "get": {
         "operationId": "listWhaleTrades",
@@ -1454,7 +1517,7 @@
           {
             "name": "category",
             "in": "query",
-            "description": "Filter by provider-backed market_canonical category (case-insensitive).",
+            "description": "Filter by market category (case-insensitive). A canonical bucket name (e.g. Basketball) matches every provider member that folds into it (NBA, WNBA, NCAAB); a raw provider value also resolves to its bucket.",
             "schema": {
               "type": "string"
             }
@@ -1667,7 +1730,7 @@
           {
             "name": "category",
             "in": "query",
-            "description": "Filter by provider-backed market_canonical category (case-insensitive).",
+            "description": "Filter by market category (case-insensitive). A canonical bucket name (e.g. Basketball) matches every provider member that folds into it (NBA, WNBA, NCAAB); a raw provider value also resolves to its bucket.",
             "schema": {
               "type": "string"
             }
@@ -2027,7 +2090,7 @@
           {
             "name": "category",
             "in": "query",
-            "description": "Filter by category slug.",
+            "description": "Filter by category. Values are matched to canonical category buckets: political variants (Elections, Global Politics, U.S. Politics, ...) fold into Politics, Geopolitics stays distinct, Culture/Entertainment map to Pop Culture, Science maps to Science & Tech, and Finance/Business map to Stocks. Mapped buckets are case-insensitive; passthrough categories (Crypto, NBA, and the sports leagues) match case-sensitively against the provider-native bucket key, so use exact casing (e.g. Crypto, NBA).",
             "schema": {
               "type": "string"
             }
@@ -2190,6 +2253,169 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/leaderboard/trending": {
+      "get": {
+        "operationId": "listTrendingWallets",
+        "summary": "List trending wallets",
+        "description": "Returns wallets ranked by trailing-window realized P&L (Polymarket-only discovery), with opaque page-cursor pagination. Each row carries window P&L, volume, distinct markets, grade, hot-streak tier, and a zero-filled daily P&L series. The underlying read model is warmed into Redis; a cold read returns 503 (warming, retry-after), never a 500 or a fabricated ranking. Polymarket-only: the read model filters platform = 'polymarket'.",
+        "tags": [
+          "Leaderboard"
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Opaque pagination cursor from a previous response.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "window",
+            "in": "query",
+            "description": "Trailing window.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "7d",
+                "30d"
+              ],
+              "default": "7d"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trending wallets list",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              },
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "object",
+                    "data",
+                    "has_more",
+                    "meta"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "list"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TrendingWallet"
+                      }
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "Opaque cursor for the next page; absent on the last page."
+                    },
+                    "total": {
+                      "type": "integer",
+                      "nullable": true,
+                      "description": "Total ranked rows when the read model exposes a count; may be absent."
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "object": "list",
+                      "data": [],
+                      "has_more": false,
+                      "next_cursor": null,
+                      "meta": {
+                        "request_id": "req_example",
+                        "cached": false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified. Returned when If-None-Match matches the current payload.",
+            "headers": {
+              "ETag": {
+                "description": "Validator for the unchanged payload.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  'https://api.0xinsider.com/api/v1/leaderboard/trending?window=7d&limit=10'"
+          }
+        ]
       }
     },
     "/api/v1/markets/search": {
@@ -2381,7 +2607,7 @@
           {
             "name": "category",
             "in": "query",
-            "description": "Filter by provider-native market category (case-insensitive, no parent/child expansion).",
+            "description": "Filter by market category (case-insensitive). A canonical bucket name (e.g. Basketball) matches every provider member that folds into it (NBA, WNBA, NCAAB); a raw provider value also resolves to its bucket. Facet values are returned as the canonical bucket.",
             "schema": {
               "type": "string"
             }
@@ -2602,6 +2828,379 @@
             "has_more": false,
             "next_cursor": null,
             "total": 0,
+            "meta": {
+              "request_id": "req_example",
+              "cached": false
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/markets/smart-money-flows": {
+      "get": {
+        "operationId": "listSmartMoneyFlows",
+        "summary": "List ranked smart-money flows",
+        "description": "Ranks markets by absolute net S/A/B-grade whale flow over a requested timeframe. Use this discovery endpoint to answer where smart money is flowing before drilling into a specific market with /api/v1/market/{condition_id}/intel. Pagination is anchored by an opaque cursor carrying the first page as_of timestamp so new whale trades do not reorder page 2.",
+        "tags": [
+          "Markets"
+        ],
+        "parameters": [
+          {
+            "name": "timeframe",
+            "in": "query",
+            "description": "Lookback window for grade-filtered whale flow aggregation.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "1h",
+                "4h",
+                "24h",
+                "7d"
+              ],
+              "default": "24h"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Page size.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Opaque cursor from previous response's next_cursor. Encodes the first-page as_of timestamp plus the last row's absolute net flow and condition_id.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Filter by market category (case-insensitive). A canonical bucket name (e.g. Basketball) matches every provider member that folds into it (NBA, WNBA, NCAAB); a raw provider value also resolves to its bucket.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "platform",
+            "in": "query",
+            "description": "Filter by source platform. all is a request-side no-op.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "polymarket",
+                "kalshi",
+                "all"
+              ],
+              "default": "all"
+            }
+          },
+          {
+            "name": "min_grade",
+            "in": "query",
+            "description": "Minimum latest trader grade included in the flow. Default B means S/A/B only; unranked traders are excluded.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "S",
+                "A",
+                "B",
+                "C",
+                "D",
+                "F"
+              ],
+              "default": "B"
+            }
+          },
+          {
+            "name": "direction",
+            "in": "query",
+            "description": "Optional post-aggregate flow direction filter.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "YES",
+                "NO"
+              ]
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "required": false,
+            "description": "Conditional GET validator from a previous ETag. Matching values return 304 Not Modified with an empty body.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ranked market smart-money flows",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "object",
+                    "data",
+                    "has_more",
+                    "meta"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "list"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SmartMoneyFlowMarket"
+                      }
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "total": {
+                      "type": "integer",
+                      "nullable": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "object": "list",
+                      "data": [
+                        {
+                          "market": {
+                            "id": "mkt_0x123",
+                            "condition_id": "0x123",
+                            "title": "Will BTC close above $100k this week?",
+                            "slug": "btc-close-above-100k-this-week",
+                            "category": "Crypto",
+                            "platform": "polymarket"
+                          },
+                          "smart_money": {
+                            "net_flow_usd": 12345.67,
+                            "direction": "YES",
+                            "whale_trade_count": 7,
+                            "buy_volume_usd": 20000,
+                            "sell_volume_usd": 7654.33
+                          },
+                          "timeframe": "24h"
+                        }
+                      ],
+                      "has_more": false,
+                      "next_cursor": null,
+                      "meta": {
+                        "request_id": "req_example",
+                        "cached": false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified. Returned when If-None-Match matches the current payload.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  'https://api.0xinsider.com/api/v1/markets/smart-money-flows?timeframe=7d&min_grade=B&limit=10'"
+          }
+        ],
+        "x-examples": {
+          "success": {
+            "object": "list",
+            "data": [],
+            "has_more": false,
+            "next_cursor": null,
+            "meta": {
+              "request_id": "req_example",
+              "cached": false
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/platforms": {
+      "get": {
+        "operationId": "getPlatforms",
+        "summary": "Get platform capability matrix",
+        "description": "Unauthenticated discovery endpoint that declares which V1 intelligence surfaces are supported, partial, or unsupported per provider platform.",
+        "tags": [
+          "System"
+        ],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Platform capability matrix",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "object",
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "platforms"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Platforms"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "object": "platforms",
+                      "data": {
+                        "platforms": {
+                          "polymarket": {
+                            "grade": "supported",
+                            "pnl": "supported",
+                            "strategy": "supported",
+                            "timeline": "supported",
+                            "whale_signal": "supported",
+                            "insider_radar": "supported",
+                            "market_snapshot": "supported"
+                          },
+                          "kalshi": {
+                            "grade": "unsupported",
+                            "pnl": "partial",
+                            "strategy": "unsupported",
+                            "timeline": "partial",
+                            "whale_signal": "unsupported",
+                            "insider_radar": "unsupported",
+                            "market_snapshot": "partial"
+                          }
+                        }
+                      },
+                      "meta": {
+                        "request_id": "req_example",
+                        "cached": false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -sS 'https://api.0xinsider.com/api/v1/platforms'"
+          }
+        ],
+        "x-examples": {
+          "success": {
+            "object": "platforms",
+            "data": {
+              "platforms": {
+                "polymarket": {
+                  "grade": "supported",
+                  "pnl": "supported",
+                  "strategy": "supported",
+                  "timeline": "supported",
+                  "whale_signal": "supported",
+                  "insider_radar": "supported",
+                  "market_snapshot": "supported"
+                },
+                "kalshi": {
+                  "grade": "unsupported",
+                  "pnl": "partial",
+                  "strategy": "unsupported",
+                  "timeline": "partial",
+                  "whale_signal": "unsupported",
+                  "insider_radar": "unsupported",
+                  "market_snapshot": "partial"
+                }
+              }
+            },
             "meta": {
               "request_id": "req_example",
               "cached": false
@@ -2965,6 +3564,40 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "expand[]",
+            "in": "query",
+            "required": false,
+            "description": "Backward-compatible alias for expand. Repeatable: trust.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "trust"
+                ]
+              }
+            },
+            "style": "form",
+            "explode": true
+          },
+          {
+            "name": "expand",
+            "in": "query",
+            "required": false,
+            "description": "Include trust metadata for current_price and spread_bps. Repeatable: trust.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "trust"
+                ]
+              }
+            },
+            "style": "form",
+            "explode": true
           },
           {
             "name": "If-None-Match",
@@ -3407,6 +4040,112 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/stream": {
+      "get": {
+        "operationId": "getStream",
+        "summary": "Resumable real-time event stream (SSE)",
+        "description": "Server-Sent Events stream of the live feed envelopes the platform already broadcasts (whale-trade pulses and other public/insider feed events). Forwards the same backend-owned envelope shape as the internal feed; no provider data is recomputed. Authenticated via the oxi_sk Bearer key like every other /api/v1 endpoint, and limited to a small number of concurrent connections per API key and a cluster-wide ceiling across all keys (HTTP 429 with Retry-After when either cap is exceeded; HTTP 503 with Retry-After if the admission backend is briefly unavailable). Each delivered frame carries an SSE id equal to the envelope sequence; reconnect with the Last-Event-ID header (or the last_event_id / seq query fallback) to replay the missed window before resuming live. When the requested resume point predates the retained window the stream emits one resync marker event (event: resync) instead of silently skipping frames. Idle connections receive periodic ': keep-alive' comment lines. This is a long-lived response: keep the connection open and read frames as they arrive.",
+        "tags": [
+          "Streaming"
+        ],
+        "parameters": [
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "required": false,
+            "description": "Sequence id of the last frame the client successfully processed. The stream replays the strictly-newer window before resuming live. Browser EventSource clients send this automatically on reconnect. Omit to attach live from now.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "last_event_id",
+            "in": "query",
+            "required": false,
+            "description": "Query-string fallback for the Last-Event-ID resume cursor when the client cannot set the request header. Numeric sequence id; non-numeric or absent attaches live with no replay.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "seq",
+            "in": "query",
+            "required": false,
+            "description": "Alias for last_event_id. Numeric sequence id to resume after; non-numeric or absent attaches live with no replay.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Open Server-Sent Events stream. The body is an unbounded text/event-stream of frames; each data frame is a JSON feed envelope (with seq, published_at, type, and event-specific fields) and carries an SSE id equal to seq. resync marker frames use event: resync.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "Newline-delimited SSE frames: 'id: <seq>\\ndata: <json-envelope>\\n\\n' for events, 'event: resync\\nid: <seq>\\ndata: <json>\\n\\n' for resync markers, and ': keep-alive' comment lines while idle."
+                },
+                "examples": {
+                  "whaleEvent": {
+                    "summary": "One live whale-trade event frame",
+                    "value": "id: 142\ndata: {\"seq\":142,\"published_at\":\"2026-06-04T12:00:00Z\",\"type\":\"WhaleTradesInserted\",\"count\":3}\n\n"
+                  },
+                  "resyncMarker": {
+                    "summary": "Resync marker after a too-old resume point",
+                    "value": "event: resync\nid: 9001\ndata: {\"type\":\"resync\",\"completeness\":{\"status\":\"truncated\",\"reason\":\"The requested Last-Event-ID predates the retained replay window; treat this as a full resync and refetch current state.\"},\"from_sequence\":12,\"to_sequence\":9001}\n\n"
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -N -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  'https://api.0xinsider.com/api/v1/stream'"
+          },
+          {
+            "lang": "curl",
+            "label": "cURL (resume)",
+            "source": "curl -N -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  -H 'Last-Event-ID: 100' \\\n  'https://api.0xinsider.com/api/v1/stream'"
+          }
+        ]
       }
     },
     "/api/v1/events/feed/since": {
@@ -4319,8 +5058,10 @@
       "post": {
         "operationId": "createMcpJsonRpcResponse",
         "summary": "Remote MCP endpoint (JSON-RPC)",
-        "description": "Model Context Protocol (MCP) Streamable HTTP transport. Accepts a JSON-RPC 2.0 request and returns a JSON-RPC response. Supported methods: initialize, notifications/initialized, ping, tools/list, tools/call. Remote MCP exposes 21 read-only tools for public V1 read operations: get_leaderboard, get_trader, batch_get_traders, get_whale_trades, get_whale_trades_history, get_market_intel, batch_get_market_intel, get_market_snapshot, get_insider_radar, get_positions, get_position_timeline, get_position_timeline_by_id, search_markets, explore_markets, get_event_replay_since, list_webhooks, get_webhook, get_daily_report_snapshot, get_weekly_report_snapshot, get_monthly_report_snapshot, get_trader_export_snapshot. Webhook create/update/delete/verify/rotate operations are intentionally not exposed as remote MCP tools. The remote endpoint advertises tools only; it does not implement resources/list, resources/read, prompts/list, or prompts/get. Each tool dispatches to the matching /api/v1/* handler in-process so auth, rate limits, and payload shape match. Auth should use Authorization: Bearer <token>. ?token=<token> remains a legacy compatibility path for URL-only MCP clients, but URL secrets can land in shell history, browser history, and logs, so prefer headers or the stdio package. Mcp-Session-Id is minted on initialize and echoed on every response. Origin header, when present, is validated against the 0xinsider + localhost allowlist.",
-        "tags": ["MCP"],
+        "description": "Model Context Protocol (MCP) Streamable HTTP transport. Accepts a JSON-RPC 2.0 request and returns a JSON-RPC response. Supported methods: initialize, notifications/initialized, ping, tools/list, tools/call. Remote MCP exposes 29 read-only tools for public V1 read operations: get_leaderboard, get_trader, batch_get_traders, get_whale_trades, get_whale_trade, get_whale_trades_history, get_market_intel, batch_get_market_intel, get_smart_money_flows, get_market_snapshot, get_insider_radar, get_insider_radar_flag, get_positions, get_position_timeline, get_position_timeline_by_id, search_markets, explore_markets, get_event_replay_since, list_webhooks, get_webhook, get_daily_report_snapshot, get_weekly_report_snapshot, get_monthly_report_snapshot, get_report, get_trader_export_snapshot, get_platforms, get_large_positions, get_trending_wallets, get_trader_pnl. Webhook create/update/delete/verify/rotate operations are intentionally not exposed as remote MCP tools. The remote endpoint advertises tools only; it does not implement resources/list, resources/read, prompts/list, or prompts/get. Each tool dispatches to the matching /api/v1/* handler in-process so auth, rate limits, and payload shape match. Auth should use Authorization: Bearer <token>. ?token=<token> remains a legacy compatibility path for URL-only MCP clients, but URL secrets can land in shell history, browser history, and logs, so prefer headers or the stdio package. Mcp-Session-Id is minted on initialize and echoed on every response. Origin header, when present, is validated against the 0xinsider + localhost allowlist.",
+        "tags": [
+          "MCP"
+        ],
         "parameters": [
           {
             "name": "token",
@@ -4598,6 +5339,149 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/reports": {
+      "get": {
+        "operationId": "getReports",
+        "summary": "Unified report snapshot (granularity selector)",
+        "description": "Unified convenience route (#4975) that consolidates the three singular report routes. Dispatches to the exact per-granularity cap (daily 50, weekly 100, monthly 200) and date window the legacy /api/v1/reports/{daily,weekly,monthly} routes use, so the response body is byte-identical to the matching legacy route for the same period. The three legacy routes stay live. Also reachable via the MCP get_report selector.",
+        "tags": [
+          "Reports"
+        ],
+        "parameters": [
+          {
+            "name": "granularity",
+            "in": "query",
+            "required": true,
+            "description": "Report granularity selector.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "daily",
+                "weekly",
+                "monthly"
+              ]
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": true,
+            "description": "Period token for the granularity. daily: UTC date YYYY-MM-DD. weekly: ISO week YYYY-WW, or a from,to YYYY-MM-DD pair. monthly: UTC month YYYY-MM.",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Daily report snapshot",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "object",
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "report_snapshot"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ReportSnapshot"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "object": "list",
+                      "data": [],
+                      "has_more": false,
+                      "next_cursor": null,
+                      "total": 0,
+                      "meta": {
+                        "request_id": "req_example",
+                        "cached": false
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  'https://api.0xinsider.com/api/v1/reports?granularity=daily&period=2026-02-17'"
+          }
+        ],
+        "x-examples": {
+          "success": {
+            "object": "list",
+            "data": [],
+            "has_more": false,
+            "next_cursor": null,
+            "total": 0,
+            "meta": {
+              "request_id": "req_example",
+              "cached": false
+            }
+          }
+        },
+        "x-mcp-tool": "get_report"
       }
     },
     "/api/v1/reports/daily": {
@@ -5052,42 +5936,8 @@
                   "success": {
                     "summary": "Successful response",
                     "value": {
-                      "object": "trader_export_snapshot",
-                      "data": {
-                                              "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
-                                              "generated_at": "2026-06-01T00:00:00Z",
-                                              "source_range": {
-                                                "first_pnl_date": "2025-01-04",
-                                                "last_pnl_date": "2026-05-31",
-                                                "latest_trade_at": "2026-05-31T18:22:05Z",
-                                                "latest_market_activity_at": "2026-05-31T18:22:05Z"
-                                              },
-                                              "completeness": {
-                                                "status": "complete",
-                                                "reason": "fully_synced",
-                                                "sync_coverage": 1.0
-                                              },
-                                              "reconciliation": {
-                                                "provider_lifetime_volume": 18650000.0,
-                                                "exported_activity_volume": 18400000.0,
-                                                "exported_market_cost_basis": 9200000.0,
-                                                "provider_activity_volume_gap": 250000.0,
-                                                "activity_volume_coverage": 0.9866
-                                              },
-                                              "counts": {
-                                                "pnl_days": 513,
-                                                "exported_markets": 28,
-                                                "estimated_trade_rows": 1420,
-                                                "estimated_size_mb": 2.4
-                                              },
-                                              "large_export_policy": {
-                                                "mode": "direct_streaming",
-                                                "current_internal_route": "stream",
-                                                "direct_streaming": {},
-                                                "async_job": {},
-                                                "rate_limit": {}
-                                              }
-                                            },
+                      "object": "traders",
+                      "data": {},
                       "meta": {
                         "request_id": "req_example",
                         "cached": false
@@ -5152,42 +6002,8 @@
         ],
         "x-examples": {
           "success": {
-            "object": "trader_export_snapshot",
-            "data": {
-                          "address": "0x863134d00841b2e200492805a01e1e2f5defaa53",
-                          "generated_at": "2026-06-01T00:00:00Z",
-                          "source_range": {
-                            "first_pnl_date": "2025-01-04",
-                            "last_pnl_date": "2026-05-31",
-                            "latest_trade_at": "2026-05-31T18:22:05Z",
-                            "latest_market_activity_at": "2026-05-31T18:22:05Z"
-                          },
-                          "completeness": {
-                            "status": "complete",
-                            "reason": "fully_synced",
-                            "sync_coverage": 1.0
-                          },
-                          "reconciliation": {
-                            "provider_lifetime_volume": 18650000.0,
-                            "exported_activity_volume": 18400000.0,
-                            "exported_market_cost_basis": 9200000.0,
-                            "provider_activity_volume_gap": 250000.0,
-                            "activity_volume_coverage": 0.9866
-                          },
-                          "counts": {
-                            "pnl_days": 513,
-                            "exported_markets": 28,
-                            "estimated_trade_rows": 1420,
-                            "estimated_size_mb": 2.4
-                          },
-                          "large_export_policy": {
-                            "mode": "direct_streaming",
-                            "current_internal_route": "stream",
-                            "direct_streaming": {},
-                            "async_job": {},
-                            "rate_limit": {}
-                          }
-                        },
+            "object": "traders",
+            "data": {},
             "meta": {
               "request_id": "req_example",
               "cached": false
@@ -5263,7 +6079,7 @@
             }
           },
           "401": {
-            "$ref": "#/components/responses/Unauthorized"
+            "$ref": "#/components/responses/InvalidApiKey"
           },
           "402": {
             "$ref": "#/components/responses/SubscriptionRequired"
@@ -5321,7 +6137,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "API key: Authorization: Bearer oxi_sk_live_..."
+        "description": "API key: Authorization: Bearer oxi_sk_live_... for live data (requires an active Insider subscription), or oxi_sk_test_... for sandbox/test mode (free account, deterministic fixture data, no live rows). Both key classes use the same paths; the prefix selects live vs sandbox."
       }
     },
     "parameters": {
@@ -5349,85 +6165,6 @@
       }
     },
     "schemas": {
-      "SmartMoneyFlowMarket": {
-        "type": "object",
-        "required": [
-          "market",
-          "smart_money",
-          "timeframe"
-        ],
-        "properties": {
-          "market": {
-            "type": "object",
-            "required": [
-              "id",
-              "condition_id",
-              "title",
-              "slug",
-              "category",
-              "platform"
-            ],
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "condition_id": {
-                "type": "string"
-              },
-              "title": {
-                "type": "string",
-                "nullable": true
-              },
-              "slug": {
-                "type": "string",
-                "nullable": true
-              },
-              "category": {
-                "type": "string",
-                "nullable": true
-              },
-              "platform": {
-                "type": "string",
-                "nullable": true
-              }
-            }
-          },
-          "smart_money": {
-            "type": "object",
-            "required": [
-              "net_flow_usd",
-              "direction",
-              "whale_trade_count",
-              "buy_volume_usd",
-              "sell_volume_usd"
-            ],
-            "properties": {
-              "net_flow_usd": {
-                "type": "number"
-              },
-              "direction": {
-                "type": "string",
-                "enum": [
-                  "YES",
-                  "NO"
-                ]
-              },
-              "whale_trade_count": {
-                "type": "integer"
-              },
-              "buy_volume_usd": {
-                "type": "number"
-              },
-              "sell_volume_usd": {
-                "type": "number"
-              }
-            }
-          },
-          "timeframe": {
-            "type": "string"
-          }
-        }
-      },
       "WebhookEventType": {
         "type": "string",
         "enum": [
@@ -5665,7 +6402,7 @@
           },
           "authentication": {
             "type": "string",
-            "const": "Bearer API key required for data endpoints; discovery and health are public."
+            "const": "Bearer API key required for data endpoints; discovery (/api/v1), health, and /api/v1/platforms are public."
           },
           "authenticated_routes": {
             "type": "array",
@@ -6059,6 +6796,148 @@
           }
         }
       },
+      "TraderTrust": {
+        "type": "object",
+        "description": "Field-level trust metadata returned only when GET /api/v1/trader/{address} includes expand=trust.",
+        "required": [
+          "total_pnl",
+          "realized_pnl",
+          "unrealized_pnl",
+          "markets_traded",
+          "win_rate",
+          "daily_win_rate",
+          "total_volume",
+          "grade",
+          "score",
+          "rank",
+          "streak_tier",
+          "strategy",
+          "category_strengths",
+          "quant_metrics",
+          "last_active",
+          "synced_at",
+          "sync_status"
+        ],
+        "properties": {
+          "total_pnl": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          },
+          "realized_pnl": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          },
+          "unrealized_pnl": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          },
+          "markets_traded": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          },
+          "win_rate": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          },
+          "daily_win_rate": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          },
+          "total_volume": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          },
+          "grade": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          },
+          "score": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          },
+          "rank": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          },
+          "streak_tier": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          },
+          "strategy": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          },
+          "category_strengths": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          },
+          "quant_metrics": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          },
+          "last_active": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          },
+          "synced_at": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          },
+          "sync_status": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          }
+        }
+      },
+      "PlatformCapabilityStatus": {
+        "type": "string",
+        "enum": [
+          "supported",
+          "partial",
+          "unsupported"
+        ]
+      },
+      "PlatformCapabilities": {
+        "type": "object",
+        "required": [
+          "grade",
+          "pnl",
+          "strategy",
+          "timeline",
+          "whale_signal",
+          "insider_radar",
+          "market_snapshot"
+        ],
+        "properties": {
+          "grade": {
+            "$ref": "#/components/schemas/PlatformCapabilityStatus"
+          },
+          "pnl": {
+            "$ref": "#/components/schemas/PlatformCapabilityStatus"
+          },
+          "strategy": {
+            "$ref": "#/components/schemas/PlatformCapabilityStatus"
+          },
+          "timeline": {
+            "$ref": "#/components/schemas/PlatformCapabilityStatus"
+          },
+          "whale_signal": {
+            "$ref": "#/components/schemas/PlatformCapabilityStatus"
+          },
+          "insider_radar": {
+            "$ref": "#/components/schemas/PlatformCapabilityStatus"
+          },
+          "market_snapshot": {
+            "$ref": "#/components/schemas/PlatformCapabilityStatus"
+          }
+        }
+      },
+      "Platforms": {
+        "type": "object",
+        "required": [
+          "platforms"
+        ],
+        "properties": {
+          "platforms": {
+            "type": "object",
+            "required": [
+              "kalshi",
+              "polymarket"
+            ],
+            "properties": {
+              "kalshi": {
+                "$ref": "#/components/schemas/PlatformCapabilities"
+              },
+              "polymarket": {
+                "$ref": "#/components/schemas/PlatformCapabilities"
+              }
+            }
+          }
+        }
+      },
       "PositionTimelineEvent": {
         "type": "object",
         "required": [
@@ -6265,6 +7144,10 @@
             "type": "string",
             "nullable": true,
             "description": "synced, unknown, or pending."
+          },
+          "trust": {
+            "$ref": "#/components/schemas/TraderTrust",
+            "description": "Field-level trust metadata. Present only when expand=trust or expand[]=trust is requested."
           }
         }
       },
@@ -7129,6 +8012,85 @@
           }
         }
       },
+      "SmartMoneyFlowMarket": {
+        "type": "object",
+        "required": [
+          "market",
+          "smart_money",
+          "timeframe"
+        ],
+        "properties": {
+          "market": {
+            "type": "object",
+            "required": [
+              "id",
+              "condition_id",
+              "title",
+              "slug",
+              "category",
+              "platform"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "condition_id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "nullable": true
+              },
+              "slug": {
+                "type": "string",
+                "nullable": true
+              },
+              "category": {
+                "type": "string",
+                "nullable": true
+              },
+              "platform": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          },
+          "smart_money": {
+            "type": "object",
+            "required": [
+              "net_flow_usd",
+              "direction",
+              "whale_trade_count",
+              "buy_volume_usd",
+              "sell_volume_usd"
+            ],
+            "properties": {
+              "net_flow_usd": {
+                "type": "number"
+              },
+              "direction": {
+                "type": "string",
+                "enum": [
+                  "YES",
+                  "NO"
+                ]
+              },
+              "whale_trade_count": {
+                "type": "integer"
+              },
+              "buy_volume_usd": {
+                "type": "number"
+              },
+              "sell_volume_usd": {
+                "type": "number"
+              }
+            }
+          },
+          "timeframe": {
+            "type": "string"
+          }
+        }
+      },
       "MarketSnapshotFreshness": {
         "type": "object",
         "required": [
@@ -7204,6 +8166,22 @@
           "reason": {
             "type": "string",
             "nullable": true
+          }
+        }
+      },
+      "MarketSnapshotTrust": {
+        "type": "object",
+        "description": "Price and spread trust metadata returned only when GET /api/v1/market/{condition_id}/snapshot includes expand=trust.",
+        "required": [
+          "current_price",
+          "spread_bps"
+        ],
+        "properties": {
+          "current_price": {
+            "$ref": "#/components/schemas/TrustMetadata"
+          },
+          "spread_bps": {
+            "$ref": "#/components/schemas/TrustMetadata"
           }
         }
       },
@@ -7419,6 +8397,10 @@
                 "$ref": "#/components/schemas/MarketSnapshotFreshness"
               }
             }
+          },
+          "trust": {
+            "$ref": "#/components/schemas/MarketSnapshotTrust",
+            "description": "Price and spread trust metadata. Present only when expand=trust or expand[]=trust is requested."
           }
         }
       },
@@ -8151,6 +9133,616 @@
             "$ref": "#/components/schemas/ResponseMeta"
           }
         }
+      },
+      "LargePosition": {
+        "type": "object",
+        "required": [
+          "id",
+          "platform",
+          "share_count",
+          "event_leg_count",
+          "first_seen_at",
+          "last_updated_at",
+          "trader",
+          "market"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Composite prefixed ID `pos_<wallet>:<condition_id>:<outcome_index>`."
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "polymarket",
+              "kalshi"
+            ],
+            "description": "Provider discriminator. Always polymarket today (scanner is Polymarket-only); kept in the shape so Kalshi can land without a breaking change."
+          },
+          "total_size_usd": {
+            "type": "number",
+            "nullable": true,
+            "description": "Aggregate provider currentValue for this position leg in USD."
+          },
+          "position_unrealized_pnl": {
+            "type": "number",
+            "nullable": true,
+            "description": "Provider per-position unrealized P&L (trader_markets.unrealized_pnl_num, from Polymarket cashPnl)."
+          },
+          "share_count": {
+            "type": "number",
+            "description": "Live share count for this position."
+          },
+          "avg_entry_price": {
+            "type": "number",
+            "nullable": true,
+            "description": "Volume-weighted entry price."
+          },
+          "current_price": {
+            "type": "number",
+            "nullable": true,
+            "description": "Latest provider mark price for the position's token."
+          },
+          "outcome_label": {
+            "type": "string",
+            "nullable": true,
+            "description": "Backend-resolved outcome label (provider outcome, else Yes/No from the binary index)."
+          },
+          "event_leg_count": {
+            "type": "integer",
+            "description": "Legs collapsed into this representative row for one (wallet, event, outcome side) group. 1 means standalone."
+          },
+          "event_total_value_usd": {
+            "type": "number",
+            "nullable": true,
+            "description": "Aggregate provider currentValue across collapsed sibling legs; equals total_size_usd when event_leg_count = 1."
+          },
+          "first_seen_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "trader": {
+            "type": "object",
+            "required": [
+              "id",
+              "address"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Prefixed ID (`trd_...`)."
+              },
+              "address": {
+                "type": "string"
+              },
+              "username": {
+                "type": "string",
+                "nullable": true
+              },
+              "grade": {
+                "type": "string",
+                "enum": [
+                  "S",
+                  "A",
+                  "B",
+                  "C",
+                  "D",
+                  "F"
+                ],
+                "nullable": true
+              },
+              "win_rate": {
+                "type": "number",
+                "nullable": true
+              },
+              "pnl": {
+                "type": "number",
+                "nullable": true,
+                "description": "Trader lifetime realized P&L across all markets."
+              },
+              "markets_traded": {
+                "type": "integer",
+                "nullable": true
+              }
+            }
+          },
+          "market": {
+            "type": "object",
+            "required": [
+              "id",
+              "condition_id"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Prefixed ID (`mkt_...`)."
+              },
+              "condition_id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string",
+                "nullable": true
+              },
+              "slug": {
+                "type": "string",
+                "nullable": true
+              },
+              "event_slug": {
+                "type": "string",
+                "nullable": true
+              },
+              "category": {
+                "type": "string",
+                "nullable": true
+              }
+            }
+          }
+        }
+      },
+      "TrendingWallet": {
+        "type": "object",
+        "required": [
+          "id",
+          "address",
+          "rank",
+          "platform",
+          "trending_pnl_usd",
+          "window_volume_usd",
+          "window_markets_traded",
+          "window_trade_days",
+          "daily_pnl_series"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Prefixed trader ID (`trd_...`)."
+          },
+          "address": {
+            "type": "string"
+          },
+          "rank": {
+            "type": "integer",
+            "description": "1-based rank within the full ranked set (stable across pages)."
+          },
+          "username": {
+            "type": "string",
+            "nullable": true
+          },
+          "profile_image_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Official Polymarket avatar URL (profileImage)."
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "polymarket",
+              "kalshi"
+            ],
+            "description": "Real provider platform; surfaced, never coerced. Polymarket-only today."
+          },
+          "trending_pnl_usd": {
+            "type": "number",
+            "description": "Realized P&L over the trailing window in USD (ranking axis)."
+          },
+          "window_volume_usd": {
+            "type": "number"
+          },
+          "window_markets_traded": {
+            "type": "integer"
+          },
+          "window_trade_days": {
+            "type": "integer"
+          },
+          "grade": {
+            "type": "string",
+            "enum": [
+              "S",
+              "A",
+              "B",
+              "C",
+              "D",
+              "F"
+            ],
+            "description": "All-time cohort-relative skill grade (forecasting calibration, risk-adjusted returns, consistency); a separate axis from streak_tier. Not a profit ranking, and relative, so it drifts as the cohort moves. Omitted when the trader is Unranked (fewer than 5 markets, insufficient track record to cohort-rank)."
+          },
+          "streak_tier": {
+            "type": "string",
+            "enum": [
+              "hot",
+              "rising",
+              "neutral",
+              "cooling",
+              "cold"
+            ],
+            "nullable": true,
+            "description": "Hot-streak tier (trailing-7d cross-sectional percentile). Null when no recent activity."
+          },
+          "all_time_pnl_usd": {
+            "type": "number",
+            "nullable": true
+          },
+          "all_time_score": {
+            "type": "number",
+            "nullable": true
+          },
+          "last_synced": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "daily_pnl_series": {
+            "type": "array",
+            "description": "Zero-filled daily P&L series across the window.",
+            "items": {
+              "type": "object",
+              "required": [
+                "date",
+                "pnl_usd"
+              ],
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "pnl_usd": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      },
+      "TraderPnl": {
+        "type": "object",
+        "required": [
+          "id",
+          "entries",
+          "stats",
+          "monthly",
+          "year_totals",
+          "drawdown"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Prefixed trader ID (`trd_...`)."
+          },
+          "entries": {
+            "type": "array",
+            "description": "Daily cumulative-P&L series (oldest-first).",
+            "items": {
+              "type": "object",
+              "required": [
+                "date",
+                "daily_change"
+              ],
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "markets_traded": {
+                  "type": "integer",
+                  "nullable": true
+                },
+                "total_volume": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "cumulative_profit": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "total_pnl": {
+                  "type": "number",
+                  "nullable": true
+                },
+                "daily_change": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "stats": {
+            "type": "object",
+            "required": [
+              "all",
+              "d90",
+              "d30",
+              "d7"
+            ],
+            "properties": {
+              "all": {
+                "type": "object",
+                "required": [
+                  "current",
+                  "change",
+                  "change_pct",
+                  "best_day",
+                  "worst_day",
+                  "win_days",
+                  "loss_days",
+                  "avg_day",
+                  "rebase_anchor"
+                ],
+                "properties": {
+                  "current": {
+                    "type": "number"
+                  },
+                  "change": {
+                    "type": "number"
+                  },
+                  "change_pct": {
+                    "type": "number"
+                  },
+                  "best_day": {
+                    "type": "number"
+                  },
+                  "best_day_date": {
+                    "type": "string",
+                    "format": "date",
+                    "nullable": true
+                  },
+                  "worst_day": {
+                    "type": "number"
+                  },
+                  "worst_day_date": {
+                    "type": "string",
+                    "format": "date",
+                    "nullable": true
+                  },
+                  "win_days": {
+                    "type": "integer"
+                  },
+                  "loss_days": {
+                    "type": "integer"
+                  },
+                  "avg_day": {
+                    "type": "number"
+                  },
+                  "rebase_anchor": {
+                    "type": "number"
+                  }
+                }
+              },
+              "d90": {
+                "type": "object",
+                "required": [
+                  "current",
+                  "change",
+                  "change_pct",
+                  "best_day",
+                  "worst_day",
+                  "win_days",
+                  "loss_days",
+                  "avg_day",
+                  "rebase_anchor"
+                ],
+                "properties": {
+                  "current": {
+                    "type": "number"
+                  },
+                  "change": {
+                    "type": "number"
+                  },
+                  "change_pct": {
+                    "type": "number"
+                  },
+                  "best_day": {
+                    "type": "number"
+                  },
+                  "best_day_date": {
+                    "type": "string",
+                    "format": "date",
+                    "nullable": true
+                  },
+                  "worst_day": {
+                    "type": "number"
+                  },
+                  "worst_day_date": {
+                    "type": "string",
+                    "format": "date",
+                    "nullable": true
+                  },
+                  "win_days": {
+                    "type": "integer"
+                  },
+                  "loss_days": {
+                    "type": "integer"
+                  },
+                  "avg_day": {
+                    "type": "number"
+                  },
+                  "rebase_anchor": {
+                    "type": "number"
+                  }
+                }
+              },
+              "d30": {
+                "type": "object",
+                "required": [
+                  "current",
+                  "change",
+                  "change_pct",
+                  "best_day",
+                  "worst_day",
+                  "win_days",
+                  "loss_days",
+                  "avg_day",
+                  "rebase_anchor"
+                ],
+                "properties": {
+                  "current": {
+                    "type": "number"
+                  },
+                  "change": {
+                    "type": "number"
+                  },
+                  "change_pct": {
+                    "type": "number"
+                  },
+                  "best_day": {
+                    "type": "number"
+                  },
+                  "best_day_date": {
+                    "type": "string",
+                    "format": "date",
+                    "nullable": true
+                  },
+                  "worst_day": {
+                    "type": "number"
+                  },
+                  "worst_day_date": {
+                    "type": "string",
+                    "format": "date",
+                    "nullable": true
+                  },
+                  "win_days": {
+                    "type": "integer"
+                  },
+                  "loss_days": {
+                    "type": "integer"
+                  },
+                  "avg_day": {
+                    "type": "number"
+                  },
+                  "rebase_anchor": {
+                    "type": "number"
+                  }
+                }
+              },
+              "d7": {
+                "type": "object",
+                "required": [
+                  "current",
+                  "change",
+                  "change_pct",
+                  "best_day",
+                  "worst_day",
+                  "win_days",
+                  "loss_days",
+                  "avg_day",
+                  "rebase_anchor"
+                ],
+                "properties": {
+                  "current": {
+                    "type": "number"
+                  },
+                  "change": {
+                    "type": "number"
+                  },
+                  "change_pct": {
+                    "type": "number"
+                  },
+                  "best_day": {
+                    "type": "number"
+                  },
+                  "best_day_date": {
+                    "type": "string",
+                    "format": "date",
+                    "nullable": true
+                  },
+                  "worst_day": {
+                    "type": "number"
+                  },
+                  "worst_day_date": {
+                    "type": "string",
+                    "format": "date",
+                    "nullable": true
+                  },
+                  "win_days": {
+                    "type": "integer"
+                  },
+                  "loss_days": {
+                    "type": "integer"
+                  },
+                  "avg_day": {
+                    "type": "number"
+                  },
+                  "rebase_anchor": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          },
+          "monthly": {
+            "type": "array",
+            "description": "Per-month P&L aggregation.",
+            "items": {
+              "type": "object",
+              "required": [
+                "year",
+                "month",
+                "pnl",
+                "markets_traded"
+              ],
+              "properties": {
+                "year": {
+                  "type": "integer"
+                },
+                "month": {
+                  "type": "integer"
+                },
+                "pnl": {
+                  "type": "number"
+                },
+                "markets_traded": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "year_totals": {
+            "type": "array",
+            "description": "Per-year P&L totals (ascending by year).",
+            "items": {
+              "type": "object",
+              "required": [
+                "year",
+                "pnl"
+              ],
+              "properties": {
+                "year": {
+                  "type": "integer"
+                },
+                "pnl": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "drawdown": {
+            "type": "array",
+            "description": "Underwater (drawdown) series.",
+            "items": {
+              "type": "object",
+              "required": [
+                "date",
+                "cumulative_profit",
+                "drawdown"
+              ],
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "cumulative_profit": {
+                  "type": "number"
+                },
+                "drawdown": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "responses": {
@@ -8460,6 +10052,10 @@
       "description": "Current prediction-market position snapshots from backend-owned mirrors."
     },
     {
+      "name": "Large Positions",
+      "description": "Largest current open positions from graded traders (Polymarket-only)."
+    },
+    {
       "name": "Whale Trades",
       "description": "Recent and historical large trade intelligence."
     },
@@ -8478,6 +10074,10 @@
     {
       "name": "Events",
       "description": "Durable public event replay streams."
+    },
+    {
+      "name": "Streaming",
+      "description": "Resumable real-time Server-Sent Events stream of live feed envelopes."
     },
     {
       "name": "Webhooks",
