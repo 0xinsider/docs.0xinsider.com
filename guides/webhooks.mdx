@@ -1,0 +1,232 @@
+---
+title: "Webhooks"
+description: "Receive whale-trade events at your own URL, verify the signature, and handle retries safely."
+---
+
+Webhooks push events to your server as they happen, so you do not have to poll. Register an HTTPS endpoint, verify it, and 0xinsider delivers a signed POST every time a subscribed event fires.
+
+Each delivery is signed with HMAC-SHA256. Verify the signature before you trust the body. The snippets below verify a real 0xinsider signature on the first try.
+
+## Event types
+
+| Event type | Status | Fires when |
+|---|---|---|
+| `whale_trades_inserted` | Live | One or more new whale trades are ingested. The payload carries the count. |
+| `live_sports_updated` | Reserved | Accepted on subscribe, not yet emitted. |
+| `whale_trader_synced` | Reserved | Accepted on subscribe, not yet emitted. |
+| `large_positions_updated` | Reserved | Accepted on subscribe, not yet emitted. |
+
+Today, `whale_trades_inserted` is the only event delivered. You can subscribe to the reserved types now; they will begin delivering when emission ships, with no change to your verification code.
+
+A `whale_trades_inserted` delivery body:
+
+```json
+{
+  "id": "evt_whale_trades_inserted_1718634500123_7",
+  "type": "whale_trades_inserted",
+  "created_at": "2026-06-17T14:28:20Z",
+  "data": { "count": 7 }
+}
+```
+
+The event signals that new trades landed. Fetch the detail from [`GET /api/v1/whale-trades`](/api-reference/endpoint/get-whale-trades) (newest first) when you receive it.
+
+## Set up an endpoint
+
+### 1. Create it
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Production webhook",
+    "url": "https://api.yourapp.com/webhooks/0xinsider",
+    "event_types": ["whale_trades_inserted"]
+  }' \
+  "https://api.0xinsider.com/api/v1/webhooks"
+```
+
+The URL must be `https` and publicly routable. Localhost and private IP literals are rejected. You can register up to 10 endpoints.
+
+The create response includes two values you only see once:
+
+```json
+{
+  "object": "webhook",
+  "data": {
+    "id": 42,
+    "object": "webhook",
+    "name": "Production webhook",
+    "url": "https://api.yourapp.com/webhooks/0xinsider",
+    "event_types": ["whale_trades_inserted"],
+    "status": "pending_verification",
+    "signing_secret": "whsec_8tF...redacted",
+    "verification": {
+      "token": "whv_3c2e...redacted",
+      "expires_at": "2026-06-18T14:28:20Z"
+    }
+  }
+}
+```
+
+Store the `signing_secret` now. It is shown only on create and on [rotate-secret](/api-reference/endpoint/rotate-webhook-secret), never on a later read. The webhook `id` is an integer.
+
+### 2. Verify it
+
+A new endpoint starts in `pending_verification` and receives nothing until you verify it. Prove you control the secret by sending the verification token back within 24 hours:
+
+```bash
+curl -X POST \
+  -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"verification_token": "whv_3c2e...redacted"}' \
+  "https://api.0xinsider.com/api/v1/webhooks/42/verify"
+```
+
+On success the endpoint flips to `active` and deliveries begin. Verification does not send a test delivery; it activates the endpoint by matching the token from create.
+
+## Delivery format
+
+Every delivery is an HTTP POST with a JSON body and these headers:
+
+| Header | Value |
+|---|---|
+| `x-0xinsider-signature` | `v1=<hex>`: the HMAC signature. |
+| `x-0xinsider-timestamp` | Unix seconds when the delivery was signed. |
+| `x-0xinsider-event-id` | Stable per-event id. Dedupe on this. |
+| `x-0xinsider-event-type` | The event type. |
+| `x-0xinsider-delivery-id` | Id of this delivery attempt's row. |
+| `x-0xinsider-delivery-attempt` | Attempt counter, starting at 1. |
+
+## Verify the signature
+
+The signature is computed over the timestamp and the raw request body, joined by a literal `.`:
+
+```
+signature = "v1=" + hex( HMAC_SHA256( signing_secret, timestamp + "." + raw_body ) )
+```
+
+Two rules make or break verification:
+
+- Use the **raw request body bytes**, exactly as received. Do not parse and re-serialize the JSON first; whitespace and key order would change and the HMAC would not match.
+- Use the `signing_secret` string as the HMAC key, the full `whsec_...` value.
+
+Reject the delivery if the signature does not match, or if `x-0xinsider-timestamp` is more than 5 minutes from your clock (a replay guard you enforce on your side).
+
+<CodeGroup>
+```javascript Node (Express)
+import express from "express";
+import crypto from "node:crypto";
+
+const SECRET = process.env.OXINSIDER_WEBHOOK_SECRET;
+const TOLERANCE_SECONDS = 300;
+
+function verify(rawBody, signatureHeader, timestampHeader) {
+  const ts = Number(timestampHeader);
+  if (!Number.isFinite(ts)) return false;
+  if (Math.abs(Date.now() / 1000 - ts) > TOLERANCE_SECONDS) return false;
+
+  const expected =
+    "v1=" +
+    crypto
+      .createHmac("sha256", SECRET)
+      .update(`${timestampHeader}.${rawBody}`)
+      .digest("hex");
+
+  // The header may carry a comma-separated list; accept any match.
+  return signatureHeader
+    .split(",")
+    .map((s) => s.trim())
+    .some((candidate) => {
+      const a = Buffer.from(candidate);
+      const b = Buffer.from(expected);
+      return a.length === b.length && crypto.timingSafeEqual(a, b);
+    });
+}
+
+const app = express();
+
+// Capture the raw body; do NOT use a JSON parser before verifying.
+app.post(
+  "/webhooks/0xinsider",
+  express.raw({ type: "application/json" }),
+  (req, res) => {
+    const rawBody = req.body.toString("utf8");
+    const ok = verify(
+      rawBody,
+      req.get("x-0xinsider-signature") ?? "",
+      req.get("x-0xinsider-timestamp") ?? ""
+    );
+    if (!ok) return res.status(400).send("bad signature");
+
+    const event = JSON.parse(rawBody);
+    // Dedupe on event.id, then ACK fast and process async.
+    res.status(200).send("ok");
+    handleEvent(event).catch(console.error);
+  }
+);
+```
+
+```python Python (Flask)
+import hashlib
+import hmac
+import time
+from flask import Flask, request
+
+SECRET = os.environ["OXINSIDER_WEBHOOK_SECRET"].encode()
+TOLERANCE_SECONDS = 300
+
+def verify(raw_body: bytes, signature_header: str, timestamp_header: str) -> bool:
+    try:
+        ts = int(timestamp_header)
+    except (TypeError, ValueError):
+        return False
+    if abs(time.time() - ts) > TOLERANCE_SECONDS:
+        return False
+
+    signed = f"{timestamp_header}.".encode() + raw_body
+    expected = "v1=" + hmac.new(SECRET, signed, hashlib.sha256).hexdigest()
+
+    # The header may carry a comma-separated list; accept any match.
+    return any(
+        hmac.compare_digest(part.strip(), expected)
+        for part in signature_header.split(",")
+    )
+
+app = Flask(__name__)
+
+@app.post("/webhooks/0xinsider")
+def receive():
+    raw_body = request.get_data()  # raw bytes, before any JSON parse
+    ok = verify(
+        raw_body,
+        request.headers.get("x-0xinsider-signature", ""),
+        request.headers.get("x-0xinsider-timestamp", ""),
+    )
+    if not ok:
+        return "bad signature", 400
+
+    event = request.get_json()
+    # Dedupe on event["id"], then return 200 quickly.
+    return "ok", 200
+```
+</CodeGroup>
+
+## Retries and idempotency
+
+Respond with any `2xx` to mark a delivery successful. Anything else, or a timeout, counts as a failure.
+
+- **Timeout**: respond within 15 seconds. ACK fast, then do slow work asynchronously.
+- **Retries**: a failed delivery is retried up to 8 attempts, roughly a minute apart. After the last attempt it is moved to a dead-letter state and not retried.
+- **Idempotency**: the same logical event always carries the same `x-0xinsider-event-id`. A retried delivery reuses its `x-0xinsider-delivery-id` and increments `x-0xinsider-delivery-attempt`. Dedupe your processing on `x-0xinsider-event-id` so a redelivery does not double-handle.
+
+## Manage and rotate
+
+- [Update](/api-reference/endpoint/update-webhook) the URL, events, or enabled flag. Changing the URL drops the endpoint back to `pending_verification` and issues a fresh verification token.
+- [Rotate the secret](/api-reference/endpoint/rotate-webhook-secret) if it leaks. The old secret stops working the moment the call returns, so deploy the new one to your verifier first.
+- [Disable](/api-reference/endpoint/delete-webhook) to stop deliveries without losing the registration, or set `enabled: false` via update.
+
+## Don't have a public endpoint yet?
+
+Poll instead. [`GET /api/v1/whale-trades`](/api-reference/endpoint/get-whale-trades) is the live feed, [`GET /api/v1/events/feed/since`](/api-reference/endpoint/get-event-replay-since) is a durable cursor-based replay of the same events, and [`GET /api/v1/stream`](/api-reference/endpoint/get-stream) is a real-time SSE stream. The [alert bot recipe](/recipes/alert-bot) shows both the webhook and the polling path.

@@ -1,0 +1,70 @@
+---
+title: "Insider scanner"
+description: "Surface suspicious early activity, then confirm it with trader and market context."
+---
+
+Goal: catch wallets that look like they knew something, fresh wallets taking large, well-timed positions right before a move. The [insider radar](/api-reference/endpoint/get-insider-radar) does the detection; this recipe drills into each flag for context.
+
+All requests need a Bearer key. See [Authentication](/authentication). Insider radar is Polymarket-only; see [Platforms](/concepts/platforms).
+
+## 1. Pull the flags
+
+Each flag has a `suspicion_score` and a `severity` of `flag` or `watch` (`watch` is the higher-conviction tier). Filter to the strong ones:
+
+```python
+import os, requests
+
+BASE = "https://api.0xinsider.com/api/v1"
+H = {"Authorization": f"Bearer {os.environ['OXINSIDER_API_KEY']}"}
+
+flags = requests.get(
+    f"{BASE}/insider-radar",
+    params={"severity": "watch", "min_suspicion": 70, "limit": 50},
+    headers=H,
+).json()
+
+for f in flags["data"]:
+    s = f["scores"]
+    print(f'{f["suspicion_score"]:.0f} {f["trader"]["username"] or f["trader"]["address"][:10]} '
+          f'timing={s["timing"]:.0f} edge={s["edge"]:.0f} size={s["size"]:.0f} fresh={s["fresh_wallet"]:.0f}')
+```
+
+The `scores` object breaks the suspicion down into `timing`, `edge`, `size`, and `fresh_wallet` components, so you can see why a wallet was flagged.
+
+## 2. Open one flag
+
+Fetch the full flag for its evidence and the linked trader and market:
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/insider-radar/flg_..."
+```
+
+## 3. Confirm with context
+
+A flag is a lead. Confirm it with two reads:
+
+```python
+flag = flags["data"][0]
+addr = flag["trader"]["address"]
+cond = flag["market"]["condition_id"]
+
+trader = requests.get(f"{BASE}/trader/{addr}", headers=H).json()["data"]
+intel = requests.get(f"{BASE}/market/{cond}/intel", headers=H).json()["data"]
+
+print("trader grade:", trader["grade"], "| markets traded:", trader["stats"]["markets_traded"])
+print("smart money net flow:", intel["smart_money"]["net_flow_usd"], intel["smart_money"]["direction"])
+```
+
+A fresh wallet with a high `size` score, taking the same side smart money is leaning, is the pattern worth a closer look.
+
+## 4. Cross-check size
+
+Confirm the position is large in absolute terms with [large positions](/api-reference/endpoint/list-large-positions), filtered to the same market:
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/large-positions?condition_id=0x123...&min_size=25000"
+```
+
+`Position.trader.is_new_wallet` and `wallet_age_days` are the fresh-wallet signals to confirm the radar's `fresh_wallet` score independently.

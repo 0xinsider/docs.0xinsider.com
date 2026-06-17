@@ -1,0 +1,68 @@
+---
+title: "Backtest a trader"
+description: "Pull a wallet's historical P&L series and fill history to evaluate it before you follow."
+---
+
+Goal: judge a trader on history, not vibes. This recipe pulls a wallet's P&L time series and its historical fills so you can reconstruct how it actually performed.
+
+All requests need a Bearer key. See [Authentication](/authentication).
+
+## 1. The P&L series
+
+[`GET /api/v1/trader/{address}/pnl`](/api-reference/endpoint/get-trader-pnl) returns the daily series plus rolled-up stats and drawdowns:
+
+```python
+import os, requests
+
+BASE = "https://api.0xinsider.com/api/v1"
+H = {"Authorization": f"Bearer {os.environ['OXINSIDER_API_KEY']}"}
+
+addr = "0x204f72f35326db932158cba6adff0b9a1da95e14"
+pnl = requests.get(f"{BASE}/trader/{addr}/pnl", headers=H).json()["data"]
+
+print("all-time:", pnl["stats"]["all"])
+print("last 30d:", pnl["stats"]["d30"])
+
+for entry in pnl["entries"][-10:]:
+    print(entry["date"], entry["cumulative_profit"], entry["daily_change"])
+```
+
+`entries` is the daily series (`date`, `total_pnl`, `cumulative_profit`, `daily_change`, `markets_traded`, `total_volume`). `monthly`, `year_totals`, and `drawdown` give you the longer view. `stats` is pre-rolled for `all`, `d90`, `d30`, and `d7` windows.
+
+## 2. The fill history
+
+For the trades behind the curve, replay this wallet's historical whale trades over a date range with [`GET /api/v1/whale-trades/history`](/api-reference/endpoint/get-whale-trades-history). It accepts a `trader` filter and a `from`/`to` window:
+
+```python
+fills = requests.get(
+    f"{BASE}/whale-trades/history",
+    params={
+        "trader": addr,
+        "from": "2026-01-01T00:00:00Z",
+        "to": "2026-06-01T00:00:00Z",
+        "limit": 100,
+    },
+    headers=H,
+).json()
+
+for tr in fills["data"]:
+    print(tr["traded_at"], tr["side"], tr["size_usd"], "@", tr["price"], tr["market"]["title"])
+```
+
+Page through with the cursor (see [Pagination](/concepts/pagination)) to pull the full window.
+
+## 3. Per-market entries and exits
+
+To reconstruct cost basis on a single market, use the [position timeline](/api-reference/endpoint/get-trader-position-timeline) with a `condition_id`. It gives ordered buys and sells with the running average price:
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/traders/0x204f.../position-timeline?condition_id=0x123..."
+```
+
+## Scope and limits
+
+- The whale-trade history covers fills above the whale threshold. Small trades below it are not in this feed; use the aggregated P&L series for the complete return picture.
+- There is no single "closed positions" list endpoint. Reconstruct closed lots from the per-market timelines, or rely on the `pnl` series for net performance.
+- [`/trader/{address}/export`](/api-reference/endpoint/get-trader-export-snapshot) returns export metadata (ranges, counts, completeness), not raw rows.
+- Backtest history is Polymarket-only; see [Platforms](/concepts/platforms).

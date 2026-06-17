@@ -26,11 +26,22 @@
             ]
           },
           {
+            "group": "Guides",
+            "pages": [
+              "guides/webhooks"
+            ]
+          },
+          {
             "group": "Concepts",
             "pages": [
               "concepts/grades",
+              "concepts/signal-scoring",
+              "concepts/strategy-types",
+              "concepts/platforms",
+              "concepts/trust-metadata",
               "concepts/pagination",
-              "concepts/number-formatting"
+              "concepts/number-formatting",
+              "concepts/expand"
             ]
           }
         ]
@@ -42,6 +53,12 @@
             "group": "Overview",
             "pages": [
               "api-reference/introduction"
+            ]
+          },
+          {
+            "group": "Objects",
+            "pages": [
+              "api-reference/objects"
             ]
           },
           {
@@ -143,6 +160,21 @@
               "api-reference/endpoint/health",
               "api-reference/endpoint/remote-mcp",
               "api-reference/endpoint/remote-mcp-stream"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Recipes",
+        "groups": [
+          {
+            "group": "Cookbook",
+            "pages": [
+              "recipes/copy-trade",
+              "recipes/insider-scanner",
+              "recipes/alert-bot",
+              "recipes/backtest",
+              "recipes/portfolio-tracker"
             ]
           }
         ]

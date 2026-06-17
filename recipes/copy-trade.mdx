@@ -1,0 +1,85 @@
+---
+title: "Copy-trade signals"
+description: "Build a follow list of top traders, then watch for their new activity."
+---
+
+Goal: pick the best wallets, then get notified when they make a move. This recipe builds a follow list from the leaderboard and watches the whale-trade feed for activity from anyone on it.
+
+All requests need a Bearer key. See [Authentication](/authentication).
+
+## 1. Build the follow list
+
+Pull the leaderboard and keep the top grades. The leaderboard ranks S, A, and B already; filter to S and A in code (there is no `min_grade` param on this endpoint).
+
+```python
+import os, requests
+
+BASE = "https://api.0xinsider.com/api/v1"
+H = {"Authorization": f"Bearer {os.environ['OXINSIDER_API_KEY']}"}
+
+leaders = requests.get(f"{BASE}/leaderboard", params={"limit": 100}, headers=H).json()
+follow = [t["address"] for t in leaders["data"] if t["grade"] in ("S", "A")]
+```
+
+Narrow by style if you want to copy one approach. Pass `strategy` to rank a single [strategy type](/concepts/strategy-types):
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/leaderboard?strategy=swing_trader&limit=50"
+```
+
+## 2. Enrich the list
+
+Pull full profiles for the whole set in one call with [batch](/api-reference/endpoint/batch-get-traders). Add `expand` for strategy and trust if you want to weight them:
+
+```python
+batch = requests.post(
+    f"{BASE}/traders/batch",
+    json={"traders": follow, "expand": ["strategy", "trust"]},
+    headers=H,
+).json()
+
+for item in batch["data"]:
+    if item["status"] == "ok":
+        t = item["data"]
+        print(t["username"], t["grade"], t["pnl"]["total"], t.get("strategy", {}).get("strategy_type"))
+```
+
+## 3. Watch for new activity
+
+The whale-trade feed is the live signal. Poll it filtered to high grades, then keep only trades from wallets on your follow list:
+
+```python
+follow_set = set(a.lower() for a in follow)
+
+def new_moves(min_size=10000):
+    feed = requests.get(
+        f"{BASE}/whale-trades",
+        params={"min_grade": "A", "min_size": min_size, "limit": 100},
+        headers=H,
+    ).json()
+    return [
+        tr for tr in feed["data"]
+        if tr["trader"]["address"].lower() in follow_set
+    ]
+
+for tr in new_moves():
+    print(f'{tr["trader"]["username"]} {tr["side"]} ${tr["size_usd"]:,.0f} @ {tr["price"]} on {tr["market"]["title"]}')
+```
+
+For a push instead of a poll, register a webhook on `whale_trades_inserted` and apply the same follow-list filter when each event arrives. See [Webhooks](/guides/webhooks).
+
+## 4. Drill into one market
+
+When a followed trader enters a market you care about, read their full entry and exit history on that market with the [position timeline](/api-reference/endpoint/get-trader-position-timeline). It takes the trader and a `condition_id`:
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/traders/0x204f.../position-timeline?condition_id=0x123..."
+```
+
+Each event is a buy or sell with price, notional, and the running average price.
+
+## What this recipe does not do
+
+There is no per-trader open-positions endpoint and no per-trader push channel. "Watch" means polling the whale-trade feed (or the `whale_trades_inserted` webhook) and matching addresses, plus the per-market timeline once you know the `condition_id`. Plan your loop around the feed, not around a subscription to a single wallet.
