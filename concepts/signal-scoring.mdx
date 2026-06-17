@@ -1,0 +1,84 @@
+---
+title: "Signal Scoring"
+description: "The smart-money and signal fields the API exposes, and what each one measures."
+---
+
+0xinsider scores activity so you can sort noise from signal. There are a few distinct scores, each answering a different question: how good is this trader, how strong is this single trade, and which way is smart money leaning on this market. This page names each field and what it measures, so you do not confuse one for another.
+
+## Trader quality: grade and score
+
+On every trader and leaderboard entry:
+
+- `grade`: a letter from `S` to `F`. The headline quality signal. See [Grades](/concepts/grades).
+- `score`: the numeric composite (0-100) behind the grade.
+- `streak_tier`: recent form, separate from the all-time grade. One of `hot`, `rising`, `neutral`, `cooling`, `cold`.
+- `rank`: position on the leaderboard.
+
+Grade is the long-run verdict. `streak_tier` is the trailing-form overlay: an A-grade trader can be `cooling`, and a B-grade trader can be `hot`.
+
+## Per-trade strength: signal_score
+
+Each [whale trade](/api-reference/endpoint/get-whale-trades) carries a `signal_score`: how strong that single fill is as a signal. Use it to rank a feed of trades, not to judge a trader overall.
+
+```json
+{
+  "object": "whale_trade",
+  "data": {
+    "id": "wt_...",
+    "size_usd": 48200.0,
+    "side": "BUY",
+    "price": 0.61,
+    "signal_score": 87.3,
+    "trader": { "address": "0x...", "grade": "S" },
+    "market": { "title": "...", "category": "politics" }
+  }
+}
+```
+
+## Market direction: smart money
+
+[Market intel](/api-reference/endpoint/get-market-intel) and [smart-money flows](/api-reference/endpoint/smart-money-flows) return a `smart_money` object. This is the canonical view of where graded money is flowing on a market:
+
+| Field | Meaning |
+|---|---|
+| `net_flow_usd` | Buy volume minus sell volume from graded traders, in USD. The headline number. |
+| `direction` | `YES` or `NO`: the side net flow is leaning toward. |
+| `buy_volume_usd` | Graded buy volume in the timeframe. |
+| `sell_volume_usd` | Graded sell volume in the timeframe. |
+| `whale_trade_count` | Number of qualifying whale trades. |
+| `top_positions` | The largest graded positions on the market, with trader and side. |
+
+```json
+{
+  "smart_money": {
+    "net_flow_usd": 312500.0,
+    "direction": "YES",
+    "buy_volume_usd": 540000.0,
+    "sell_volume_usd": 227500.0,
+    "whale_trade_count": 41
+  }
+}
+```
+
+`net_flow_usd` is the field to read for "which way is smart money leaning, and how hard." A large positive `net_flow_usd` with `direction: YES` means graded traders are buying YES.
+
+## Market discovery: smart_score
+
+The [explore](/api-reference/endpoint/explore-markets) feed ranks markets with a separate set of discovery aggregates:
+
+- `smart_score`: a per-market smart-money intensity used for ranking.
+- `smart_count`: how many graded traders are active on the market.
+- `smart_label`: a short human-readable tag.
+- `discover_score`: the backend-owned score behind the default hot sort.
+
+These power discovery sorting and are distinct from the `smart_money` flow object above. When you want a number to act on for a specific market, use `smart_money.net_flow_usd`. When you want to rank a list of markets to surface, use the explore `sort` parameter, which is driven by these scores.
+
+## Picking the right field
+
+| Question | Field |
+|---|---|
+| Is this trader worth following? | `grade` (and `score`) |
+| Is this trader hot right now? | `streak_tier` |
+| Is this single trade a strong signal? | `signal_score` |
+| Which way is smart money leaning on this market? | `smart_money.net_flow_usd` and `direction` |
+| Which markets should I surface? | explore `sort` (driven by `discover_score`) |

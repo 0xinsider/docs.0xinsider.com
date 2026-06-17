@@ -16,5 +16,7 @@ curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
 - [Get](/api-reference/endpoint/get-webhook) one to inspect its current state.
 - [Update](/api-reference/endpoint/update-webhook) to change URL, events, or active flag.
 - [Delete](/api-reference/endpoint/delete-webhook) when you no longer need it.
-- [Verify](/api-reference/endpoint/verify-webhook) signed delivery on your side using HMAC.
+- [Verify](/api-reference/endpoint/verify-webhook) the endpoint with its token to activate deliveries.
 - [Rotate secret](/api-reference/endpoint/rotate-webhook-secret) if a signing secret leaks.
+
+For event types, the signature scheme, and verification code, see the [Webhooks guide](/guides/webhooks).

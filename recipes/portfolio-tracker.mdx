@@ -1,0 +1,81 @@
+---
+title: "Portfolio tracker"
+description: "Track a set of wallets' P&L and current positions on one dashboard."
+---
+
+Goal: keep a dashboard of the wallets you care about, their aggregate P&L and their live positions. This recipe uses the batch endpoint for the numbers and the positions board for current holdings.
+
+All requests need a Bearer key. See [Authentication](/authentication).
+
+## 1. Aggregate P&L in one call
+
+[`POST /api/v1/traders/batch`](/api-reference/endpoint/batch-get-traders) takes up to 25 wallets (by address or `trd_` id) and returns a full profile for each. This is the clean path for portfolio totals:
+
+```python
+import os, requests
+
+BASE = "https://api.0xinsider.com/api/v1"
+H = {"Authorization": f"Bearer {os.environ['OXINSIDER_API_KEY']}"}
+
+wallets = ["0x204f...", "0x863...", "0x885..."]
+batch = requests.post(
+    f"{BASE}/traders/batch",
+    json={"traders": wallets, "expand": ["trust"]},
+    headers=H,
+).json()
+
+book = []
+for item in batch["data"]:
+    if item["status"] == "ok":
+        t = item["data"]
+        book.append({
+            "wallet": t["address"],
+            "name": t["username"],
+            "grade": t["grade"],
+            "total_pnl": t["pnl"]["total"],
+            "unrealized": t["pnl"]["unrealized"],
+            "last_30d": t["pnl"]["last_30d"],
+        })
+    else:
+        print("failed:", item["input"], item["error"]["message"])
+
+print("portfolio P&L:", sum(b["total_pnl"] for b in book))
+```
+
+Each item reports its own `status` (`ok` or `error`), so one bad wallet does not fail the batch. For more than 25 wallets, split into batches of 25.
+
+## 2. Current positions
+
+There is no per-trader open-positions endpoint. The [positions board](/api-reference/endpoint/get-positions) is global, filterable by grade, size, side, and category, but not by wallet, so scan it and intersect on your wallet set:
+
+```python
+wallet_set = set(w.lower() for w in wallets)
+
+def positions_for_book(min_size=1000):
+    held, cursor = [], None
+    while True:
+        params = {"limit": 100, "min_size": min_size}
+        if cursor:
+            params["cursor"] = cursor
+        page = requests.get(f"{BASE}/positions", params=params, headers=H).json()
+        held += [p for p in page["data"] if p["trader"]["address"].lower() in wallet_set]
+        if not page.get("has_more"):
+            return held
+        cursor = page["next_cursor"]
+
+for p in positions_for_book():
+    print(p["trader"]["address"][:10], p["market"]["outcome_label"],
+          p["side"], f'${p["current_value_usd"]:,.0f}', p["freshness"])
+```
+
+Check each position's `freshness` ([trust](/concepts/trust-metadata)) before you trust the value. `fresh` is live; `stale` means the provider read is past its window.
+
+## 3. Refresh cadence
+
+- Pull batch P&L on a slow loop (minutes). It is the heavier call.
+- Scan the positions board on whatever cadence your dashboard needs; it is cursor-paginated and cheap per page.
+- For a specific wallet-and-market pair, the [position timeline](/api-reference/endpoint/get-trader-position-timeline) gives exact entry and exit events.
+
+## Scope and limits
+
+Tracking N specific wallets means scanning the global positions board and filtering, because there is no "open positions for wallet X" endpoint. If your set is large, raise `min_size` so the board scan stays cheap and you only track meaningful positions. Aggregate P&L via batch is exact; the live position list is a board intersection.

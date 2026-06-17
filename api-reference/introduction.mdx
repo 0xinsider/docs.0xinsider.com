@@ -124,11 +124,13 @@ endpoints remain restricted to configured 0xinsider origins.
 
 Newer builder endpoints (snapshots, history ranges, batch reads, reports) attach metadata to provider-owned values so you can tell provider-backed, cached, partial, stale, and unavailable data apart.
 
-Per value:
+Per value, four dimensions:
 
-- `source`: where the value came from (`provider`, `cache`, `computed`).
-- `freshness`: how stale it is (an ISO timestamp or `live`).
-- `reconciliation`: whether it's been cross-checked against the source of truth.
-- `completeness`: `full`, `partial`, or `unavailable`.
+- `source`: where it came from (`provider`, `database`, `cache`, `computed`, `client_input`, `unavailable`).
+- `freshness`: how current it is (`fresh`, `refreshing`, `stale`, `not_live`, `unknown`, `unavailable`).
+- `reconciliation`: whether it was cross-checked against the source of truth (`provider_backed`, `db_mirror`, `computed`, `partial`, `not_applicable`, `unavailable`).
+- `completeness`: whether it reflects the full picture (`complete`, `partial`, `not_computed`, `not_applicable`, `unavailable`).
+
+See [Trust metadata](/concepts/trust-metadata) for what each value means and how to request field-level trust with `expand=trust`.
 
 Rule of thumb: **don't flatten unavailable values into `0`, `[]`, or `{}`.** Read the metadata and surface "unavailable" to your consumer instead of inventing a zero. Provider data that quietly becomes `0` causes silent bugs downstream.

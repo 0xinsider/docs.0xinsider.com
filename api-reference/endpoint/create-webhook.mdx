@@ -3,7 +3,7 @@ title: "Create Webhook"
 openapi: "POST /api/v1/webhooks"
 ---
 
-Register an endpoint to receive whale-trade and radar events as they happen.
+Register an HTTPS endpoint to receive [webhook events](/guides/webhooks#event-types) as they happen. The endpoint starts in `pending_verification` and must be verified before deliveries begin.
 
 ```bash
 curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
@@ -17,6 +17,6 @@ curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   "https://api.0xinsider.com/api/v1/webhooks"
 ```
 
-The response includes a one-time signing secret. **Copy it now**. You can't retrieve it later. Use it to verify the `X-0xinsider-Signature` header on every delivery; see [Verify Webhook](/api-reference/endpoint/verify-webhook). If it leaks, [rotate it](/api-reference/endpoint/rotate-webhook-secret).
+The response includes a one-time `signing_secret` and a `verification.token`. **Copy the secret now**. You can't retrieve it later. Use it to verify the `x-0xinsider-signature` header on every delivery (see the [Webhooks guide](/guides/webhooks)), and send the verification token to [Verify Webhook](/api-reference/endpoint/verify-webhook) to activate the endpoint. If the secret leaks, [rotate it](/api-reference/endpoint/rotate-webhook-secret).
 
 Send `Idempotency-Key` when retrying after a timeout. The same key with the same body returns the original webhook; the same key with a different body returns `422`.

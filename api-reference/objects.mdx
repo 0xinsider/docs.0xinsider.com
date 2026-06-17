@@ -1,0 +1,726 @@
+---
+title: "Objects"
+description: "Every object the API returns, generated from the OpenAPI schema."
+---
+
+{/* GENERATED FILE -- do not edit by hand. Run scripts/generate-objects-reference.py. */}
+
+These are the objects the API returns, generated directly from the OpenAPI
+schema so they always match the live contract. Each table lists a field, its
+type, whether it is always present, and what it means.
+
+
+## ApiDiscovery
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `api_base_url` | string | Yes | Canonical API origin for public V1 requests. |
+| `docs_url` | string | Yes | Full agent-readable API reference. |
+| `openapi_url` | string | Yes | Canonical web-origin OpenAPI JSON document. |
+| `health_url` | string | Yes | Unauthenticated API health endpoint. |
+| `authentication` | string | Yes |  |
+| `authenticated_routes` | array of string | Yes | Representative authenticated data routes. Full route coverage lives in OpenAPI and llms-full.txt. |
+
+## ApiError
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `object` | string | Yes |  |
+| `error` | object | Yes |  |
+| `meta` | `ResponseMeta` | Yes |  |
+
+## ApiErrorBody
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `code` | string | Yes |  |
+| `message` | string | Yes |  |
+| `doc_url` | string | No |  |
+| `param` | string | No |  |
+
+## BatchMarketIntelItem
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `index` | integer | Yes | Zero-based request index. Duplicate inputs keep separate result rows. |
+| `input` | string | Yes |  |
+| `status` | `ok` \| `error` | Yes |  |
+| `data` | `MarketIntel` | No |  |
+| `error` | `ApiErrorBody` | No |  |
+
+## BatchRateLimitMeta
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `basis` | string | Yes |  |
+| `limit` | integer | Yes |  |
+| `remaining` | integer | Yes |  |
+| `reset` | integer | Yes | Unix timestamp when the batch item window resets. |
+
+## BatchResponseMeta
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `request_id` | string | Yes |  |
+| `cached` | boolean | Yes |  |
+| `total_items` | integer | Yes |  |
+| `successful_items` | integer | Yes |  |
+| `failed_items` | integer | Yes |  |
+| `request_cost` | integer | Yes | Number of batch item units reserved before execution. |
+| `rate_limit` | `BatchRateLimitMeta` | Yes |  |
+
+## BatchTraderItem
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `index` | integer | Yes | Zero-based request index. Duplicate inputs keep separate result rows. |
+| `input` | string | Yes |  |
+| `status` | `ok` \| `error` | Yes |  |
+| `data` | `Trader` | No |  |
+| `error` | `ApiErrorBody` | No |  |
+
+## CreateWebhookRequest
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `name` | string | Yes |  |
+| `url` | string | Yes | Public HTTPS callback URL. Local/private/internal targets are rejected. |
+| `event_types` | array of `WebhookEventType` | Yes |  |
+
+## EventReplayEvent
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | Yes | Opaque event ID; currently identical to cursor for the whale_alerts.id sequence. |
+| `type` | `whale_trades_inserted` | Yes |  |
+| `cursor` | string | Yes | Cursor positioned at this event. |
+| `sequence` | integer | Yes | Global whale_alerts.id sequence. |
+| `published_at` | string | Yes |  |
+| `payload` | object | Yes |  |
+| `source` | `EventReplaySource` | Yes |  |
+| `freshness` | `EventReplayFreshness` | Yes |  |
+
+## EventReplayFreshness
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `status` | string | Yes |  |
+| `observed_at` | string | Yes |  |
+
+## EventReplayMeta
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `request_id` | string | Yes | Unique request ID (req_ prefix). |
+| `cached` | boolean | Yes |  |
+| `cache_age_s` | integer | No |  |
+| `replay` | object | Yes |  |
+| `retention` | object | Yes |  |
+| `completeness` | object | Yes |  |
+
+## EventReplaySource
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `kind` | string | Yes |  |
+| `producer_family` | `whale_trades` | Yes |  |
+| `owner` | string | Yes |  |
+| `provider_fetch_at_request_time` | boolean | Yes |  |
+
+## ExploreEntry
+
+One of: `ExploreGroup`, `ExploreStandalone`. Discriminated by `type`.
+
+## ExploreFacetValue
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `value` | string | Yes |  |
+| `label` | string | Yes |  |
+| `count` | integer | Yes |  |
+
+## ExploreFacets
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `categories` | array of `ExploreFacetValue` | Yes |  |
+| `platforms` | array of `ExploreFacetValue` | Yes |  |
+
+## ExploreGroup
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `type` | string | Yes |  |
+| `event_slug` | string | Yes |  |
+| `parent_title` | string | Yes |  |
+| `image` | string | No |  |
+| `platform` | string | No |  |
+| `category` | string | No |  |
+| `markets` | array of `ExploreMarket` | Yes |  |
+| `rep_volume` | number | No |  |
+| `rep_whales` | integer | No |  |
+
+## ExploreMarket
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | Yes |  |
+| `condition_id` | string | Yes |  |
+| `title` | string | Yes | Non-empty market title. |
+| `slug` | string | No | Provider-native market slug. |
+| `url_slug` | string | No | First-party market page slug used for internal links. |
+| `image` | string | No |  |
+| `icon` | string | No |  |
+| `category` | string | No |  |
+| `platform` | string | No |  |
+| `status` | `active` \| `closed` | Yes |  |
+| `volume` | number | No |  |
+| `liquidity` | number | No |  |
+| `whale_trade_count` | integer | No |  |
+| `whale_distinct_wallets` | integer | No |  |
+| `whale_total_usd` | number | No |  |
+| `whale_last_trade_at` | string | No |  |
+| `end_date` | string | No |  |
+| `created_at` | string | No |  |
+| `outcome_yes` | string | No |  |
+| `outcome_no` | string | No |  |
+| `event_slug` | string | No |  |
+| `kalshi_series_slug` | string | No |  |
+| `smart_score` | number | No |  |
+| `smart_count` | integer | No |  |
+| `smart_label` | string | No |  |
+| `outcome_yes_label` | string | No | Display label for the YES/outcome_index=0 side, enriched from provider outcome metadata when available. |
+| `outcome_no_label` | string | No | Display label for the NO/outcome_index=1 side, enriched from provider outcome metadata when available. |
+| `outcome_yes_provider_id` | integer | No | Provider-owned YES/outcome_index=0 identifier when available for trade-ticket wiring. |
+| `outcome_no_provider_id` | integer | No | Provider-owned NO/outcome_index=1 identifier when available for trade-ticket wiring. |
+| `open_interest` | number | No |  |
+| `oi_change_pct` | number | No |  |
+| `price_points` | array of array of number | No |  |
+| `no_price_points` | array of array of number | No |  |
+| `last_price` | number | No |  |
+| `no_last_price` | number | No |  |
+| `change_pct_24h` | number | No |  |
+| `no_change_pct_24h` | number | No |  |
+| `discover_score` | number | No | Backend-owned deterministic market discovery score used by the hot sort. |
+| `score_components` | object | No |  |
+| `freshness` | object | No |  |
+
+## ExploreStandalone
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `type` | string | Yes |  |
+| `market` | `ExploreMarket` | Yes |  |
+
+## ExportCompleteness
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `status` | `complete` \| `partial` \| `empty` | Yes |  |
+| `reason` | string | Yes |  |
+| `sync_coverage` | number | Yes |  |
+
+## ExportCounts
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `pnl_days` | integer | Yes |  |
+| `exported_markets` | integer | Yes |  |
+| `estimated_trade_rows` | integer | Yes |  |
+| `estimated_size_mb` | number | Yes |  |
+
+## ExportSourceRange
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `first_pnl_date` | string | No |  |
+| `last_pnl_date` | string | No |  |
+| `latest_trade_at` | string | No |  |
+| `latest_market_activity_at` | string | No |  |
+
+## ExportVolumeReconciliation
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `provider_lifetime_volume` | number | No |  |
+| `exported_activity_volume` | number | Yes |  |
+| `exported_market_cost_basis` | number | Yes |  |
+| `provider_activity_volume_gap` | number | No |  |
+| `activity_volume_coverage` | number | No |  |
+
+## LargeExportPolicy
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `mode` | string | Yes |  |
+| `current_internal_route` | string | Yes |  |
+| `direct_streaming` | object | Yes |  |
+| `async_job` | object | Yes |  |
+| `rate_limit` | object | Yes |  |
+
+## LargePosition
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | Yes | Composite prefixed ID `pos_<wallet>:<condition_id>:<outcome_index>`. |
+| `platform` | `polymarket` \| `kalshi` | Yes | Provider discriminator. Always polymarket today (scanner is Polymarket-only); kept in the shape so Kalshi can land without a breaking change. |
+| `total_size_usd` | number | No | Aggregate provider currentValue for this position leg in USD. |
+| `position_unrealized_pnl` | number | No | Provider per-position unrealized P&L (trader_markets.unrealized_pnl_num, from Polymarket cashPnl). |
+| `share_count` | number | Yes | Live share count for this position. |
+| `avg_entry_price` | number | No | Volume-weighted entry price. |
+| `current_price` | number | No | Latest provider mark price for the position's token. |
+| `outcome_label` | string | No | Backend-resolved outcome label (provider outcome, else Yes/No from the binary index). |
+| `event_leg_count` | integer | Yes | Legs collapsed into this representative row for one (wallet, event, outcome side) group. 1 means standalone. |
+| `event_total_value_usd` | number | No | Aggregate provider currentValue across collapsed sibling legs; equals total_size_usd when event_leg_count = 1. |
+| `first_seen_at` | string | Yes |  |
+| `last_updated_at` | string | Yes |  |
+| `trader` | object | Yes |  |
+| `market` | object | Yes |  |
+
+## LeaderboardEntry
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | Yes |  |
+| `address` | string | Yes |  |
+| `username` | string | No |  |
+| `grade` | string | No |  |
+| `streak_tier` | `hot` \| `rising` \| `neutral` \| `cooling` \| `cold` | No | Hot-streak tier (trailing-7d cross-sectional percentile); a separate axis from the all-time grade. Null when no recent activity. |
+| `score` | number | No |  |
+| `pnl` | number | No |  |
+| `volume` | number | No |  |
+| `markets_traded` | integer | No |  |
+| `win_rate` | number | No |  |
+| `strategy_type` | string | No |  |
+| `platform` | string | Yes |  |
+| `last_active` | string | No |  |
+
+## MarketIntel
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `market` | object | Yes |  |
+| `smart_money` | object | Yes |  |
+| `timeframe` | string | Yes |  |
+
+## MarketSearchResult
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | Yes |  |
+| `condition_id` | string | Yes |  |
+| `title` | string | Yes |  |
+| `slug` | string | No |  |
+| `category` | string | No |  |
+| `platform` | string | No |  |
+| `status` | `active` \| `closed` | Yes |  |
+
+## MarketSnapshot
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `market` | object | Yes |  |
+| `outcomes` | array of object | Yes |  |
+| `liquidity` | object | Yes |  |
+| `sports` | object | Yes |  |
+| `freshness` | object | Yes |  |
+| `trust` | `MarketSnapshotTrust` | No | Price and spread trust metadata. Present only when expand=trust or expand[]=trust is requested. |
+
+## MarketSnapshotFreshness
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `status` | `fresh` \| `stale` \| `available` \| `not_live` \| `unavailable` | Yes |  |
+| `source` | string | Yes |  |
+| `as_of` | string | No |  |
+| `stale_after_s` | integer | No |  |
+| `reason` | string | No |  |
+
+## MarketSnapshotTopOfBook
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `status` | `available` \| `unavailable` | Yes |  |
+| `source` | string | Yes |  |
+| `best_bid` | number | No |  |
+| `best_ask` | number | No |  |
+| `spread_bps` | integer | No |  |
+| `bid_depth_usdc` | number | No |  |
+| `ask_depth_usdc` | number | No |  |
+| `reason` | string | No |  |
+
+## MarketSnapshotTrust
+
+Price and spread trust metadata returned only when GET /api/v1/market/{condition_id}/snapshot includes expand=trust.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `current_price` | `TrustMetadata` | Yes |  |
+| `spread_bps` | `TrustMetadata` | Yes |  |
+
+## PlatformCapabilities
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `grade` | `PlatformCapabilityStatus` | Yes |  |
+| `pnl` | `PlatformCapabilityStatus` | Yes |  |
+| `strategy` | `PlatformCapabilityStatus` | Yes |  |
+| `timeline` | `PlatformCapabilityStatus` | Yes |  |
+| `whale_signal` | `PlatformCapabilityStatus` | Yes |  |
+| `insider_radar` | `PlatformCapabilityStatus` | Yes |  |
+| `market_snapshot` | `PlatformCapabilityStatus` | Yes |  |
+
+## PlatformCapabilityStatus
+
+String enum: `supported`, `partial`, `unsupported`.
+
+## Platforms
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `platforms` | object | Yes |  |
+
+## Position
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | Yes | Composite prefixed ID `pos_<wallet>:<condition_id>:<outcome_index>`. |
+| `platform` | `polymarket` \| `kalshi` | Yes | Provider discriminator. Slice 5 ships Polymarket only; the field stays in the response shape so Kalshi positions can land without a breaking change. |
+| `wallet` | string | Yes | Lowercased proxy wallet address. |
+| `side` | `YES` \| `NO` | Yes | Binary outcome side. Non-binary positions are not surfaced on V1. |
+| `shares` | number | Yes | Live share count from the wallet_positions mirror. |
+| `avg_price` | number | No | Volume-weighted entry price for this leg. |
+| `current_value_usd` | number | Yes | Current mark-to-market value in USD (always non-null on V1 — pre-reconcile rows are excluded). |
+| `initial_value_usd` | number | No |  |
+| `cash_pnl` | number | No | Unrealized P&L for the open position (Polymarket `cashPnl`). |
+| `realized_pnl` | number | No | Closed-leg P&L rolled up (Polymarket `realizedPnl`). |
+| `last_reconciled_at` | string | No | Max updated_at across mirror legs for this pair. |
+| `freshness` | `fresh` \| `refreshing` \| `stale` \| `unknown` | Yes | Backend-computed staleness bucket derived from last_reconciled_at. |
+| `trader` | object | Yes |  |
+| `market` | object | Yes |  |
+
+## PositionTimelineEvent
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | Yes | Prefixed ID (pe_...). |
+| `event_timestamp` | string | Yes | ISO 8601 timestamp of the on-chain fill. |
+| `action` | `buy` \| `sell` | Yes | From the taker's perspective. |
+| `outcome_side` | `yes` \| `no` | Yes |  |
+| `amount_delta` | number | Yes | Signed share delta (+ on buy, − on sell). |
+| `price` | number | Yes | Fill price in USDC per share, in [0,1]. |
+| `usdc_notional` | number | Yes | Positive USDC notional of the fill. |
+| `tx_hash` | string | Yes | Polygon transaction hash of the fill. |
+| `running_amount` | number | Yes | Cumulative signed share balance after this fill. |
+| `running_avg_price` | number | Yes | Buy-weighted entry basis (matches Polymarket /positions avgPrice semantics). Sells do not change this value. 0 when no buys have occurred yet. |
+
+## RadarFlag
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | Yes | Prefixed ID (rf_...). |
+| `suspicion_score` | number | Yes |  |
+| `severity` | `flag` \| `watch` | Yes |  |
+| `trader` | object | Yes |  |
+| `market` | object | Yes |  |
+| `scores` | object | Yes |  |
+| `evidence` | object | Yes | Structured evidence JSON. |
+| `created_at` | string | Yes |  |
+
+## ReportPayload
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `total_whale_trades` | integer | No |  |
+| `total_whale_volume` | number | No |  |
+| `biggest_trade_size` | number | No |  |
+| `active_traders` | integer | No |  |
+| `top_whale_trades` | array of object | No |  |
+| `categories` | array of object | No |  |
+| `grade_distribution` | array of object | No |  |
+
+## ReportReconciliation
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `volume_kind` | string | Yes |  |
+| `whale_volume_source` | string | Yes |  |
+| `notes` | string | Yes |  |
+
+## ReportSnapshot
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `kind` | `daily` \| `weekly` \| `monthly` | Yes |  |
+| `generated_at` | string | Yes |  |
+| `source_range` | `ReportSourceRange` | Yes |  |
+| `snapshot` | `SnapshotState` | Yes |  |
+| `completeness` | `SnapshotCompleteness` | Yes |  |
+| `reconciliation` | `ReportReconciliation` | Yes |  |
+| `report` | `ReportPayload` | Yes |  |
+
+## ReportSourceRange
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `start_date` | string | Yes |  |
+| `end_date` | string | Yes |  |
+| `timezone` | string | Yes |  |
+
+## ResponseMeta
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `request_id` | string | Yes | Unique request ID (req_ prefix). |
+| `cached` | boolean | Yes |  |
+| `cache_age_s` | integer | No | Cache age in seconds, null if not cached. |
+
+## SmartMoneyFlowMarket
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `market` | object | Yes |  |
+| `smart_money` | object | Yes |  |
+| `timeframe` | string | Yes |  |
+
+## SnapshotCompleteness
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `status` | `complete` \| `partial` \| `empty` | Yes |  |
+| `reason` | string | Yes |  |
+| `expected_days` | integer | Yes |  |
+| `covered_days_with_whale_activity` | integer | Yes |  |
+
+## SnapshotState
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `status` | `final` \| `rolling` | Yes |  |
+| `generated_at` | string | Yes |  |
+| `mutable_until` | string | No |  |
+
+## Trader
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | Yes | Prefixed ID (trd_...). |
+| `address` | string | Yes |  |
+| `username` | string | No |  |
+| `grade` | `S` \| `A` \| `B` \| `C` \| `D` \| `F` | No |  |
+| `streak_tier` | `hot` \| `rising` \| `neutral` \| `cooling` \| `cold` | No | Hot-streak tier (trailing-7d cross-sectional percentile); a separate axis from the all-time grade. Null when no recent activity. |
+| `score` | number | No |  |
+| `rank` | integer | No |  |
+| `pnl` | object | Yes |  |
+| `stats` | object | Yes |  |
+| `strategy` | object | No |  |
+| `category_strengths` | object | No | Per-category performance breakdown (expand=categories or expand[]=categories). Null unless expanded. Object keyed by category name; each value is the precomputed trader_rankings.category_ranks payload (rank, total_in_category, total_pnl, scaled_total_pnl, n_markets, wins, losses, win_rate; scaled_total_pnl is a legacy alias that currently equals total_pnl). Pass-through DB JSON: keys and value shape are DB-owned, so the inner shape is intentionally unconstrained and may carry additional compatibility fields. |
+| `quant_metrics` | object | No | Advanced risk/performance metrics (expand=quant_metrics or expand[]=quant_metrics). Null unless expanded. Pass-through of the advanced_metrics row as JSON (trader_id and id stripped); the metric key-set is DB-owned and additive, so the inner shape is intentionally unconstrained. |
+| `last_active` | string | No |  |
+| `synced_at` | string | No |  |
+| `sync_status` | string | No | synced, unknown, or pending. |
+| `trust` | `TraderTrust` | No | Field-level trust metadata. Present only when expand=trust or expand[]=trust is requested. |
+
+## TraderExportSnapshot
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `address` | string | Yes |  |
+| `generated_at` | string | Yes |  |
+| `source_range` | `ExportSourceRange` | Yes |  |
+| `completeness` | `ExportCompleteness` | Yes |  |
+| `reconciliation` | `ExportVolumeReconciliation` | Yes |  |
+| `counts` | `ExportCounts` | Yes |  |
+| `large_export_policy` | `LargeExportPolicy` | Yes |  |
+
+## TraderPnl
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | Yes | Prefixed trader ID (`trd_...`). |
+| `entries` | array of object | Yes | Daily cumulative-P&L series (oldest-first). |
+| `stats` | object | Yes |  |
+| `monthly` | array of object | Yes | Per-month P&L aggregation. |
+| `year_totals` | array of object | Yes | Per-year P&L totals (ascending by year). |
+| `drawdown` | array of object | Yes | Underwater (drawdown) series. |
+
+## TraderTrust
+
+Field-level trust metadata returned only when GET /api/v1/trader/{address} includes expand=trust.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `total_pnl` | `TrustMetadata` | Yes |  |
+| `realized_pnl` | `TrustMetadata` | Yes |  |
+| `unrealized_pnl` | `TrustMetadata` | Yes |  |
+| `markets_traded` | `TrustMetadata` | Yes |  |
+| `win_rate` | `TrustMetadata` | Yes |  |
+| `daily_win_rate` | `TrustMetadata` | Yes |  |
+| `total_volume` | `TrustMetadata` | Yes |  |
+| `grade` | `TrustMetadata` | Yes |  |
+| `score` | `TrustMetadata` | Yes |  |
+| `rank` | `TrustMetadata` | Yes |  |
+| `streak_tier` | `TrustMetadata` | Yes |  |
+| `strategy` | `TrustMetadata` | Yes |  |
+| `category_strengths` | `TrustMetadata` | Yes |  |
+| `quant_metrics` | `TrustMetadata` | Yes |  |
+| `last_active` | `TrustMetadata` | Yes |  |
+| `synced_at` | `TrustMetadata` | Yes |  |
+| `sync_status` | `TrustMetadata` | Yes |  |
+
+## TrendingWallet
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | Yes | Prefixed trader ID (`trd_...`). |
+| `address` | string | Yes |  |
+| `rank` | integer | Yes | 1-based rank within the full ranked set (stable across pages). |
+| `username` | string | No |  |
+| `profile_image_url` | string | No | Official Polymarket avatar URL (profileImage). |
+| `platform` | `polymarket` \| `kalshi` | Yes | Real provider platform; surfaced, never coerced. Polymarket-only today. |
+| `trending_pnl_usd` | number | Yes | Realized P&L over the trailing window in USD (ranking axis). |
+| `window_volume_usd` | number | Yes |  |
+| `window_markets_traded` | integer | Yes |  |
+| `window_trade_days` | integer | Yes |  |
+| `grade` | `S` \| `A` \| `B` \| `C` \| `D` \| `F` | No | All-time cohort-relative skill grade (forecasting calibration, risk-adjusted returns, consistency); a separate axis from streak_tier. Not a profit ranking, and relative, so it drifts as the cohort moves. Omitted when the trader is Unranked (fewer than 5 markets, insufficient track record to cohort-rank). |
+| `streak_tier` | `hot` \| `rising` \| `neutral` \| `cooling` \| `cold` | No | Hot-streak tier (trailing-7d cross-sectional percentile). Null when no recent activity. |
+| `all_time_pnl_usd` | number | No |  |
+| `all_time_score` | number | No |  |
+| `last_synced` | string | No |  |
+| `daily_pnl_series` | array of object | Yes | Zero-filled daily P&L series across the window. |
+
+## TrustCompleteness
+
+Whether the described value or result set is complete for its stated contract.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `status` | `complete` \| `partial` \| `not_computed` \| `not_applicable` \| `unavailable` | Yes |  |
+| `detail` | string | No |  |
+
+## TrustFreshness
+
+Freshness metadata for a trust-critical value. This is separate from transport cache fields in ResponseMeta.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `status` | `fresh` \| `refreshing` \| `stale` \| `not_live` \| `unknown` \| `unavailable` | Yes |  |
+| `as_of` | string | No |  |
+| `max_age_s` | integer | No |  |
+
+## TrustMetadata
+
+Shared source/freshness/reconciliation/completeness metadata for public API values that may be cached, stale, partial, computed, or provider-unavailable. Unavailable provider values must be represented with explicit metadata instead of fabricated zeros or empty arrays.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `source` | `TrustSource` | Yes |  |
+| `freshness` | `TrustFreshness` | Yes |  |
+| `reconciliation` | `TrustReconciliation` | Yes |  |
+| `completeness` | `TrustCompleteness` | Yes |  |
+
+## TrustReconciliation
+
+How provider-owned facts were reconciled with stored/read-model values.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `status` | `provider_backed` \| `db_mirror` \| `computed` \| `partial` \| `not_applicable` \| `unavailable` | Yes |  |
+| `detail` | string | No |  |
+
+## TrustSource
+
+Source metadata for a trust-critical value. Providers and DB/read models own business truth; clients should not infer missing provider facts from titles, slugs, zeros, or empty arrays.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `kind` | `provider` \| `database` \| `cache` \| `computed` \| `client_input` \| `unavailable` | Yes |  |
+| `owner` | string | Yes | Provider, table/read-model, cache, or service that owns the value. |
+| `field` | string | No | Provider field, DB column, or computed field name when applicable. |
+
+## UpdateWebhookRequest
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `name` | string | No |  |
+| `url` | string | No |  |
+| `event_types` | array of `WebhookEventType` | No |  |
+| `enabled` | boolean | No |  |
+
+## Usage
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `object` | string | Yes |  |
+| `data` | object | Yes |  |
+| `meta` | `ResponseMeta` | Yes |  |
+
+## VerifyWebhookRequest
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `verification_token` | string | Yes |  |
+
+## WebhookEndpoint
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | integer | Yes |  |
+| `object` | string | Yes |  |
+| `name` | string | Yes |  |
+| `url` | string | Yes |  |
+| `event_types` | array of `WebhookEventType` | Yes |  |
+| `status` | `WebhookStatus` | Yes |  |
+| `verified_at` | string | No |  |
+| `verification_token_expires_at` | string | Yes |  |
+| `failure_count` | integer | Yes |  |
+| `created_at` | string | Yes |  |
+| `updated_at` | string | Yes |  |
+| `retry_policy` | `WebhookRetryPolicy` | Yes |  |
+| `signing_secret` | string | No | Returned only on create or rotate-secret. |
+| `verification` | `WebhookVerification` | No |  |
+
+## WebhookEventType
+
+String enum: `whale_trades_inserted`, `live_sports_updated`, `whale_trader_synced`, `large_positions_updated`.
+
+## WebhookRetryPolicy
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `max_attempts` | integer | Yes |  |
+| `terminal_status` | string | Yes |  |
+
+## WebhookStatus
+
+String enum: `pending_verification`, `active`, `disabled`.
+
+## WebhookVerification
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `token` | string | Yes | One-time verification token returned only on create or URL change. |
+| `expires_at` | string | Yes |  |
+
+## WhaleTrade
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | string | Yes | Prefixed ID (wt_...). |
+| `traded_at` | string | Yes |  |
+| `size_usd` | number | Yes |  |
+| `side` | `BUY` \| `SELL` | Yes |  |
+| `price` | number | Yes |  |
+| `signal_score` | number | Yes | 0.0–1.0 normalized signal score. |
+| `trader` | object | Yes |  |
+| `market` | object | Yes |  |
+
+## WhaleTradeHistoryMeta
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `request_id` | string | Yes | Unique request ID (req_ prefix). |
+| `cached` | boolean | Yes |  |
+| `cache_age_s` | integer | No | Cache age in seconds, null if not cached. |
+| `source` | object | Yes |  |
+| `completeness` | object | Yes |  |

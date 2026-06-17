@@ -1,0 +1,53 @@
+---
+title: "Platforms"
+description: "Which prediction markets 0xinsider covers, and which features are available per platform."
+---
+
+0xinsider covers two prediction-market platforms: **Polymarket** and **Kalshi**. They are not at parity. Polymarket is fully covered. Kalshi coverage is partial, because some of the on-chain signals 0xinsider computes do not exist for Kalshi's centralized markets.
+
+Plan around the real coverage. A copy-trading or whale-tracking integration that assumes Kalshi grades or Kalshi whale data will come back empty.
+
+## The platform enum
+
+Anywhere a `platform` field or filter appears, the values are lowercase:
+
+- `polymarket`
+- `kalshi`
+
+Endpoints that accept a `platform` filter (whale-trades history, smart-money flows, explore) also accept `all`.
+
+## Capability matrix
+
+This mirrors the live [`GET /api/v1/platforms`](/api-reference/endpoint/get-platforms) response, which is the source of truth. Query it at runtime rather than hard-coding coverage.
+
+| Capability | Polymarket | Kalshi |
+|---|---|---|
+| Trader grade | Supported | Unsupported |
+| P&L | Supported | Partial |
+| Strategy classification | Supported | Unsupported |
+| Position timeline | Supported | Partial |
+| Whale signal | Supported | Unsupported |
+| Insider radar | Supported | Unsupported |
+| Market snapshot | Supported | Partial |
+
+`supported` means the feature is fully populated. `partial` means some fields are present but not all (Kalshi market snapshots carry last price but no order-book top-of-book, for example). `unsupported` means the feature does not apply to that platform and returns no data.
+
+## Polymarket-only features
+
+Two surfaces are Polymarket-only today, independent of any `platform` filter you pass:
+
+- **Whale trades** ([`/whale-trades`](/api-reference/endpoint/get-whale-trades), [`/whale-trades/history`](/api-reference/endpoint/get-whale-trades-history)). The whale-trade feed is built from Polymarket fills only. A `platform=kalshi` filter returns nothing.
+- **Large positions** ([`/large-positions`](/api-reference/endpoint/list-large-positions)). The large-position scanner runs against Polymarket markets only.
+
+Trader grades, strategy classification, and insider radar are also Polymarket-only, as the matrix shows.
+
+## What works on both
+
+These read paths return both Polymarket and Kalshi data:
+
+- Trader profiles and P&L ([`/trader/{address}`](/api-reference/endpoint/get-trader), [`/trader/{address}/pnl`](/api-reference/endpoint/get-trader-pnl)), with the per-platform caveats above.
+- Positions board ([`/positions`](/api-reference/endpoint/get-positions)).
+- Market intel and smart-money flows ([`/market/{condition_id}/intel`](/api-reference/endpoint/get-market-intel), [`/markets/smart-money-flows`](/api-reference/endpoint/smart-money-flows)).
+- Market search and explore ([`/markets/search`](/api-reference/endpoint/search-markets), [`/markets/explore`](/api-reference/endpoint/explore-markets)).
+
+When a field is thin or absent for Kalshi, [trust metadata](/concepts/trust-metadata) marks it (`unsupported` sources surface as `unavailable`), so you can detect coverage gaps in code instead of guessing.

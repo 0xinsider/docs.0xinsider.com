@@ -9,7 +9,7 @@ Permanently remove a webhook. No further events are delivered to that URL, and t
 curl -X DELETE \
   -H "Authorization: Bearer $OXINSIDER_API_KEY" \
   -H "Idempotency-Key: webhook-delete-2026-06-01" \
-  "https://api.0xinsider.com/api/v1/webhooks/wh_abc123"
+  "https://api.0xinsider.com/api/v1/webhooks/42"
 ```
 
 To pause deliveries without losing the webhook, [update](/api-reference/endpoint/update-webhook) it to `enabled: false` instead.

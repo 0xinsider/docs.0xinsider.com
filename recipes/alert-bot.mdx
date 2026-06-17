@@ -1,0 +1,81 @@
+---
+title: "Alert bot"
+description: "Get notified on large trades, by webhook push or by polling, then post to Slack or Discord."
+---
+
+Goal: fire an alert when a large trade lands. There are two ways to receive the events: a webhook push (no infrastructure to poll, needs a public URL) or polling (works anywhere). Pick one.
+
+All requests need a Bearer key. See [Authentication](/authentication).
+
+## Option A: webhook push
+
+Register an endpoint on `whale_trades_inserted` and verify it. Full setup, signature verification, and retry handling are in the [Webhooks guide](/guides/webhooks). The event tells you new trades landed; fetch the detail and filter:
+
+```python
+# Inside your verified webhook handler, after signature check:
+def handle_event(event):
+    if event["type"] != "whale_trades_inserted":
+        return
+    feed = requests.get(
+        f"{BASE}/whale-trades",
+        params={"min_grade": "A", "min_size": 25000, "limit": 50},
+        headers=H,
+    ).json()
+    for tr in feed["data"]:
+        post_alert(tr)
+```
+
+Webhook events are coarse: one event per ingest batch, no per-market or per-grade server-side filter. Apply your `min_size` and `min_grade` filter on the fetched trades.
+
+## Option B: polling
+
+No public URL required. Walk the durable replay feed with a cursor so you never miss or double-count an event across restarts:
+
+```python
+import os, time, requests
+
+BASE = "https://api.0xinsider.com/api/v1"
+H = {"Authorization": f"Bearer {os.environ['OXINSIDER_API_KEY']}"}
+
+cursor = load_cursor()  # persist this between runs
+
+while True:
+    params = {"limit": 100}
+    if cursor:
+        params["cursor"] = cursor
+    resp = requests.get(f"{BASE}/events/feed/since", params=params, headers=H).json()
+
+    for ev in resp["data"]:
+        if ev["type"] == "whale_trades_inserted":
+            check_new_trades()
+    if resp.get("next_cursor"):
+        cursor = resp["next_cursor"]
+        save_cursor(cursor)
+    if not resp.get("has_more"):
+        time.sleep(15)
+```
+
+For the live feed directly, poll [`GET /api/v1/whale-trades`](/api-reference/endpoint/get-whale-trades) with your filters, or open the [SSE stream](/api-reference/endpoint/get-stream) for real-time push without a webhook.
+
+## Post the alert
+
+```python
+def post_alert(tr):
+    msg = (
+        f'{tr["trader"]["grade"]}-grade {tr["trader"]["username"] or "wallet"} '
+        f'{tr["side"]} ${tr["size_usd"]:,.0f} @ {tr["price"]} '
+        f'on {tr["market"]["title"]} (signal {tr["signal_score"]:.0f})'
+    )
+    requests.post(os.environ["SLACK_WEBHOOK_URL"], json={"text": msg})
+```
+
+## Which to choose
+
+| | Webhook push | Polling |
+|---|---|---|
+| Public HTTPS URL | Required | Not required |
+| Latency | Lowest | Poll interval |
+| Missed events on downtime | Retried up to 8 times | Caught up via cursor |
+| Filtering | After receipt | Query params (whale-trades) |
+
+Webhooks win when you have a server and want the lowest latency. Polling the cursor feed wins for a script, a notebook, or anything behind NAT.

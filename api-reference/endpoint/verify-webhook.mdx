@@ -3,12 +3,16 @@ title: "Verify Webhook"
 openapi: "POST /api/v1/webhooks/{id}/verify"
 ---
 
-Send a signed test payload to your webhook URL to confirm signature verification on your side before live deliveries start.
+Activate a webhook by returning the `verification_token` you received when you created it. A new endpoint stays in `pending_verification` and receives no deliveries until it is verified. The token expires 24 hours after create.
 
 ```bash
 curl -X POST \
   -H "Authorization: Bearer $OXINSIDER_API_KEY" \
-  "https://api.0xinsider.com/api/v1/webhooks/wh_abc123/verify"
+  -H "Content-Type: application/json" \
+  -d '{"verification_token": "whv_3c2e...redacted"}' \
+  "https://api.0xinsider.com/api/v1/webhooks/42/verify"
 ```
 
-The webhook receives a `verify.test` event with an `X-0xinsider-Signature` header. Compute `HMAC_SHA256(secret, raw_body)` on your side and compare in constant time. Reject deliveries with mismatched signatures.
+On success the endpoint flips to `active` and deliveries begin. This call does not send a test delivery; it activates the endpoint by matching the token. The webhook `id` is the integer returned at create.
+
+For the signature scheme and copy-pasteable verification code, see the [Webhooks guide](/guides/webhooks).

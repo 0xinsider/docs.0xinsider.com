@@ -1,0 +1,117 @@
+---
+title: "Trust Metadata"
+description: "Every derived field can tell you where it came from, how fresh it is, and whether it was reconciled against the provider."
+---
+
+Most APIs hand you a number and leave you to guess whether it is live, cached, or stale. 0xinsider can tell you. Ask for trust metadata and every covered field comes with its own provenance: the source it came from, how fresh it is, whether it was reconciled against the on-chain or provider truth, and whether the value is complete.
+
+This matters when you act on the data. A P&L figure that is `fresh` and `provider_backed` is safe to trade on. The same figure marked `stale` and `db_mirror` is a hint, not a fact.
+
+## How to get it
+
+Trust metadata is opt-in, because it adds weight to the response. Pass `expand=trust`:
+
+```bash
+# Field-level trust on a trader profile
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/trader/0x204f72f35326db932158cba6adff0b9a1da95e14?expand=trust"
+
+# Trust on a market snapshot (price and spread)
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/market/0x123.../snapshot?expand=trust"
+```
+
+Without `expand=trust`, the `trust` block is omitted. See [Expanding responses](/concepts/expand) for the full list of expand options.
+
+## The shape
+
+Each covered field maps to a `TrustMetadata` object with four dimensions:
+
+```json
+{
+  "trust": {
+    "pnl": {
+      "source": { "kind": "provider", "owner": "polymarket", "field": "cashPnl" },
+      "freshness": { "status": "fresh", "as_of": "2026-06-17T14:28:20Z", "max_age_s": 300 },
+      "reconciliation": { "status": "provider_backed", "detail": "from /positions" },
+      "completeness": { "status": "complete", "detail": null }
+    }
+  }
+}
+```
+
+On a trader profile, `trust` carries one entry per derived field (P&L, strategy, category strengths, quant metrics, last-active, and more). On a market snapshot, it covers `current_price` and `spread_bps`.
+
+## The four dimensions
+
+### source
+
+Where the value originated.
+
+| Value | Meaning |
+|---|---|
+| `provider` | Read directly from Polymarket or Kalshi. |
+| `database` | Stored in our database, mirrored from a provider read. |
+| `cache` | Served from a short-lived cache. |
+| `computed` | Derived by 0xinsider from underlying rows. |
+| `client_input` | Echoed back from your request. |
+| `unavailable` | No source could supply this field. |
+
+The `owner` and `field` tell you the upstream provider and the exact provider field name when `kind` is `provider`.
+
+### freshness
+
+How current the value is.
+
+| Value | Meaning |
+|---|---|
+| `fresh` | Within its expected age window. |
+| `refreshing` | A newer value is being fetched right now. |
+| `stale` | Past its freshness window. Treat as a hint. |
+| `not_live` | Point-in-time value that is not meant to update (a resolved market). |
+| `unknown` | Freshness could not be determined. |
+| `unavailable` | No freshness signal exists. |
+
+`as_of` is the timestamp the value was last known good. `max_age_s` is the window after which `fresh` becomes `stale`.
+
+### reconciliation
+
+Whether the value was checked against the provider's own truth.
+
+| Value | Meaning |
+|---|---|
+| `provider_backed` | Matches a direct provider read. |
+| `db_mirror` | Mirrored from an earlier provider read, not re-checked this request. |
+| `computed` | Derived locally, no single provider field to reconcile against. |
+| `partial` | Reconciled against some but not all underlying sources. |
+| `not_applicable` | Reconciliation does not apply to this field. |
+| `unavailable` | Could not reconcile. |
+
+### completeness
+
+Whether the value reflects the full picture.
+
+| Value | Meaning |
+|---|---|
+| `complete` | Computed over the full available history. |
+| `partial` | Computed over a subset (an in-progress sync, a bounded window). |
+| `not_computed` | The field was not computed for this response. |
+| `not_applicable` | Completeness does not apply. |
+| `unavailable` | Could not determine completeness. |
+
+`detail` carries a short human-readable note when the status needs one (for example, why a value is `partial`).
+
+## Using it in practice
+
+A simple rule covers most integrations: act on values that are `fresh` and either `provider_backed` or `db_mirror`, and treat anything `stale`, `partial`, or `unavailable` as a softer signal.
+
+```python
+def is_actionable(field_trust):
+    return (
+        field_trust["freshness"]["status"] == "fresh"
+        and field_trust["completeness"]["status"] == "complete"
+        and field_trust["reconciliation"]["status"] in ("provider_backed", "db_mirror")
+    )
+```
+
+When a trader is mid-sync, expect `partial` completeness on history-derived fields until the sync finishes. See [Platforms](/concepts/platforms) for which fields carry meaningful trust on Kalshi, where coverage is thinner than Polymarket.
