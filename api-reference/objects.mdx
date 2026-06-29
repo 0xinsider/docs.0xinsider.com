@@ -515,7 +515,7 @@ String enum: `supported`, `partial`, `unsupported`.
 | `stats` | object | Yes |  |
 | `strategy` | object | No |  |
 | `category_strengths` | object | No | Per-category performance breakdown (expand=categories or expand[]=categories). Null unless expanded. Object keyed by category name; each value is the precomputed trader_rankings.category_ranks payload (rank, total_in_category, total_pnl, scaled_total_pnl, n_markets, wins, losses, win_rate; scaled_total_pnl is a legacy alias that currently equals total_pnl). Pass-through DB JSON: keys and value shape are DB-owned, so the inner shape is intentionally unconstrained and may carry additional compatibility fields. |
-| `quant_metrics` | object | No | Advanced risk/performance metrics (expand=quant_metrics or expand[]=quant_metrics). Null unless expanded. Pass-through of the advanced_metrics row as JSON (trader_id and id stripped); the metric key-set is DB-owned and additive, so the inner shape is intentionally unconstrained. |
+| `quant_metrics` | object | No | Curated advanced risk/performance metrics (expand=quant_metrics or expand[]=quant_metrics). Omitted unless expanded and the trader has computed metrics; when present, all listed fields are present (each is a number or null). null means insufficient trade history and must not be treated as 0. This is a fixed, documented field set, refreshed periodically by the cross-sectional ranking job. |
 | `last_active` | string | No |  |
 | `synced_at` | string | No |  |
 | `sync_status` | string | No | synced, unknown, or pending. |
