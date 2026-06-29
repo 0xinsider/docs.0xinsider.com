@@ -7127,8 +7127,66 @@
           "quant_metrics": {
             "type": "object",
             "nullable": true,
-            "additionalProperties": true,
-            "description": "Advanced risk/performance metrics (expand=quant_metrics or expand[]=quant_metrics). Null unless expanded. Pass-through of the advanced_metrics row as JSON (trader_id and id stripped); the metric key-set is DB-owned and additive, so the inner shape is intentionally unconstrained."
+            "additionalProperties": false,
+            "required": [
+              "smart_score",
+              "copy_score",
+              "sharpe_30d",
+              "sharpe_7d",
+              "profit_factor",
+              "edge_consistency",
+              "sharpe_percentile",
+              "pf_percentile",
+              "consistency_percentile"
+            ],
+            "description": "Curated advanced risk/performance metrics (expand=quant_metrics or expand[]=quant_metrics). Omitted unless expanded and the trader has computed metrics; when present, all listed fields are present (each is a number or null). null means insufficient trade history and must not be treated as 0. This is a fixed, documented field set, refreshed periodically by the cross-sectional ranking job.",
+            "properties": {
+              "smart_score": {
+                "type": "number",
+                "nullable": true,
+                "description": "Composite skill score, 0-100. smart_score = clamp(0, 100, 30*sharpe_percentile_fraction + 20*profit_factor_percentile_fraction + 20*edge_consistency_percentile_fraction + 10*min(1, return_on_capital/2) + 10*equity_smoothness + 10*(1 - min(1, asset_concentration))). Higher is better. null when insufficient history."
+              },
+              "copy_score": {
+                "type": "number",
+                "nullable": true,
+                "description": "Copyability score, 0-100. Same base as smart_score minus penalties for traits that make a strategy hard to replicate: -20 if fewer than 50 markets traded, -15 if positions are highly concentrated, -15 if position sizing exceeds about 2x Kelly, -10 if the worst single-trade loss exceeds 30%, -10 if edge is inconsistent; result clamped to 0-100. Higher means easier to follow. null when insufficient history."
+              },
+              "sharpe_30d": {
+                "type": "number",
+                "nullable": true,
+                "description": "Sharpe ratio over the trailing 30 days (risk-adjusted return; higher is better). Magnitude can be large for small samples. null when insufficient history."
+              },
+              "sharpe_7d": {
+                "type": "number",
+                "nullable": true,
+                "description": "Sharpe ratio over the trailing 7 days (risk-adjusted return; higher is better). null when insufficient history."
+              },
+              "profit_factor": {
+                "type": "number",
+                "nullable": true,
+                "description": "Gross profit divided by gross loss; greater than 1 is profitable. Capped at 1000 when there are effectively no losses. null when insufficient history."
+              },
+              "edge_consistency": {
+                "type": "number",
+                "nullable": true,
+                "description": "Stability of the trader's edge over time, 0-1 (higher is more consistent). null when insufficient history."
+              },
+              "sharpe_percentile": {
+                "type": "number",
+                "nullable": true,
+                "description": "Cross-sectional percentile rank of the trader's Sharpe ratio versus all traders, 0-100. null when insufficient history."
+              },
+              "pf_percentile": {
+                "type": "number",
+                "nullable": true,
+                "description": "Cross-sectional percentile rank of profit factor versus all traders, 0-100. null when insufficient history."
+              },
+              "consistency_percentile": {
+                "type": "number",
+                "nullable": true,
+                "description": "Cross-sectional percentile rank of edge consistency versus all traders, 0-100. null when insufficient history."
+              }
+            }
           },
           "last_active": {
             "type": "string",

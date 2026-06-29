@@ -7,6 +7,20 @@ rss: true
 
 This changelog tracks externally visible REST API changes only. Documentation-only edits are intentionally excluded.
 
+<Update label="June 29, 2026" description="Trader quant_metrics is now a documented, fixed field set">
+  [`GET /api/v1/trader/{address}`](/api-reference/endpoint/get-trader) and [`POST /api/v1/traders/batch`](/api-reference/endpoint/batch-get-traders) now return a curated, documented `quant_metrics` object when you pass `?expand=quant_metrics`, instead of an unconstrained pass-through of internal metrics.
+
+  When expanded, the object always carries these nine fields, each a number or `null` (`null` means insufficient trade history and is never `0`):
+
+  - `copy_score`, `smart_score`: 0-100 composite scores. `smart_score` blends risk-adjusted return, profit factor, edge consistency, return on capital, equity smoothness, and diversification. `copy_score` is that same base minus penalties for traits that make a strategy hard to replicate (small sample, concentration, oversized position sizing, large single losses, inconsistent edge).
+  - `sharpe_30d`, `sharpe_7d`: risk-adjusted return over the trailing 30 and 7 days.
+  - `profit_factor`: gross profit divided by gross loss (capped at 1000).
+  - `edge_consistency`: stability of the trader's edge over time (0-1).
+  - `sharpe_percentile`, `pf_percentile`, `consistency_percentile`: cross-sectional ranks versus all traders (0-100).
+
+  Every field is now defined in the [trader endpoint reference](/api-reference/endpoint/get-trader). Undocumented internal and experimental metrics that previously leaked through the pass-through are no longer returned.
+</Update>
+
 <Update label="June 1, 2026" description="Smart-money flow market discovery endpoint">
   Added [`GET /api/v1/markets/smart-money-flows`](/api-reference/endpoint/smart-money-flows), a ranked discovery feed that answers where smart money is flowing before you know a `condition_id`.
 
