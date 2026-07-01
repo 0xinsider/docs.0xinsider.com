@@ -6977,6 +6977,11 @@
               "no"
             ]
           },
+          "token_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Polymarket CLOB token id (ERC1155 asset id, decimal string) for this outcome; null when unavailable (e.g. Kalshi markets, unsynced markets)."
+          },
           "amount_delta": {
             "type": "number",
             "description": "Signed share delta (+ on buy, − on sell)."
@@ -7246,6 +7251,11 @@
               "NO"
             ],
             "description": "Binary outcome side. Non-binary positions are not surfaced on V1."
+          },
+          "token_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Polymarket CLOB token id (ERC1155 asset id, decimal string) for this outcome; null when unavailable (e.g. Kalshi markets, unsynced markets)."
           },
           "shares": {
             "type": "number",
@@ -7679,9 +7689,19 @@
             "type": "string",
             "nullable": true
           },
+          "token_id_yes": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Polymarket CLOB token id (ERC1155 asset id, decimal string) for the YES outcome; null when unavailable (e.g. Kalshi markets, unsynced markets)."
+          },
           "outcome_no": {
             "type": "string",
             "nullable": true
+          },
+          "token_id_no": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Polymarket CLOB token id (ERC1155 asset id, decimal string) for the NO outcome; null when unavailable (e.g. Kalshi markets, unsynced markets)."
           },
           "event_slug": {
             "type": "string",
@@ -8016,6 +8036,11 @@
                   "NO"
                 ]
               },
+              "token_id": {
+                "type": "string",
+                "nullable": true,
+                "description": "The Polymarket CLOB token id (ERC1155 asset id, decimal string) for the net-flow direction outcome; null when unavailable (e.g. Kalshi markets, unsynced markets)."
+              },
               "whale_trade_count": {
                 "type": "integer"
               },
@@ -8056,6 +8081,11 @@
                         "YES",
                         "NO"
                       ]
+                    },
+                    "token_id": {
+                      "type": "string",
+                      "nullable": true,
+                      "description": "The Polymarket CLOB token id (ERC1155 asset id, decimal string) for this outcome; null when unavailable (e.g. Kalshi markets, unsynced markets)."
                     },
                     "size_usd": {
                       "type": "number"
@@ -8132,6 +8162,11 @@
                   "YES",
                   "NO"
                 ]
+              },
+              "token_id": {
+                "type": "string",
+                "nullable": true,
+                "description": "The Polymarket CLOB token id (ERC1155 asset id, decimal string) for the net-flow direction outcome; null when unavailable (e.g. Kalshi markets, unsynced markets)."
               },
               "whale_trade_count": {
                 "type": "integer"
@@ -8911,7 +8946,76 @@
           "top_whale_trades": {
             "type": "array",
             "items": {
-              "type": "object"
+              "type": "object",
+              "properties": {
+                "outcome": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Provider outcome label for the traded side."
+                },
+                "side": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Trade direction (BUY or SELL), not the outcome side."
+                },
+                "title": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Market title."
+                },
+                "size": {
+                  "type": "number",
+                  "nullable": true,
+                  "description": "Trade size in USD."
+                },
+                "price": {
+                  "type": "number",
+                  "nullable": true,
+                  "description": "Trade price in provider [0, 1] units."
+                },
+                "token_id": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "The Polymarket CLOB token id (ERC1155 asset id, decimal string) for the traded outcome; null when unavailable (e.g. Kalshi markets, unsynced markets)."
+                },
+                "id": {
+                  "type": "integer",
+                  "format": "int64",
+                  "nullable": true,
+                  "description": "Whale trade id."
+                },
+                "trade_time": {
+                  "type": "string",
+                  "format": "date-time",
+                  "nullable": true,
+                  "description": "Trade timestamp (UTC)."
+                },
+                "market_category": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Provider market category."
+                },
+                "platform": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Venue: polymarket or kalshi."
+                },
+                "name": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Trader display name, when known."
+                },
+                "pseudonym": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Trader pseudonym, when no display name is known."
+                },
+                "trader_grade": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Trader grade (S-F) at snapshot time."
+                }
+              }
             },
             "nullable": true
           },
@@ -9245,6 +9349,11 @@
             "type": "string",
             "nullable": true,
             "description": "Backend-resolved outcome label (provider outcome, else Yes/No from the binary index)."
+          },
+          "token_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Polymarket CLOB token id (ERC1155 asset id, decimal string) for this outcome; null when unavailable (e.g. Kalshi markets, unsynced markets)."
           },
           "event_leg_count": {
             "type": "integer",

@@ -7,6 +7,22 @@ rss: true
 
 This changelog tracks externally visible REST API changes only. Documentation-only edits are intentionally excluded.
 
+<Update label="July 1, 2026" description="Every V1 YES/NO/outcome now carries its Polymarket CLOB token id">
+  Reads that expose an outcome, side, or net-flow direction now also return a per-outcome Polymarket CLOB `token_id`, so you can go straight from a YES/NO/outcome label to its on-chain ERC1155 asset id without a second lookup. Use it for order placement, per-token price history, and on-chain reconciliation.
+
+  The value is a decimal string for a synced Polymarket market and `null` when unavailable (for example Kalshi markets, or markets that have not synced yet). It is always present and never in a `required` set, so the change is purely additive and safe for existing clients.
+
+  The endpoints that gained it:
+
+  - [`GET /api/v1/positions`](/api-reference/endpoint/get-positions): `token_id` alongside `side`.
+  - [`GET /api/v1/large-positions`](/api-reference/endpoint/list-large-positions): `token_id` alongside `outcome_label`.
+  - [`GET /api/v1/market/{condition_id}/intel`](/api-reference/endpoint/get-market-intel) and [`POST /api/v1/markets/intel/batch`](/api-reference/endpoint/batch-get-market-intel): `token_id` on `smart_money` (alongside `direction`) and on every `smart_money.top_positions` entry.
+  - [`GET /api/v1/markets/smart-money-flows`](/api-reference/endpoint/smart-money-flows): `token_id` on `smart_money`, alongside `direction`.
+  - [`GET /api/v1/trader/{address}/position-timeline`](/api-reference/endpoint/get-position-timeline) and [`GET /api/v1/traders/{trader}/position-timeline`](/api-reference/endpoint/get-trader-position-timeline): `token_id` alongside `outcome_side`.
+  - [`GET /api/v1/markets/explore`](/api-reference/endpoint/explore-markets): `token_id_yes` and `token_id_no` alongside `outcome_yes` / `outcome_no`. These are CLOB token ids (decimal strings), distinct from the integer `outcome_yes_provider_id` / `outcome_no_provider_id` Gamma ids.
+  - [`GET /api/v1/reports/daily`](/api-reference/endpoint/get-daily-report-snapshot), [`weekly`](/api-reference/endpoint/get-weekly-report-snapshot), and [`monthly`](/api-reference/endpoint/get-monthly-report-snapshot): `token_id` on every `top_whale_trades` entry.
+</Update>
+
 <Update label="July 1, 2026" description="Pick of the Day archive adds a cumulative track-record series for charting">
   `GET /api/v1/pick-of-the-day/archive` now returns a `hit_rate.series` array — the cumulative track record of the Pick of the Day, ready to chart without recomputing it on the client.
 
