@@ -48,11 +48,11 @@ smart_score = clamp(0, 100,
 
 | Penalty | When it applies |
 |---|---|
-| −20 | Fewer than 50 markets traded (thin track record) |
-| −15 | Positions are highly concentrated |
-| −15 | Position sizing exceeds about 2x Kelly (over-betting) |
-| −10 | Worst single-trade loss exceeds 30% |
-| −10 | Edge is inconsistent |
+| -20 | Fewer than 50 markets traded (thin track record) |
+| -15 | Positions are highly concentrated |
+| -15 | Position sizing exceeds about 2x Kelly (over-betting) |
+| -10 | Worst single-trade loss exceeds 30% |
+| -10 | Edge is inconsistent |
 
 A trader can have a high `smart_score` and a much lower `copy_score`: genuinely skilled, but running a book that is risky or impractical to mirror. When you are ranking traders to follow or copy, read `copy_score`. When you are ranking pure skill, read `smart_score`.
 
@@ -94,7 +94,7 @@ These place the trader against the whole population, 0-100. They are the inputs 
     "grade": "S",
     "quant_metrics": {
       "smart_score": 84.2,
-      "copy_score": 71.5,
+      "copy_score": 74.2,
       "sharpe_30d": 2.13,
       "sharpe_7d": 3.44,
       "profit_factor": 4.1,
