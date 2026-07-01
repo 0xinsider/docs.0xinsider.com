@@ -1,0 +1,115 @@
+---
+title: "Quant Metrics"
+description: "The curated risk and performance metrics behind a trader's scores, what each field means, and how to read them."
+---
+
+`quant_metrics` is a curated set of risk and performance metrics for a trader. It is where the two headline scores live, `smart_score` and `copy_score`, alongside the risk-adjusted return and consistency measures they are built from.
+
+The field set is fixed and documented: exactly nine fields, each a number or `null`. It is not a raw database dump, and it does not grow silently as we add internal columns. New internal metrics stay internal until they are curated into this contract.
+
+## How to get it
+
+`quant_metrics` is an [expanded field](/concepts/expand). It is omitted from trader responses unless you ask for it:
+
+```bash
+# Single trader
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/trader/0x204f...?expand=quant_metrics"
+
+# Many traders at once
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  -X POST "https://api.0xinsider.com/api/v1/traders/batch" \
+  -H "Content-Type: application/json" \
+  -d '{"traders": ["0x204f...", "swisstony"], "expand": ["quant_metrics"]}'
+```
+
+It appears on [`GET /api/v1/trader/{address}`](/api-reference/endpoint/get-trader) and [`POST /api/v1/traders/batch`](/api-reference/endpoint/batch-get-traders). The field is present only when the trader has computed metrics; when present, all nine keys are present.
+
+## The two headline scores
+
+Both scores are 0-100 and higher is better. They answer different questions.
+
+- `smart_score` measures **skill**: how good is this trader, on a risk-adjusted basis, relative to everyone else?
+- `copy_score` measures **copyability**: how safely could you follow this trader, after discounting traits that make a strategy hard to replicate?
+
+`smart_score` is a weighted blend of the trader's cross-sectional percentiles and a few absolute measures:
+
+```
+smart_score = clamp(0, 100,
+    30 * sharpe_percentile_fraction
+  + 20 * profit_factor_percentile_fraction
+  + 20 * edge_consistency_percentile_fraction
+  + 10 * min(1, return_on_capital / 2)
+  + 10 * equity_smoothness
+  + 10 * (1 - min(1, asset_concentration)))
+```
+
+`copy_score` starts from that same base and subtracts penalties for hard-to-replicate behaviour, then clamps to 0-100:
+
+| Penalty | When it applies |
+|---|---|
+| -20 | Fewer than 50 markets traded (thin track record) |
+| -15 | Positions are highly concentrated |
+| -15 | Position sizing exceeds about 2x Kelly (over-betting) |
+| -10 | Worst single-trade loss exceeds 30% |
+| -10 | Edge is inconsistent |
+
+A trader can have a high `smart_score` and a much lower `copy_score`: genuinely skilled, but running a book that is risky or impractical to mirror. When you are ranking traders to follow or copy, read `copy_score`. When you are ranking pure skill, read `smart_score`.
+
+## The component metrics
+
+These are the underlying measures. They are absolute values, not ranks.
+
+| Field | Meaning |
+|---|---|
+| `sharpe_30d` | Sharpe ratio over the trailing 30 days (risk-adjusted return; higher is better). Magnitude can be large for small samples. |
+| `sharpe_7d` | Sharpe ratio over the trailing 7 days. |
+| `profit_factor` | Gross profit divided by gross loss; greater than 1 is profitable. Capped at 1000 when there are effectively no losses. |
+| `edge_consistency` | Stability of the trader's edge over time, 0-1 (higher is more consistent). |
+
+## The percentile ranks
+
+These place the trader against the whole population, 0-100. They are the inputs the scores lean on, exposed directly so you can see where a number sits in the field.
+
+| Field | Meaning |
+|---|---|
+| `sharpe_percentile` | Percentile rank of the trader's Sharpe ratio versus all traders. |
+| `pf_percentile` | Percentile rank of profit factor versus all traders. |
+| `consistency_percentile` | Percentile rank of edge consistency versus all traders. |
+
+## Reading the values
+
+- **`null` means insufficient trade history, not zero.** Every field is a number or `null`. A `null` field is one we cannot compute yet for this trader; treating it as `0` will rank a brand-new wallet as the worst possible trader rather than an unknown one.
+- **Values refresh periodically.** The scores and percentiles are recomputed by the cross-sectional ranking job, not on every request. A trader's percentile moves as the rest of the population moves, even if their own trades do not.
+- **Scores are 0-100; components are absolute.** `smart_score`, `copy_score`, and the three percentiles are bounded 0-100. `sharpe_30d`/`sharpe_7d` and `profit_factor` are unbounded (profit factor is capped at 1000), so compare them against the percentile fields for context.
+
+## Full response shape
+
+```json
+{
+  "object": "trader",
+  "data": {
+    "id": "trd_0x204f72f35326db932158cba6adff0b9a1da95e14",
+    "username": "swisstony",
+    "grade": "S",
+    "quant_metrics": {
+      "smart_score": 84.2,
+      "copy_score": 74.2,
+      "sharpe_30d": 2.13,
+      "sharpe_7d": 3.44,
+      "profit_factor": 4.1,
+      "edge_consistency": 0.62,
+      "sharpe_percentile": 97.4,
+      "pf_percentile": 88.9,
+      "consistency_percentile": 91.0
+    }
+  }
+}
+```
+
+## Related
+
+- [Signal scoring](/concepts/signal-scoring) names every score the API exposes and which to reach for.
+- [Grades](/concepts/grades) explains the headline `S`-`F` grade, the long-run quality verdict that sits above these metrics.
+- [Expanding responses](/concepts/expand) covers the `expand` parameter and the other expandable fields.
+- [Trust metadata](/concepts/trust-metadata) exposes per-field provenance, including for `quant_metrics`.
