@@ -26,7 +26,7 @@ type, whether it is always present, and what it means.
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `object` | string | Yes |  |
-| `error` | object | Yes |  |
+| `error` | object (`code`, `message`, `doc_url`, `param`) | Yes |  |
 | `meta` | `ResponseMeta` | Yes |  |
 
 ## ApiErrorBody
@@ -114,9 +114,9 @@ type, whether it is always present, and what it means.
 | `request_id` | string | Yes | Unique request ID (req_ prefix). |
 | `cached` | boolean | Yes |  |
 | `cache_age_s` | integer | No |  |
-| `replay` | object | Yes |  |
-| `retention` | object | Yes |  |
-| `completeness` | object | Yes |  |
+| `replay` | object (`from_cursor`, `to_cursor`, `from_sequence`, `to_sequence`, `ordering`) | Yes |  |
+| `retention` | object (`status`, `retained_events`, `cursor_expired`) | Yes |  |
+| `completeness` | object (`status`, `reason`) | Yes |  |
 
 ## EventReplaySource
 
@@ -183,7 +183,9 @@ One of: `ExploreGroup`, `ExploreStandalone`. Discriminated by `type`.
 | `end_date` | string | No |  |
 | `created_at` | string | No |  |
 | `outcome_yes` | string | No |  |
+| `token_id_yes` | string | No | The Polymarket CLOB token id (ERC1155 asset id, decimal string) for the YES outcome; null when unavailable (e.g. Kalshi markets, unsynced markets). |
 | `outcome_no` | string | No |  |
+| `token_id_no` | string | No | The Polymarket CLOB token id (ERC1155 asset id, decimal string) for the NO outcome; null when unavailable (e.g. Kalshi markets, unsynced markets). |
 | `event_slug` | string | No |  |
 | `kalshi_series_slug` | string | No |  |
 | `smart_score` | number | No |  |
@@ -202,8 +204,8 @@ One of: `ExploreGroup`, `ExploreStandalone`. Discriminated by `type`.
 | `change_pct_24h` | number | No |  |
 | `no_change_pct_24h` | number | No |  |
 | `discover_score` | number | No | Backend-owned deterministic market discovery score used by the hot sort. |
-| `score_components` | object | No |  |
-| `freshness` | object | No |  |
+| `score_components` | object (`volume_signal`, `whale_signal`, `liquidity_signal`, `recency_signal`, `smart_money_signal`, `price_move_signal`, `missing_price_penalty`) | No |  |
+| `freshness` | object (`enrichment_status`, `price_status`) | No |  |
 
 ## ExploreStandalone
 
@@ -270,12 +272,13 @@ One of: `ExploreGroup`, `ExploreStandalone`. Discriminated by `type`.
 | `avg_entry_price` | number | No | Volume-weighted entry price. |
 | `current_price` | number | No | Latest provider mark price for the position's token. |
 | `outcome_label` | string | No | Backend-resolved outcome label (provider outcome, else Yes/No from the binary index). |
+| `token_id` | string | No | The Polymarket CLOB token id (ERC1155 asset id, decimal string) for this outcome; null when unavailable (e.g. Kalshi markets, unsynced markets). |
 | `event_leg_count` | integer | Yes | Legs collapsed into this representative row for one (wallet, event, outcome side) group. 1 means standalone. |
 | `event_total_value_usd` | number | No | Aggregate provider currentValue across collapsed sibling legs; equals total_size_usd when event_leg_count = 1. |
 | `first_seen_at` | string | Yes |  |
 | `last_updated_at` | string | Yes |  |
-| `trader` | object | Yes |  |
-| `market` | object | Yes |  |
+| `trader` | object (`id`, `address`, `username`, `grade`, `win_rate`, `pnl`, `markets_traded`) | Yes |  |
+| `market` | object (`id`, `condition_id`, `title`, `slug`, `event_slug`, `category`) | Yes |  |
 
 ## LeaderboardEntry
 
@@ -299,8 +302,8 @@ One of: `ExploreGroup`, `ExploreStandalone`. Discriminated by `type`.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `market` | object | Yes |  |
-| `smart_money` | object | Yes |  |
+| `market` | object (`id`, `condition_id`, `title`, `slug`, `category`, `platform`) | Yes |  |
+| `smart_money` | object (`net_flow_usd`, `direction`, `token_id`, `whale_trade_count`, `buy_volume_usd`, `sell_volume_usd`, `top_positions`) | Yes |  |
 | `timeframe` | string | Yes |  |
 
 ## MarketSearchResult
@@ -319,11 +322,11 @@ One of: `ExploreGroup`, `ExploreStandalone`. Discriminated by `type`.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `market` | object | Yes |  |
-| `outcomes` | array of object | Yes |  |
-| `liquidity` | object | Yes |  |
-| `sports` | object | Yes |  |
-| `freshness` | object | Yes |  |
+| `market` | object (`id`, `condition_id`, `provider`, `title`, `slug`, `page_slug`, `event_slug`, `category`, `status`, `description`, `image`, `series_slug`, `kalshi_series_slug`, `market_type`, `market_result`, `created_at`, `end_date`, `resolved_at`) | Yes |  |
+| `outcomes` | array of object (`side`, `label`, `token_id`, `current_price`, `top_of_book`) | Yes |  |
+| `liquidity` | object (`source`, `volume_usd`, `liquidity_usd`, `volume_24h_usd`, `last_price`) | Yes |  |
+| `sports` | object (`status`, `source`, `live_match_key`, `live_league_key`, `live_score`, `reason`) | Yes |  |
+| `freshness` | object (`market_data`, `top_of_book`, `live_sports`) | Yes |  |
 | `trust` | `MarketSnapshotTrust` | No | Price and spread trust metadata. Present only when expand=trust or expand[]=trust is requested. |
 
 ## MarketSnapshotFreshness
@@ -378,7 +381,7 @@ String enum: `supported`, `partial`, `unsupported`.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `platforms` | object | Yes |  |
+| `platforms` | object (`kalshi`, `polymarket`) | Yes |  |
 
 ## Position
 
@@ -388,6 +391,7 @@ String enum: `supported`, `partial`, `unsupported`.
 | `platform` | `polymarket` \| `kalshi` | Yes | Provider discriminator. Slice 5 ships Polymarket only; the field stays in the response shape so Kalshi positions can land without a breaking change. |
 | `wallet` | string | Yes | Lowercased proxy wallet address. |
 | `side` | `YES` \| `NO` | Yes | Binary outcome side. Non-binary positions are not surfaced on V1. |
+| `token_id` | string | No | The Polymarket CLOB token id (ERC1155 asset id, decimal string) for this outcome; null when unavailable (e.g. Kalshi markets, unsynced markets). |
 | `shares` | number | Yes | Live share count from the wallet_positions mirror. |
 | `avg_price` | number | No | Volume-weighted entry price for this leg. |
 | `current_value_usd` | number | Yes | Current mark-to-market value in USD (always non-null on V1 — pre-reconcile rows are excluded). |
@@ -396,8 +400,8 @@ String enum: `supported`, `partial`, `unsupported`.
 | `realized_pnl` | number | No | Closed-leg P&L rolled up (Polymarket `realizedPnl`). |
 | `last_reconciled_at` | string | No | Max updated_at across mirror legs for this pair. |
 | `freshness` | `fresh` \| `refreshing` \| `stale` \| `unknown` | Yes | Backend-computed staleness bucket derived from last_reconciled_at. |
-| `trader` | object | Yes |  |
-| `market` | object | Yes |  |
+| `trader` | object (`id`, `address`, `username`, `grade`, `win_rate`, `pnl`, `markets`, `wallet_age_days`, `is_new_wallet`) | Yes |  |
+| `market` | object (`id`, `condition_id`, `title`, `slug`, `event_slug`, `category`, `outcome_label`, `end_date`) | Yes |  |
 
 ## PositionTimelineEvent
 
@@ -407,6 +411,7 @@ String enum: `supported`, `partial`, `unsupported`.
 | `event_timestamp` | string | Yes | ISO 8601 timestamp of the on-chain fill. |
 | `action` | `buy` \| `sell` | Yes | From the taker's perspective. |
 | `outcome_side` | `yes` \| `no` | Yes |  |
+| `token_id` | string | No | The Polymarket CLOB token id (ERC1155 asset id, decimal string) for this outcome; null when unavailable (e.g. Kalshi markets, unsynced markets). |
 | `amount_delta` | number | Yes | Signed share delta (+ on buy, − on sell). |
 | `price` | number | Yes | Fill price in USDC per share, in [0,1]. |
 | `usdc_notional` | number | Yes | Positive USDC notional of the fill. |
@@ -421,9 +426,9 @@ String enum: `supported`, `partial`, `unsupported`.
 | `id` | string | Yes | Prefixed ID (rf_...). |
 | `suspicion_score` | number | Yes |  |
 | `severity` | `flag` \| `watch` | Yes |  |
-| `trader` | object | Yes |  |
-| `market` | object | Yes |  |
-| `scores` | object | Yes |  |
+| `trader` | object (`id`, `address`, `username`) | Yes |  |
+| `market` | object (`id`, `condition_id`, `title`) | Yes |  |
+| `scores` | object (`timing`, `edge`, `size`, `fresh_wallet`) | Yes |  |
 | `evidence` | object | Yes | Structured evidence JSON. |
 | `created_at` | string | Yes |  |
 
@@ -435,7 +440,7 @@ String enum: `supported`, `partial`, `unsupported`.
 | `total_whale_volume` | number | No |  |
 | `biggest_trade_size` | number | No |  |
 | `active_traders` | integer | No |  |
-| `top_whale_trades` | array of object | No |  |
+| `top_whale_trades` | array of object (`outcome`, `side`, `title`, `size`, `price`, `token_id`, `id`, `trade_time`, `market_category`, `platform`, `name`, `pseudonym`, `trader_grade`) | No |  |
 | `categories` | array of object | No |  |
 | `grade_distribution` | array of object | No |  |
 
@@ -479,8 +484,8 @@ String enum: `supported`, `partial`, `unsupported`.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `market` | object | Yes |  |
-| `smart_money` | object | Yes |  |
+| `market` | object (`id`, `condition_id`, `title`, `slug`, `category`, `platform`) | Yes |  |
+| `smart_money` | object (`net_flow_usd`, `direction`, `token_id`, `whale_trade_count`, `buy_volume_usd`, `sell_volume_usd`) | Yes |  |
 | `timeframe` | string | Yes |  |
 
 ## SnapshotCompleteness
@@ -511,11 +516,11 @@ String enum: `supported`, `partial`, `unsupported`.
 | `streak_tier` | `hot` \| `rising` \| `neutral` \| `cooling` \| `cold` | No | Hot-streak tier (trailing-7d cross-sectional percentile); a separate axis from the all-time grade. Null when no recent activity. |
 | `score` | number | No |  |
 | `rank` | integer | No |  |
-| `pnl` | object | Yes |  |
-| `stats` | object | Yes |  |
-| `strategy` | object | No |  |
+| `pnl` | object (`total`, `realized`, `unrealized`, `last_7d`, `last_30d`) | Yes |  |
+| `stats` | object (`markets_traded`, `win_rate`, `daily_win_rate`, `total_volume`) | Yes |  |
+| `strategy` | object (`strategy_type`, `description`, `confidence`) | No |  |
 | `category_strengths` | object | No | Per-category performance breakdown (expand=categories or expand[]=categories). Null unless expanded. Object keyed by category name; each value is the precomputed trader_rankings.category_ranks payload (rank, total_in_category, total_pnl, scaled_total_pnl, n_markets, wins, losses, win_rate; scaled_total_pnl is a legacy alias that currently equals total_pnl). Pass-through DB JSON: keys and value shape are DB-owned, so the inner shape is intentionally unconstrained and may carry additional compatibility fields. |
-| `quant_metrics` | object | No | Curated advanced risk/performance metrics (expand=quant_metrics or expand[]=quant_metrics). Omitted unless expanded and the trader has computed metrics; when present, all listed fields are present (each is a number or null). null means insufficient trade history and must not be treated as 0. This is a fixed, documented field set, refreshed periodically by the cross-sectional ranking job. |
+| `quant_metrics` | object (`smart_score`, `copy_score`, `sharpe_30d`, `sharpe_7d`, `profit_factor`, `edge_consistency`, `sharpe_percentile`, `pf_percentile`, `consistency_percentile`) | No | Curated advanced risk/performance metrics (expand=quant_metrics or expand[]=quant_metrics). Omitted unless expanded and the trader has computed metrics; when present, all listed fields are present (each is a number or null). null means insufficient trade history and must not be treated as 0. This is a fixed, documented field set, refreshed periodically by the cross-sectional ranking job. |
 | `last_active` | string | No |  |
 | `synced_at` | string | No |  |
 | `sync_status` | string | No | synced, unknown, or pending. |
@@ -538,11 +543,11 @@ String enum: `supported`, `partial`, `unsupported`.
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `id` | string | Yes | Prefixed trader ID (`trd_...`). |
-| `entries` | array of object | Yes | Daily cumulative-P&L series (oldest-first). |
-| `stats` | object | Yes |  |
-| `monthly` | array of object | Yes | Per-month P&L aggregation. |
-| `year_totals` | array of object | Yes | Per-year P&L totals (ascending by year). |
-| `drawdown` | array of object | Yes | Underwater (drawdown) series. |
+| `entries` | array of object (`date`, `markets_traded`, `total_volume`, `cumulative_profit`, `total_pnl`, `daily_change`) | Yes | Daily cumulative-P&L series (oldest-first). |
+| `stats` | object (`all`, `d90`, `d30`, `d7`) | Yes |  |
+| `monthly` | array of object (`year`, `month`, `pnl`, `markets_traded`) | Yes | Per-month P&L aggregation. |
+| `year_totals` | array of object (`year`, `pnl`) | Yes | Per-year P&L totals (ascending by year). |
+| `drawdown` | array of object (`date`, `cumulative_profit`, `drawdown`) | Yes | Underwater (drawdown) series. |
 
 ## TraderTrust
 
@@ -587,7 +592,7 @@ Field-level trust metadata returned only when GET /api/v1/trader/{address} inclu
 | `all_time_pnl_usd` | number | No |  |
 | `all_time_score` | number | No |  |
 | `last_synced` | string | No |  |
-| `daily_pnl_series` | array of object | Yes | Zero-filled daily P&L series across the window. |
+| `daily_pnl_series` | array of object (`date`, `pnl_usd`) | Yes | Zero-filled daily P&L series across the window. |
 
 ## TrustCompleteness
 
@@ -652,7 +657,7 @@ Source metadata for a trust-critical value. Providers and DB/read models own bus
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `object` | string | Yes |  |
-| `data` | object | Yes |  |
+| `data` | object (`rate_limit`, `daily_usage`) | Yes |  |
 | `meta` | `ResponseMeta` | Yes |  |
 
 ## VerifyWebhookRequest
@@ -712,8 +717,8 @@ String enum: `pending_verification`, `active`, `disabled`.
 | `side` | `BUY` \| `SELL` | Yes |  |
 | `price` | number | Yes |  |
 | `signal_score` | number | Yes | 0.0–1.0 normalized signal score. |
-| `trader` | object | Yes |  |
-| `market` | object | Yes |  |
+| `trader` | object (`id`, `address`, `username`, `grade`) | Yes |  |
+| `market` | object (`id`, `condition_id`, `title`, `slug`, `category`) | Yes |  |
 
 ## WhaleTradeHistoryMeta
 
@@ -722,5 +727,5 @@ String enum: `pending_verification`, `active`, `disabled`.
 | `request_id` | string | Yes | Unique request ID (req_ prefix). |
 | `cached` | boolean | Yes |  |
 | `cache_age_s` | integer | No | Cache age in seconds, null if not cached. |
-| `source` | object | Yes |  |
-| `completeness` | object | Yes |  |
+| `source` | object (`kind`, `table`, `provider_fetch_at_request_time`) | Yes |  |
+| `completeness` | object (`status`, `reason`) | Yes |  |
