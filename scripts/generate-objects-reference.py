@@ -54,6 +54,11 @@ def type_label(node):
         ap = node.get("additionalProperties")
         if isinstance(ap, dict):
             return f"map of {type_label(ap)}"
+        inner = node.get("properties")
+        if inner:
+            # Enumerate an inline object's sub-fields so the reference names
+            # them (e.g. quant_metrics) instead of showing a bare `object`.
+            return "object (" + ", ".join(f"`{k}`" for k in inner) + ")"
         return "object"
     if isinstance(t, list):
         return " \\| ".join(t)
