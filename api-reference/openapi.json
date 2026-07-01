@@ -7430,6 +7430,16 @@
               "SELL"
             ]
           },
+          "outcome": {
+            "type": "string",
+            "nullable": true,
+            "description": "Traded outcome label (e.g. \"Yes\"/\"No\"/team name), resolved provider-first from the trade's outcome_index against market_canonical (index 0 -> yes, 1 -> no). Distinct axis from side (BUY/SELL): side is the trade direction, outcome is which leg was traded. null for multi-outcome (outcome_index >= 2) or unsynced markets; a Kalshi row carries its provider label here (only token_id is null for Kalshi, since there is no CLOB token)."
+          },
+          "token_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Polymarket CLOB token id (ERC1155 asset id, decimal string) for the traded outcome; null when unavailable (e.g. Kalshi markets, unsynced markets)."
+          },
           "price": {
             "type": "number"
           },

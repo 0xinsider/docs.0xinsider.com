@@ -7,6 +7,12 @@ rss: true
 
 This changelog tracks externally visible REST API changes only. Documentation-only edits are intentionally excluded.
 
+<Update label="July 1, 2026" description="Whale trades now expose the traded outcome and its CLOB token id">
+  Each whale trade ([`GET /api/v1/whale-trades`](/api-reference/endpoint/get-whale-trades), [`/whale-trades/history`](/api-reference/endpoint/get-whale-trades-history), [`/whale-trades/{id}`](/api-reference/endpoint/get-whale-trade)) now returns the traded `outcome` (the provider outcome label - which leg the trade was on, e.g. Yes/No/team) and its per-outcome Polymarket CLOB `token_id`, alongside the existing `side` (BUY/SELL, unchanged). Previously only BUY/SELL was exposed, so you could not tell which outcome a whale trade was on, or get that outcome's on-chain token id.
+
+  `outcome` is null only for a multi-outcome or unsynced market with no stored label; a Kalshi trade carries its provider label here (only `token_id` is null for Kalshi, since there is no CLOB token). Both fields are additive and nullable, so existing clients are unaffected.
+</Update>
+
 <Update label="July 1, 2026" description="Every V1 YES/NO/outcome now carries its Polymarket CLOB token id">
   Reads that expose an outcome, side, or net-flow direction now also return a per-outcome Polymarket CLOB `token_id`, so you can go straight from a YES/NO/outcome label to its on-chain ERC1155 asset id without a second lookup. Use it for order placement, per-token price history, and on-chain reconciliation.
 
