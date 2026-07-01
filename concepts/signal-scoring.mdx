@@ -16,6 +16,15 @@ On every trader and leaderboard entry:
 
 Grade is the long-run verdict. `streak_tier` is the trailing-form overlay: an A-grade trader can be `cooling`, and a B-grade trader can be `hot`.
 
+## Deeper trader metrics: quant_metrics
+
+`grade` and `score` are the headline verdict. When you want the risk and performance detail behind them, request [`quant_metrics`](/concepts/quant-metrics) on a trader (`expand=quant_metrics`). It returns nine curated fields, including two 0-100 scores that answer different questions:
+
+- `smart_score`: how skilled is this trader, risk-adjusted, versus the field.
+- `copy_score`: how safely could you copy them, after penalising traits that make a strategy hard to replicate.
+
+The other seven fields (30- and 7-day Sharpe, profit factor, edge consistency, and their cross-sectional percentiles) are the inputs behind those scores. See [Quant metrics](/concepts/quant-metrics) for the full field set and how to read `null`.
+
 ## Per-trade strength: signal_score
 
 Each [whale trade](/api-reference/endpoint/get-whale-trades) carries a `signal_score`: how strong that single fill is as a signal. Use it to rank a feed of trades, not to judge a trader overall.
@@ -78,6 +87,7 @@ These power discovery sorting and are distinct from the `smart_money` flow objec
 | Question | Field |
 |---|---|
 | Is this trader worth following? | `grade` (and `score`) |
+| How skilled is this trader, in detail? | `quant_metrics.smart_score` (and `copy_score` for copyability) |
 | Is this trader hot right now? | `streak_tier` |
 | Is this single trade a strong signal? | `signal_score` |
 | Which way is smart money leaning on this market? | `smart_money.net_flow_usd` and `direction` |

@@ -36,6 +36,7 @@
             "pages": [
               "concepts/grades",
               "concepts/signal-scoring",
+              "concepts/quant-metrics",
               "concepts/strategy-types",
               "concepts/platforms",
               "concepts/trust-metadata",

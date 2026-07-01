@@ -31,7 +31,7 @@ Available on [`GET /api/v1/trader/{address}`](/api-reference/endpoint/get-trader
 |---|---|---|
 | `strategy` | `strategy` | The trader's ML strategy classification: `strategy_type`, an optional `description`, and `confidence`. See [Strategy types](/concepts/strategy-types). |
 | `categories` | `category_strengths` | Per-category performance, keyed by category: rank within the category, total P&L, markets traded, wins, losses, and win rate. |
-| `quant_metrics` | `quant_metrics` | Advanced per-trader quant metrics. The key set is additive and database-owned. |
+| `quant_metrics` | `quant_metrics` | A fixed set of nine curated risk and performance metrics, including the `smart_score` and `copy_score` headline scores. See [Quant metrics](/concepts/quant-metrics). |
 | `trust` | `trust` | Field-level [trust metadata](/concepts/trust-metadata): source, freshness, reconciliation, and completeness for each derived field. |
 
 ## Example
