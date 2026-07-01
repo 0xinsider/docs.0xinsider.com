@@ -7,6 +7,18 @@ rss: true
 
 This changelog tracks externally visible REST API changes only. Documentation-only edits are intentionally excluded.
 
+<Update label="July 1, 2026" description="Pick of the Day archive adds a cumulative track-record series for charting">
+  `GET /api/v1/pick-of-the-day/archive` now returns a `hit_rate.series` array — the cumulative track record of the Pick of the Day, ready to chart without recomputing it on the client.
+
+  Each element is one resolved (win or loss) pick, in ascending `pick_date` order, and carries:
+
+  - `date` — the pick's publish date (`YYYY-MM-DD`).
+  - `net_profit_usd` — the running cumulative profit of a $100 stake on every resolved, priced pick through that date.
+  - `hit_rate_pct` — the running hit rate (wins / decided) through that date, to one decimal.
+
+  The final point equals the top-level `hit_rate.net_profit_usd` and `hit_rate.pct`, so a chart of the series always ends exactly on the headline numbers. The array is empty until at least one pick has resolved. Every existing `hit_rate` field is unchanged — this is purely additive.
+</Update>
+
 <Update label="June 29, 2026" description="Trader quant_metrics is now a documented, fixed field set">
   [`GET /api/v1/trader/{address}`](/api-reference/endpoint/get-trader) and [`POST /api/v1/traders/batch`](/api-reference/endpoint/batch-get-traders) now return a curated, documented `quant_metrics` object when you pass `?expand=quant_metrics`, instead of an unconstrained pass-through of internal metrics.
 
