@@ -18,7 +18,7 @@ This changelog tracks externally visible REST API changes only. Documentation-on
   - `edge_consistency`: stability of the trader's edge over time (0-1).
   - `sharpe_percentile`, `pf_percentile`, `consistency_percentile`: cross-sectional ranks versus all traders (0-100).
 
-  Every field is now defined in the [trader endpoint reference](/api-reference/endpoint/get-trader). Undocumented internal and experimental metrics that previously leaked through the pass-through are no longer returned.
+  Every field is defined in the [trader endpoint reference](/api-reference/endpoint/get-trader), and the new [Quant metrics guide](/concepts/quant-metrics) explains what each score and metric means, its range, and how to read `null`. Undocumented internal and experimental metrics that previously leaked through the pass-through are no longer returned.
 </Update>
 
 <Update label="June 1, 2026" description="Smart-money flow market discovery endpoint">
