@@ -7,6 +7,13 @@ rss: true
 
 This changelog tracks externally visible REST API changes only. Documentation-only edits are intentionally excluded.
 
+<Update label="July 2, 2026" description="Pick of the Day: fixed 19:00 Europe/Berlin release and a multi-sport candidate pool">
+  Two behavior changes to [`GET /api/v1/pick-of-the-day`](/api-reference/endpoint/get-pick-of-the-day) and its archive. No fields were added, removed, or retyped - existing clients are unaffected - but two value semantics changed:
+
+  - `release_at` is now a fixed daily instant: 19:00 Europe/Berlin (19:00 CEST in summer, 19:00 CET in winter), every day, instead of a kickoff-relative time that moved with whichever game was picked. `next_drop_deadline` counts down to the same fixed instant. If no candidate qualifies at the release slot, the selector keeps retrying every 15 minutes until one does (or the day's eligible-kickoff window closes), so on a thin day the actual publish can trail `release_at` by minutes to hours.
+  - The pick can now be any sport or prop bet. The candidate pool evaluates every sport category with real smart-money flow that day - soccer, tennis, baseball, basketball, hockey, MMA, cricket, golf, and esports, including prop markets such as totals, spreads, and exact scores - instead of only whatever survived a global hot-markets ranking (which one surging sport could monopolize). Expect `category` values beyond `Soccer` in the archive going forward. Selection guardrails and the ranking metric are unchanged.
+</Update>
+
 <Update label="July 1, 2026" description="Whale trades now expose the traded outcome and its CLOB token id">
   Each whale trade ([`GET /api/v1/whale-trades`](/api-reference/endpoint/get-whale-trades), [`/whale-trades/history`](/api-reference/endpoint/get-whale-trades-history), [`/whale-trades/{id}`](/api-reference/endpoint/get-whale-trade)) now returns the traded `outcome` (the provider outcome label - which leg the trade was on, e.g. Yes/No/team) and its per-outcome Polymarket CLOB `token_id`, alongside the existing `side` (BUY/SELL, unchanged). Previously only BUY/SELL was exposed, so you could not tell which outcome a whale trade was on, or get that outcome's on-chain token id.
 
