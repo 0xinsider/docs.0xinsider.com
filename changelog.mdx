@@ -7,6 +7,12 @@ rss: true
 
 This changelog tracks externally visible REST API changes only. Documentation-only edits are intentionally excluded.
 
+<Update label="July 4, 2026" description="Sandbox / test-mode API keys removed; a single live key class remains">
+  Sandbox / test-mode API keys (`oxi_sk_test_...`) are removed. The API now has a single key class: `oxi_sk_live_...`, sent as `Authorization: Bearer oxi_sk_live_...`, which requires an active Insider subscription and always returns live data.
+
+  Any request still authenticating with an `oxi_sk_test_...` key will fail. Generate a live key from your account's API keys page and switch clients over before this lands. There is no fixture/deterministic-data mode - every request now reads live data.
+</Update>
+
 <Update label="July 2, 2026" description="Pick of the Day: fixed 19:00 Europe/Berlin release and a multi-sport candidate pool">
   Two behavior changes to [`GET /api/v1/pick-of-the-day`](/api-reference/endpoint/get-pick-of-the-day) and its archive. No fields were added, removed, or retyped - existing clients are unaffected - but two value semantics changed:
 

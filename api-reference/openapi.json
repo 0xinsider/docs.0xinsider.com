@@ -14,10 +14,6 @@
     {
       "url": "https://api.0xinsider.com",
       "description": "Production (live data). Authenticate with a live key (oxi_sk_live_...); requires an active Insider subscription."
-    },
-    {
-      "url": "https://api.0xinsider.com",
-      "description": "Sandbox / test mode (deterministic fixture data, no live rows). Authenticate with a test key (oxi_sk_test_...) on a free account. Same base URL and paths as production: the key class selects live vs sandbox. Test keys are billing-exempt, served from a fixed fixture dataset, and never read live data or persist writes; webhooks, usage, and MCP responses show the response shape only."
     }
   ],
   "security": [
@@ -6563,7 +6559,7 @@
       "bearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "description": "API key: Authorization: Bearer oxi_sk_live_... for live data (requires an active Insider subscription), or oxi_sk_test_... for sandbox/test mode (free account, deterministic fixture data, no live rows). Both key classes use the same paths; the prefix selects live vs sandbox."
+        "description": "API key authentication. Send your key in the Authorization header as `Bearer oxi_sk_live_...`. Live keys require an active Insider subscription and return live data."
       }
     },
     "parameters": {
