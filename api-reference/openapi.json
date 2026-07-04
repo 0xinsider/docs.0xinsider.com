@@ -6130,6 +6130,432 @@
           }
         }
       }
+    },
+    "/api/v1/pick-of-the-day": {
+      "get": {
+        "operationId": "getPickOfTheDay",
+        "summary": "Get today's Pick of the Day",
+        "description": "One sourced sharp-money call a day (Insider-tier). Returns the single latest published pick: the backed side, the pre-game odds and $100 return, the proven smart-money holders on that side, the grade and category edge, and the thesis. The price is snapshotted before kickoff so it does not drift. Returns 404 when no pick is published.",
+        "tags": [
+          "Pick of the Day"
+        ],
+        "parameters": [
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "required": false,
+            "description": "Conditional GET validator from a previous ETag. Matching values return 304 Not Modified with an empty body.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Today's Pick of the Day",
+            "headers": {
+              "ETag": {
+                "description": "Stable validator for the current Pick of the Day payload. Re-send it via If-None-Match for conditional GETs.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "object",
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "pick_of_the_day"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PickOfTheDay"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "object": "pick_of_the_day",
+                      "data": {
+                        "state": "full",
+                        "pick_date": "2026-06-23",
+                        "matchup": "Portugal vs. Uzbekistan",
+                        "category": "Soccer",
+                        "platform": "polymarket",
+                        "release_at": "2026-06-23T17:00:00Z",
+                        "is_locked": false,
+                        "outcome": "pending",
+                        "pick_outcome_label": "Portugal",
+                        "position": "Portugal to win",
+                        "side_summary": "Smart money is backing Portugal",
+                        "smart_wallet_count": 7,
+                        "top_grade": "A",
+                        "category_edge_pct": 0.09,
+                        "category_edge_sample": 180,
+                        "smart_usd": 48250.0,
+                        "backed_price": 0.62,
+                        "return_per_100": 161.29,
+                        "sharp_pct": 0.9,
+                        "market_pct": 0.62,
+                        "consensus_edge_pct": 0.28,
+                        "traders": 7,
+                        "backed_sharp_usd": 312500.0,
+                        "holders": [
+                          {
+                            "address": "0x0000000000000000000000000000000000000000",
+                            "name": "swisstony",
+                            "grade": "A",
+                            "shares": 12500.0
+                          }
+                        ],
+                        "holder_count": 7,
+                        "editorial_note": null,
+                        "thesis": "Graded soccer specialists are stacked on Portugal at a price the market has not fully repriced.",
+                        "market_url": "https://0xinsider.com/market/portugal-vs-uzbekistan",
+                        "event_slug": "portugal-vs-uzbekistan",
+                        "sports_context": {
+                          "league_name": "FIFA World Cup",
+                          "league_logo": "https://polymarket.com/leagues/fifa-world-cup.png",
+                          "yes_team": {
+                            "label": "Portugal",
+                            "short_label": "POR",
+                            "full_name": "Portugal national football team",
+                            "provider_id": 1421,
+                            "logo": "https://polymarket.com/teams/portugal.png",
+                            "color": "#C8102E",
+                            "record": null,
+                            "score": null
+                          },
+                          "no_team": {
+                            "label": "Uzbekistan",
+                            "short_label": "UZB",
+                            "full_name": "Uzbekistan national football team",
+                            "provider_id": 1738,
+                            "logo": "https://polymarket.com/teams/uzbekistan.png",
+                            "color": "#1EB53A",
+                            "record": null,
+                            "score": null
+                          },
+                          "game_id": 884213,
+                          "event_matchup": false
+                        },
+                        "disclaimer": "Not financial advice. Prediction markets carry risk; do your own research."
+                      },
+                      "meta": {
+                        "request_id": "req_example",
+                        "cached": false,
+                        "cost": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified. Returned when If-None-Match matches the current Pick of the Day payload.",
+            "headers": {
+              "ETag": {
+                "description": "Validator for the unchanged Pick of the Day payload.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  'https://api.0xinsider.com/api/v1/pick-of-the-day'"
+          }
+        ],
+        "x-examples": {
+          "success": {
+            "object": "pick_of_the_day",
+            "data": {
+              "state": "full",
+              "pick_date": "2026-06-23",
+              "matchup": "Portugal vs. Uzbekistan",
+              "category": "Soccer",
+              "platform": "polymarket",
+              "release_at": "2026-06-23T17:00:00Z",
+              "is_locked": false,
+              "outcome": "pending",
+              "pick_outcome_label": "Portugal",
+              "position": "Portugal to win",
+              "side_summary": "Smart money is backing Portugal",
+              "smart_wallet_count": 7,
+              "top_grade": "A",
+              "category_edge_pct": 0.09,
+              "category_edge_sample": 180,
+              "smart_usd": 48250.0,
+              "backed_price": 0.62,
+              "return_per_100": 161.29,
+              "sharp_pct": 0.9,
+              "market_pct": 0.62,
+              "consensus_edge_pct": 0.28,
+              "traders": 7,
+              "backed_sharp_usd": 312500.0,
+              "holders": [
+                {
+                  "address": "0x0000000000000000000000000000000000000000",
+                  "name": "swisstony",
+                  "grade": "A",
+                  "shares": 12500.0
+                }
+              ],
+              "holder_count": 7,
+              "editorial_note": null,
+              "thesis": "Graded soccer specialists are stacked on Portugal at a price the market has not fully repriced.",
+              "market_url": "https://0xinsider.com/market/portugal-vs-uzbekistan",
+              "event_slug": "portugal-vs-uzbekistan",
+              "sports_context": {
+                "league_name": "FIFA World Cup",
+                "league_logo": "https://polymarket.com/leagues/fifa-world-cup.png",
+                "yes_team": {
+                  "label": "Portugal",
+                  "short_label": "POR",
+                  "full_name": "Portugal national football team",
+                  "provider_id": 1421,
+                  "logo": "https://polymarket.com/teams/portugal.png",
+                  "color": "#C8102E",
+                  "record": null,
+                  "score": null
+                },
+                "no_team": {
+                  "label": "Uzbekistan",
+                  "short_label": "UZB",
+                  "full_name": "Uzbekistan national football team",
+                  "provider_id": 1738,
+                  "logo": "https://polymarket.com/teams/uzbekistan.png",
+                  "color": "#1EB53A",
+                  "record": null,
+                  "score": null
+                },
+                "game_id": 884213,
+                "event_matchup": false
+              },
+              "disclaimer": "Not financial advice. Prediction markets carry risk; do your own research."
+            },
+            "meta": {
+              "request_id": "req_example",
+              "cached": false,
+              "cost": 1
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pick-of-the-day/archive": {
+      "get": {
+        "operationId": "getPickOfTheDayArchive",
+        "summary": "Get the Pick of the Day track record",
+        "description": "Every published Pick of the Day with its real outcome, plus the rolling hit rate (wins / decided; void and pending excluded). Resolved picks are public; a still-pending pick's backed side is included for the authenticated Insider key.",
+        "tags": [
+          "Pick of the Day"
+        ],
+        "parameters": [
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "required": false,
+            "description": "Conditional GET validator from a previous ETag. Matching values return 304 Not Modified with an empty body.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Pick of the Day track record",
+            "headers": {
+              "ETag": {
+                "description": "Stable validator for the current Pick of the Day archive payload. Re-send it via If-None-Match for conditional GETs.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "object",
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "pick_of_the_day_archive"
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/PickOfTheDayArchive"
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                },
+                "examples": {
+                  "success": {
+                    "summary": "Successful response",
+                    "value": {
+                      "object": "pick_of_the_day_archive",
+                      "data": {
+                        "picks": [
+                          {
+                            "pick_date": "2026-06-22",
+                            "matchup": "Spain vs. France",
+                            "category": "Soccer",
+                            "pick_outcome_label": "Spain",
+                            "top_grade": "A",
+                            "outcome": "win",
+                            "return_per_100": 200.0
+                          },
+                          {
+                            "pick_date": "2026-06-23",
+                            "matchup": "Portugal vs. Uzbekistan",
+                            "category": "Soccer",
+                            "pick_outcome_label": "Portugal",
+                            "top_grade": "A",
+                            "outcome": "pending"
+                          }
+                        ],
+                        "hit_rate": {
+                          "wins": 1,
+                          "losses": 0,
+                          "decided": 1,
+                          "pct": 100.0,
+                          "void": 0,
+                          "pending": 1,
+                          "net_profit_usd": 100.0,
+                          "staked_usd": 100.0,
+                          "roi_pct": 100.0,
+                          "series": [
+                            {
+                              "date": "2026-06-22",
+                              "net_profit_usd": 100.0,
+                              "hit_rate_pct": 100.0
+                            }
+                          ]
+                        }
+                      },
+                      "meta": {
+                        "request_id": "req_example",
+                        "cached": false,
+                        "cost": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified. Returned when If-None-Match matches the current Pick of the Day archive payload.",
+            "headers": {
+              "ETag": {
+                "description": "Validator for the unchanged Pick of the Day archive payload.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  'https://api.0xinsider.com/api/v1/pick-of-the-day/archive'"
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -6165,6 +6591,462 @@
       }
     },
     "schemas": {
+      "PickHolder": {
+        "type": "object",
+        "required": [
+          "address",
+          "shares"
+        ],
+        "properties": {
+          "address": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "grade": {
+            "type": "string",
+            "nullable": true,
+            "description": "All-time trader grade (S, A, B, C, D, F)."
+          },
+          "shares": {
+            "type": "number"
+          }
+        }
+      },
+      "PickOfTheDay": {
+        "type": "object",
+        "required": [
+          "state",
+          "pick_date",
+          "matchup",
+          "category",
+          "platform",
+          "release_at",
+          "is_locked",
+          "outcome",
+          "pick_outcome_label",
+          "position",
+          "side_summary",
+          "smart_wallet_count",
+          "thesis",
+          "disclaimer"
+        ],
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "full"
+            ],
+            "description": "Always 'full' for an authenticated Insider key."
+          },
+          "pick_date": {
+            "type": "string",
+            "format": "date",
+            "description": "The pick's local publication date (YYYY-MM-DD)."
+          },
+          "matchup": {
+            "type": "string",
+            "description": "Human-readable matchup (e.g. \"Portugal vs. Uzbekistan\")."
+          },
+          "category": {
+            "type": "string",
+            "description": "Market category (e.g. \"Soccer\")."
+          },
+          "platform": {
+            "type": "string",
+            "description": "Provider platform (e.g. \"polymarket\")."
+          },
+          "release_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The pick's nominal daily release slot (fixed 19:00 Europe/Berlin -- CEST/CET). The actual publish instant can trail it by minutes to hours when no candidate qualified at the slot and the selector kept retrying (retries stop when the day's kickoff-eligibility window closes at 21:00 US/Eastern)."
+          },
+          "is_locked": {
+            "type": "boolean",
+            "description": "Whether the market has locked (kicked off) so the snapshotted price no longer trades."
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "win",
+              "loss",
+              "void"
+            ],
+            "description": "Settlement outcome of the backed side; 'pending' until the market resolves."
+          },
+          "pick_outcome_label": {
+            "type": "string",
+            "description": "The raw backed-outcome label (e.g. \"Portugal\")."
+          },
+          "token_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "The Polymarket CLOB token id (ERC1155 asset id, decimal string) for the backed outcome; null when unavailable (e.g. Kalshi markets, unsynced markets)."
+          },
+          "position": {
+            "type": "string",
+            "description": "The backed side phrased as a bet (e.g. \"Portugal to win\")."
+          },
+          "side_summary": {
+            "type": "string",
+            "description": "One-line summary of which side smart money is backing."
+          },
+          "smart_wallet_count": {
+            "type": "integer",
+            "description": "Number of proven smart-money wallets on the backed side."
+          },
+          "top_grade": {
+            "type": "string",
+            "nullable": true,
+            "description": "Highest trader grade among the backed-side holders (S, A, B, C, D, F)."
+          },
+          "category_edge_pct": {
+            "type": "number",
+            "nullable": true,
+            "description": "Category win-rate edge as a fraction: the backed-side cohort's win rate in this category minus the non-market-maker category baseline (e.g. 0.09 = +9 points). Present only when statistically credible; null/absent otherwise (and for legacy rows). Paired with category_edge_sample."
+          },
+          "category_edge_sample": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Pooled count of resolved markets behind category_edge_pct (the headline's n). Present if and only if category_edge_pct is present."
+          },
+          "smart_usd": {
+            "type": "number",
+            "nullable": true,
+            "description": "Recency-weighted graded-flow magnitude in USD; omitted when <= 0."
+          },
+          "backed_price": {
+            "type": "number",
+            "nullable": true,
+            "description": "Pre-game snapshot probability (0..1) for the backed side."
+          },
+          "return_per_100": {
+            "type": "number",
+            "nullable": true,
+            "description": "Gross return on a $100 stake at the snapshotted price (100 / backed_price)."
+          },
+          "sharp_pct": {
+            "type": "number",
+            "nullable": true,
+            "description": "Backed-side smart-money dollar consensus as a fraction 0..1: the share of the sharp dollars on the backed side. A conviction signal, NOT a probability or expected-value claim. Frozen at generation."
+          },
+          "market_pct": {
+            "type": "number",
+            "nullable": true,
+            "description": "Market-implied probability of the backed side as a fraction 0..1 (equals backed_price), re-exposed alongside sharp_pct for the WHY breakdown."
+          },
+          "consensus_edge_pct": {
+            "type": "number",
+            "nullable": true,
+            "description": "Consensus edge = sharp_pct - market_pct, the conviction-vs-price gap (how much more of the smart money sits on this side than the price implies). This is NOT an expected-value or guaranteed edge. Null when either input is null."
+          },
+          "traders": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Count of proven smart-money wallets on the backed side (equals smart_wallet_count)."
+          },
+          "backed_sharp_usd": {
+            "type": "number",
+            "nullable": true,
+            "description": "Raw backed-side smart-money USD frozen at generation (the 'Sharp $'), NOT the recency-weighted smart_usd which decays."
+          },
+          "holders": {
+            "type": "array",
+            "nullable": true,
+            "description": "Proven smart-money holders on the backed side.",
+            "items": {
+              "$ref": "#/components/schemas/PickHolder"
+            }
+          },
+          "holder_count": {
+            "type": "integer",
+            "nullable": true,
+            "description": "True total of proven holders on the backed side (may exceed the holders array length)."
+          },
+          "editorial_note": {
+            "type": "string",
+            "nullable": true,
+            "description": "Optional editorial note attached to the pick."
+          },
+          "thesis": {
+            "type": "string",
+            "description": "The reasoning behind the pick."
+          },
+          "market_url": {
+            "type": "string",
+            "nullable": true,
+            "description": "Canonical web market URL."
+          },
+          "event_slug": {
+            "type": "string",
+            "nullable": true,
+            "description": "The canonical /event game-page slug (one neutral page per game), null when the game has no neutral event page."
+          },
+          "sports_context": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PickSportsContext"
+              }
+            ],
+            "nullable": true,
+            "description": "Provider-first sports context for the pick's market (team logos, league branding, live score). Full-state only; omitted when the pick is not a team-sports market."
+          },
+          "disclaimer": {
+            "type": "string",
+            "description": "Risk disclaimer shown with every pick."
+          }
+        }
+      },
+      "PickSportsContext": {
+        "type": "object",
+        "required": [
+          "event_matchup"
+        ],
+        "description": "Provider-first sports context for a Pick of the Day market: team crests, league branding, and live score. Team logos and league logo are provider-owned (Polymarket /teams crests for clubs, country flags for national teams and tennis players); no local derivation.",
+        "properties": {
+          "league_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "League or competition display name (e.g. \"Premier League\")."
+          },
+          "league_logo": {
+            "type": "string",
+            "nullable": true,
+            "description": "League logo URL (provider-owned)."
+          },
+          "yes_team": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PickSportsTeam"
+              }
+            ],
+            "nullable": true,
+            "description": "The team mapped to the market's YES outcome, or the parent-event home/first team when event_matchup is true."
+          },
+          "no_team": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PickSportsTeam"
+              }
+            ],
+            "nullable": true,
+            "description": "The team mapped to the market's NO outcome, or the parent-event away/second team when event_matchup is true."
+          },
+          "game_id": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Provider game identifier (Polymarket Gamma gameId); omitted when null."
+          },
+          "event_matchup": {
+            "type": "boolean",
+            "description": "Always present. True when the two teams are the parent-event match identity for a teamless binary leg (e.g. a draw, totals, or prop market), not the market's own outcomes."
+          },
+          "event_subject_team": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PickSportsTeam"
+              }
+            ],
+            "nullable": true,
+            "description": "Present only alongside event_matchup: the event team the binary leg is about (provider group_item_title matched to a matchup team, e.g. Belgium for \"Will Belgium win?\"), i.e. the winner on a Yes resolution. Omitted for teamless legs (draw, totals, prop)."
+          }
+        }
+      },
+      "PickSportsTeam": {
+        "type": "object",
+        "description": "A single sports team or competitor in a Pick of the Day market's sports context. Every field is provider-owned and nullable.",
+        "properties": {
+          "label": {
+            "type": "string",
+            "nullable": true,
+            "description": "Team display label as it appears on the market outcome (e.g. \"Portugal\")."
+          },
+          "short_label": {
+            "type": "string",
+            "nullable": true,
+            "description": "Abbreviated team label (e.g. \"POR\")."
+          },
+          "full_name": {
+            "type": "string",
+            "nullable": true,
+            "description": "Full team or competitor name (e.g. \"Portugal national football team\")."
+          },
+          "provider_id": {
+            "type": "integer",
+            "nullable": true,
+            "description": "Provider team identifier (Polymarket /teams id)."
+          },
+          "logo": {
+            "type": "string",
+            "nullable": true,
+            "description": "Team crest or flag URL (provider-owned: Polymarket /teams crest for clubs, country flag for national teams and tennis players)."
+          },
+          "color": {
+            "type": "string",
+            "nullable": true,
+            "description": "Team brand color as a hex string (provider-owned)."
+          },
+          "record": {
+            "type": "string",
+            "nullable": true,
+            "description": "Win-loss record as a display string (e.g. \"12-4\")."
+          },
+          "score": {
+            "type": "string",
+            "nullable": true,
+            "description": "Live or final score as a display string when the game is in play or settled."
+          }
+        }
+      },
+      "PickOfTheDayArchive": {
+        "type": "object",
+        "required": [
+          "picks",
+          "hit_rate"
+        ],
+        "properties": {
+          "picks": {
+            "type": "array",
+            "description": "Every published Pick of the Day, most recent last.",
+            "items": {
+              "$ref": "#/components/schemas/PickOfTheDayArchiveEntry"
+            }
+          },
+          "hit_rate": {
+            "$ref": "#/components/schemas/PickOfTheDayHitRate"
+          }
+        }
+      },
+      "PickOfTheDayArchiveEntry": {
+        "type": "object",
+        "required": [
+          "pick_date",
+          "matchup",
+          "category",
+          "outcome"
+        ],
+        "properties": {
+          "pick_date": {
+            "type": "string",
+            "format": "date",
+            "description": "The pick's local publication date (YYYY-MM-DD)."
+          },
+          "matchup": {
+            "type": "string",
+            "description": "Human-readable matchup (e.g. \"Portugal vs. Uzbekistan\")."
+          },
+          "category": {
+            "type": "string",
+            "description": "Market category (e.g. \"Soccer\")."
+          },
+          "pick_outcome_label": {
+            "type": "string",
+            "nullable": true,
+            "description": "The backed side's outcome label. Omitted for a still-pending pick when the request is not from an authenticated Insider key."
+          },
+          "top_grade": {
+            "type": "string",
+            "nullable": true,
+            "description": "Best grade among the proven smart-money holders on the backed side (S, A, B, C, D, F)."
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "win",
+              "loss",
+              "void"
+            ],
+            "description": "Settlement outcome of the backed side; 'pending' until the market resolves."
+          },
+          "return_per_100": {
+            "type": "number",
+            "description": "Gross return on a $100 stake on this resolved pick: a win returns 100 / backed_price, a loss returns 0, a void refunds 100. Omitted (not null) for a still-pending pick or a resolved pick with no frozen price; mirrors the backend skip-when-absent behavior and the route-client optional (non-nullable) schema."
+          }
+        }
+      },
+      "PickOfTheDayHitRate": {
+        "type": "object",
+        "required": [
+          "wins",
+          "losses",
+          "decided",
+          "pct",
+          "void",
+          "pending",
+          "net_profit_usd",
+          "staked_usd",
+          "roi_pct"
+        ],
+        "properties": {
+          "wins": {
+            "type": "integer",
+            "description": "Number of decided picks that won."
+          },
+          "losses": {
+            "type": "integer",
+            "description": "Number of decided picks that lost."
+          },
+          "decided": {
+            "type": "integer",
+            "description": "Number of decided picks (wins + losses); excludes void and pending."
+          },
+          "pct": {
+            "type": "number",
+            "description": "Rolling hit rate as a percentage (wins / decided * 100, to 1 decimal); 0 when none are decided."
+          },
+          "void": {
+            "type": "integer",
+            "description": "Number of picks that resolved void (excluded from the hit rate)."
+          },
+          "pending": {
+            "type": "integer",
+            "description": "Number of picks still pending resolution (excluded from the hit rate)."
+          },
+          "net_profit_usd": {
+            "type": "number",
+            "description": "Cumulative profit (USD) of a $100/pick strategy over resolved, priced picks: a win pays 100/backed_price - 100, a loss pays -100, a void pays 0. A resolved pick with no frozen price is excluded."
+          },
+          "staked_usd": {
+            "type": "number",
+            "description": "Total staked (USD) = 100 * count of win/loss picks with a frozen price (void excluded -- a void refunds the stake)."
+          },
+          "roi_pct": {
+            "type": "number",
+            "description": "Return on the staked amount as a percentage (net_profit_usd / staked_usd * 100, to 1 decimal); 0 when nothing is staked."
+          },
+          "series": {
+            "type": "array",
+            "description": "Cumulative track-record series, one point per decided (win/loss) pick in ascending pick_date order (void and pending add no point). The last point's net_profit_usd and hit_rate_pct equal the headline net_profit_usd and pct by construction. Empty when nothing is decided.",
+            "items": {
+              "type": "object",
+              "required": [
+                "date",
+                "net_profit_usd",
+                "hit_rate_pct"
+              ],
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "The decided pick's publish date (YYYY-MM-DD)."
+                },
+                "net_profit_usd": {
+                  "type": "number",
+                  "description": "Running cumulative $100/pick profit (USD) through this pick (priced win/loss only; an unpriced win/loss carries it forward)."
+                },
+                "hit_rate_pct": {
+                  "type": "number",
+                  "description": "Running rolling hit rate (wins / decided * 100, to 1 decimal) through this pick."
+                }
+              }
+            }
+          }
+        }
+      },
       "WebhookEventType": {
         "type": "string",
         "enum": [

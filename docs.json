@@ -102,6 +102,13 @@
             ]
           },
           {
+            "group": "Pick of the Day",
+            "pages": [
+              "api-reference/endpoint/get-pick-of-the-day",
+              "api-reference/endpoint/get-pick-of-the-day-archive"
+            ]
+          },
+          {
             "group": "Whale Trades",
             "pages": [
               "api-reference/endpoint/get-whale-trades",
