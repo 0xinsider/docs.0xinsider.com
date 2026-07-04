@@ -1,0 +1,23 @@
+---
+title: "Get Pick of the Day"
+openapi: "GET /api/v1/pick-of-the-day"
+---
+
+One sourced sharp-money call a day, promoted to the API. This is an Insider-tier endpoint: your API key already proves the subscription, so the response is always the full pick (the web teaser is a product-UI concept, not an API one).
+
+The pick returns the backed side, the pre-game odds and the return on a $100 stake, the proven smart-money holders on that side, the grade and category edge, and the thesis behind it.
+
+- `backed_price` and `return_per_100` are a snapshot frozen before kickoff, so the value does not drift between calls.
+- `sharp_pct`, `market_pct`, and `consensus_edge_pct` are the WHY breakdown: sharp-money conviction versus the market-implied price. These are conviction signals, not expected-value or guaranteed-edge claims.
+- `outcome` is `pending` until the market resolves, then `win`, `loss`, or `void`.
+- `sports_context` carries provider-owned team crests, league branding, and live score for team-sports picks; it is omitted otherwise.
+- Returns `404` when no pick is published right now.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/pick-of-the-day"
+```
+
+The response is side-effect-free and ETag-cacheable. Send the previous `ETag` back via `If-None-Match` to get a `304 Not Modified` when the pick is unchanged.
+
+For the full track record and rolling hit rate, see [Get Pick of the Day track record](/api-reference/endpoint/get-pick-of-the-day-archive).

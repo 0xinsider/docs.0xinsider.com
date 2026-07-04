@@ -1,0 +1,22 @@
+---
+title: "Get Pick of the Day track record"
+openapi: "GET /api/v1/pick-of-the-day/archive"
+---
+
+The full Pick of the Day track record: every published pick with its real outcome, plus the rolling hit rate.
+
+- `picks` lists every published pick, most recent last, each with its `outcome` and (for resolved, priced picks) the `return_per_100` on a $100 stake.
+- `hit_rate` is the headline record: `wins`, `losses`, `decided` (wins + losses), and `pct` (wins / decided). `void` and `pending` picks are excluded from the rate.
+- `hit_rate.net_profit_usd`, `staked_usd`, and `roi_pct` model a flat $100-per-pick strategy over resolved, priced picks.
+- `hit_rate.series` is the cumulative curve, one point per decided pick in ascending date order, ready to chart. Its last point equals the headline `net_profit_usd` and `pct` by construction.
+
+Resolved picks are the public record. A still-pending pick's backed side (`pick_outcome_label`) is included because the API key already proves Insider tier.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/pick-of-the-day/archive"
+```
+
+Side-effect-free and ETag-cacheable. Send the previous `ETag` back via `If-None-Match` for a `304 Not Modified` when the archive is unchanged.
+
+For today's single pick, see [Get Pick of the Day](/api-reference/endpoint/get-pick-of-the-day).
