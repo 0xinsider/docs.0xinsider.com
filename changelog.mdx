@@ -7,6 +7,13 @@ rss: true
 
 This changelog tracks externally visible REST API changes only. Documentation-only edits are intentionally excluded.
 
+<Update label="July 5, 2026" description="Pick of the Day returns 404 outside today's pick, and adds a game_started field">
+  Two changes to [`GET /api/v1/pick-of-the-day`](/api-reference/endpoint/get-pick-of-the-day):
+
+  - **New field `game_started`** (boolean): true once the backed game's kickoff has passed, so the snapshotted pre-game price is no longer actionable. Absent for a legacy pick with no stored kickoff (treat as not-started). Additive and optional - existing clients are unaffected. Separately, the `is_locked` description was corrected: it is a pre-release embargo flag (effectively always false on a served pick), not a "kicked off" signal - use `game_started` for kickoff.
+  - **Behavior change (non-breaking):** the endpoint now returns `404` when today has no published pick yet, instead of serving the most recent prior day's (often already-settled) pick. The response shape is unchanged and `404` was already a documented response; this conforms the endpoint to its "today's Pick of the Day" contract so an automated consumer never acts on a finished game. Prior picks stay available through the archive endpoint.
+</Update>
+
 <Update label="July 4, 2026" description="Sandbox / test-mode API keys removed; a single live key class remains">
   Sandbox / test-mode API keys (`oxi_sk_test_...`) are removed. The API now has a single key class: `oxi_sk_live_...`, sent as `Authorization: Bearer oxi_sk_live_...`, which requires an active Insider subscription and always returns live data.
 

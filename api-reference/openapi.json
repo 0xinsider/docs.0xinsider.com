@@ -6131,7 +6131,7 @@
       "get": {
         "operationId": "getPickOfTheDay",
         "summary": "Get today's Pick of the Day",
-        "description": "One sourced sharp-money call a day (Insider-tier). Returns the single latest published pick: the backed side, the pre-game odds and $100 return, the proven smart-money holders on that side, the grade and category edge, and the thesis. The price is snapshotted before kickoff so it does not drift. Returns 404 when no pick is published.",
+        "description": "One sourced sharp-money call a day (Insider-tier). Returns the published pick for the CURRENT product day: the backed side, the pre-game odds and $100 return, the proven smart-money holders on that side, the grade and category edge, and the thesis. The price is snapshotted before kickoff so it does not drift. Returns 404 when today has no published pick yet -- it never serves a prior day's finished pick as today's, so an automated consumer never acts on a settled game (a prior pick stays available through the archive endpoint).",
         "tags": [
           "Pick of the Day"
         ],
@@ -6661,7 +6661,11 @@
           },
           "is_locked": {
             "type": "boolean",
-            "description": "Whether the market has locked (kicked off) so the snapshotted price no longer trades."
+            "description": "True only before the pick's daily release slot (a pre-release embargo flag); effectively always false on a served, already-published pick. To detect that the backed game has kicked off, use `game_started`."
+          },
+          "game_started": {
+            "type": "boolean",
+            "description": "True once the backed game's kickoff has passed (kickoff <= now). When true the snapshotted pre-game price is no longer actionable. Absent for a legacy pick with no stored kickoff (treat as not-started)."
           },
           "outcome": {
             "type": "string",
