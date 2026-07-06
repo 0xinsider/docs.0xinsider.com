@@ -1,0 +1,8 @@
+---
+title: "Get Sports Edge Signals"
+openapi: "GET /api/v1/sports-edge-signals"
+---
+
+Returns the ranked list of upcoming pre-game sports markets (moneyline and props) where graded smart money is piled on one side. Each signal carries the piled side and its CLOB token, the grade distribution of the pile (S/A/B holder counts), dollar concentration, the market's kickoff time, and a grade-weighted conviction score — everything needed to act on the signal in one call, computed server-side.
+
+Ranking is grade-distribution driven: `conviction_score = (5·s_count + 4·a_count + 3·b_count) · sharp_pct`, so a market with more top-grade (S/A) traders concentrated on the piled side ranks higher. All raw fields are returned so callers can re-rank. Markets with no clear pile (roughly 50/50) are excluded.

@@ -7,6 +7,12 @@ rss: true
 
 This changelog tracks externally visible REST API changes only. Documentation-only edits are intentionally excluded.
 
+<Update label="July 6, 2026" description="Sports Edge Signals: ranked pre-game sports markets where graded smart money is piled">
+  Added [`GET /api/v1/sports-edge-signals`](/api-reference/endpoint/get-sports-edge-signals) - the ranked list of upcoming pre-game sports markets (moneyline and props) where graded (S/A/B) smart money is piled on one side, computed server-side in one call.
+
+  Each signal returns the piled side and its CLOB `token_id`, the pile's grade distribution (`s_count`/`a_count`/`b_count`), dollar concentration (`sharp_pct`, `backed_sharp_usd`), the market's `game_start_time` (kickoff), and a grade-weighted `conviction_score`. Ranking is grade-distribution driven - a market with more top-grade (S/A) traders on the piled side ranks higher - and roughly-50/50 markets with no clear pile are excluded. Bearer + insider tier, ETag-cached, cursor-paginated with a snapshot-pinned cursor.
+</Update>
+
 <Update label="July 5, 2026" description="Pick of the Day returns 404 outside today's pick, and adds a game_started field">
   Two changes to [`GET /api/v1/pick-of-the-day`](/api-reference/endpoint/get-pick-of-the-day):
 
