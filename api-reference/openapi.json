@@ -6552,6 +6552,192 @@
           }
         ]
       }
+    },
+    "/api/v1/sports-edge-signals": {
+      "get": {
+        "operationId": "listSportsEdgeSignals",
+        "summary": "List ranked pre-game sports-edge signals",
+        "description": "Insider-tier. Ranked list of upcoming pre-game sports markets (moneyline + props) where graded (S/A/B) smart money is piled on one side, each row carrying the piled side, its grade distribution (S/A/B counts, dollar concentration, top grade), the kickoff time, and the piled-side Polymarket CLOB token id. Eligibility is a market with recent graded whale FLOW in the kickoff window; ranking is the current graded HOLDER pile. Deliberately NOT the editorial Pick of the Day ranker. Served from a shared server-side snapshot cache (TTL ~180s) computed once per category window at the maximum 48h horizon and filtered to the requested horizon_hours at request time (so every horizon shares one cache entry); the cursor pins to that snapshot and a stale cursor is rejected. Polymarket only (Kalshi lacks kickoff + graded-holder data).",
+        "tags": [
+          "Markets"
+        ],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Optional canonical sport bucket filter (e.g. Basketball, Tennis, Soccer). A raw provider value (NBA) resolves to its canonical bucket. A non-sport category returns an empty list.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Page size.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "description": "Opaque cursor from a previous response's next_cursor. Encodes the snapshot anchor plus the last row's conviction_score, smart_score and condition_id. A cursor from an expired snapshot returns 400.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "horizon_hours",
+            "in": "query",
+            "description": "Kickoff ceiling in hours from now; the floor is now (only games not yet started). Clamped to 1..48.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 48,
+              "default": 12
+            }
+          },
+          {
+            "name": "min_grade",
+            "in": "query",
+            "description": "Minimum trader grade required on the piled side. Only S, A, B are accepted (the piled-side grade distribution is S/A/B only; C, D, F return 400). Default B means at least one S/A/B holder is piled; S requires an S holder, A requires an S or A holder.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "S",
+                "A",
+                "B"
+              ],
+              "default": "B"
+            }
+          },
+          {
+            "name": "If-None-Match",
+            "in": "header",
+            "required": false,
+            "description": "Conditional GET validator from a previous ETag. Matching values return 304 Not Modified with an empty body.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ranked pre-game sports-edge signals",
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/X-RateLimit-Limit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/X-RateLimit-Remaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/X-RateLimit-Reset"
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "object",
+                    "data",
+                    "has_more",
+                    "meta"
+                  ],
+                  "properties": {
+                    "object": {
+                      "type": "string",
+                      "const": "list"
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/SportsEdgeSignal"
+                      }
+                    },
+                    "has_more": {
+                      "type": "boolean"
+                    },
+                    "next_cursor": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "total": {
+                      "type": "integer",
+                      "nullable": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/ResponseMeta"
+                    }
+                  }
+                },
+                "x-examples": {
+                  "success": {
+                    "object": "list",
+                    "data": [],
+                    "has_more": false,
+                    "next_cursor": null,
+                    "meta": {
+                      "request_id": "req_example",
+                      "cached": false,
+                      "cost": 5
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Not Modified. Returned when If-None-Match matches the current payload.",
+            "headers": {
+              "ETag": {
+                "$ref": "#/components/headers/ETag"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/SubscriptionRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "408": {
+            "$ref": "#/components/responses/RequestTimeout"
+          },
+          "423": {
+            "$ref": "#/components/responses/Locked"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "503": {
+            "$ref": "#/components/responses/RateLimitUnavailable"
+          }
+        },
+        "x-codeSamples": [
+          {
+            "lang": "curl",
+            "label": "cURL",
+            "source": "curl -sS \\\n  -H 'Authorization: Bearer $OXI_SK' \\\n  'https://api.0xinsider.com/api/v1/sports-edge-signals?category=Basketball&horizon_hours=12&min_grade=B&limit=10'"
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -10800,6 +10986,127 @@
                 }
               }
             }
+          }
+        }
+      },
+      "SportsEdgeSignal": {
+        "type": "object",
+        "description": "One ranked pre-game sports market where graded smart money is piled on one side, with the grade distribution, kickoff, and piled-side CLOB token id.",
+        "required": [
+          "condition_id",
+          "piled_outcome_index",
+          "backed_sharp_usd",
+          "s_count",
+          "a_count",
+          "b_count",
+          "graded_holders",
+          "conviction_score",
+          "rank"
+        ],
+        "properties": {
+          "condition_id": {
+            "type": "string",
+            "description": "Polymarket condition id."
+          },
+          "token_id": {
+            "type": "string",
+            "nullable": true,
+            "description": "Polymarket CLOB token id (ERC1155 asset id, decimal string) for the PILED outcome; null when unavailable."
+          },
+          "category": {
+            "type": "string",
+            "nullable": true,
+            "description": "Canonical sport bucket (e.g. Basketball, Tennis); null when the raw category has no canonical mapping."
+          },
+          "raw_category": {
+            "type": "string",
+            "nullable": true,
+            "description": "Raw provider category as stored (e.g. NBA, EPL)."
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "event_slug": {
+            "type": "string",
+            "nullable": true
+          },
+          "game_start_time": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true,
+            "description": "Kickoff (UTC). In the future at SNAPSHOT time and within the requested horizon; because the response is served from a shared snapshot cached up to the ~180s TTL, a served kickoff can be up to ~180s in the past relative to the response time. Not a live guarantee that the game has not yet started."
+          },
+          "piled_side": {
+            "type": "string",
+            "nullable": true,
+            "description": "Human piled-side label (never a bare Yes/Over); null when the provider outcome label is missing."
+          },
+          "piled_outcome_index": {
+            "type": "integer",
+            "description": "0 = first outcome (yes/home), 1 = second outcome (no/away)."
+          },
+          "sharp_pct": {
+            "type": "number",
+            "nullable": true,
+            "description": "Piled-side dollar concentration backed_usd / (yes_usd + no_usd), in (0.5, 1] for a real pile; null when there is no sharp USD."
+          },
+          "backed_sharp_usd": {
+            "type": "number",
+            "description": "Raw piled-side smart-money USD."
+          },
+          "s_count": {
+            "type": "integer",
+            "description": "S-grade graded holders on the piled side."
+          },
+          "a_count": {
+            "type": "integer",
+            "description": "A-grade graded holders on the piled side."
+          },
+          "b_count": {
+            "type": "integer",
+            "description": "B-grade graded holders on the piled side."
+          },
+          "graded_holders": {
+            "type": "integer",
+            "description": "Piled-side graded holder count (s_count + a_count + b_count)."
+          },
+          "top_grade": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "S",
+              "A",
+              "B"
+            ],
+            "description": "Best grade present on the piled side; null when none."
+          },
+          "smart_score": {
+            "type": "number",
+            "nullable": true,
+            "description": "Canonical sharp-money score (yes_usd - no_usd)/(yes_usd + no_usd) in [-1, 1] (piled-yes positive, piled-no negative); the ranking tiebreak."
+          },
+          "volume": {
+            "type": "number",
+            "nullable": true,
+            "description": "Market volume (USD)."
+          },
+          "net_side": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "BUY",
+              "SELL"
+            ],
+            "description": "Aggregate recent flow direction on the market; null when unavailable."
+          },
+          "conviction_score": {
+            "type": "number",
+            "description": "Grade-weighted pile score (5*s + 4*a + 3*b) * sharp_pct; the default ranking key, descending."
+          },
+          "rank": {
+            "type": "integer",
+            "description": "1-based rank within the (min_grade-filtered) ranked result."
           }
         }
       }

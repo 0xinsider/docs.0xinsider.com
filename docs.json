@@ -98,7 +98,8 @@
               "api-reference/endpoint/smart-money-flows",
               "api-reference/endpoint/get-market-intel",
               "api-reference/endpoint/batch-get-market-intel",
-              "api-reference/endpoint/get-market-snapshot"
+              "api-reference/endpoint/get-market-snapshot",
+              "api-reference/endpoint/get-sports-edge-signals"
             ]
           },
           {
