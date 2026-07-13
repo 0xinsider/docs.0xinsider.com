@@ -1,0 +1,13 @@
+---
+title: "List Webhook Deliveries"
+openapi: "GET /api/v1/webhooks/{id}/deliveries"
+---
+
+Lists recent delivery attempts for one webhook destination owned by the authenticated API-key user, newest first.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/webhooks/123/deliveries?limit=50"
+```
+
+The endpoint uses opaque cursor pagination. A webhook not owned by the caller returns the same `404` as an unknown ID. Delivery rows omit the request body and signing secret.

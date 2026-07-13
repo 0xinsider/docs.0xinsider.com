@@ -1,0 +1,13 @@
+---
+title: "Submit Trader Export"
+openapi: "POST /api/v1/trader/{address}/export"
+---
+
+Queues an asynchronous full-dataset export for one trader. Choose `json`, `ndjson`, or `csv`; JSON is the default.
+
+```bash
+curl -X POST -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/trader/0xabc.../export?format=ndjson"
+```
+
+The response contains the job ID. [Poll its status](/api-reference/endpoint/get-trader-export-status), then use the [download endpoint](/api-reference/endpoint/download-trader-export) after the job reaches `ready`. Quotas are enforced per API-key owner and trader address.

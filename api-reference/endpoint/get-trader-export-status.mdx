@@ -1,0 +1,13 @@
+---
+title: "Get Trader Export Status"
+openapi: "GET /api/v1/trader/{address}/export/status"
+---
+
+Returns the state of an asynchronous trader export owned by the authenticated API key: `queued`, `running`, `ready`, or `failed`.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/trader/0xabc.../export/status?job_id=123"
+```
+
+When the state is `ready`, request the file through [Download Trader Export](/api-reference/endpoint/download-trader-export).

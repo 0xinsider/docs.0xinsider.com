@@ -1,0 +1,15 @@
+---
+title: "Get Trader Context"
+openapi: "GET /api/v1/trader/{address}/context"
+---
+
+Returns one structured, AI-ready trader briefing: the full trader profile, position and sync coverage, realized and unrealized P&L rollups, and point-in-time freshness metadata.
+
+The path accepts a wallet address, known username, or `trd_...` trader ID. An unknown trader returns `200` with `sync_status: "unknown"`; `position_summary` is omitted when no local row exists.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/trader/swisstony/context"
+```
+
+The JSON route returns an `ETag`. Send it with `If-None-Match` for a conditional read. Use the [Markdown variant](/api-reference/endpoint/get-trader-context-markdown) when you need a directly readable briefing instead.

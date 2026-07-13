@@ -1,0 +1,24 @@
+---
+title: "Get Sports Edge Observations"
+openapi: "GET /api/v1/sports-edge-observations"
+---
+
+Measures sports opportunities that are deliberately excluded from the funded Sports Edge slate. Use this endpoint to collect point-in-time evidence for wider-holder pre-game markets or provider-confirmed in-play markets without changing the funded algorithm.
+
+Pass one required `cohort`:
+
+- `wider_holder` measures current graded-holder consensus without requiring recent graded whale flow.
+- `in_play` measures only provider-confirmed live games. Stale or unavailable holder and directional evidence fails closed and emits no observation.
+
+Every returned row has `observation_only: true`. Never route these rows to an order executor. This endpoint does not feed [Sports Edge Signals](/api-reference/endpoint/get-sports-edge-signals) or Pick of the Day.
+
+Omit `category` to evaluate all 14 observation sports. The observation registry includes Table Tennis and Pickleball, but both remain outside the 12-sport funded projection. Raw provider categories resolve through the canonical taxonomy; a non-sport category returns an empty list.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/sports-edge-observations?cohort=wider_holder&category=Tennis&limit=20"
+```
+
+The response includes a per-sport `funnel`. For each evaluated sport, `input` must equal `terminal_total`; sparse terminal reason counts explain why candidates were emitted or excluded. Provider, holder, directional, and reconciliation degradation remain explicit and shorten the cache lifetime.
+
+Pagination uses the endpoint-specific `seo_` cursor. Cursors are pinned to `snapshot_as_of` and the selected cohort, so you cannot reuse one across cohorts or after its snapshot refreshes.

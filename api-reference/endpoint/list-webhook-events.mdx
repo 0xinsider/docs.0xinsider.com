@@ -1,0 +1,13 @@
+---
+title: "List Webhook Events"
+openapi: "GET /api/v1/webhooks/events"
+---
+
+Returns the catalog of webhook event types, including each event's description, data shape, and whether its producer is active or dormant.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/webhooks/events"
+```
+
+Insider-only event types appear in the catalog for every authenticated key, but they deliver only to an API key with an active Insider subscription. A dormant event is subscribable but does not currently fire.

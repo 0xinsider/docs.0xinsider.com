@@ -74,12 +74,17 @@
             "group": "Traders",
             "pages": [
               "api-reference/endpoint/get-trader",
+              "api-reference/endpoint/get-trader-context",
+              "api-reference/endpoint/get-trader-context-markdown",
               "api-reference/endpoint/batch-get-traders",
               "api-reference/endpoint/get-trader-pnl",
               "api-reference/endpoint/get-position-timeline",
               "api-reference/endpoint/get-trader-position-timeline",
               "api-reference/endpoint/list-large-positions",
               "api-reference/endpoint/get-trader-export-snapshot",
+              "api-reference/endpoint/submit-trader-export",
+              "api-reference/endpoint/get-trader-export-status",
+              "api-reference/endpoint/download-trader-export",
               "api-reference/endpoint/get-leaderboard",
               "api-reference/endpoint/list-trending-wallets"
             ]
@@ -95,11 +100,14 @@
             "pages": [
               "api-reference/endpoint/search-markets",
               "api-reference/endpoint/explore-markets",
+              "api-reference/endpoint/sharp-money-flows",
               "api-reference/endpoint/smart-money-flows",
               "api-reference/endpoint/get-market-intel",
               "api-reference/endpoint/batch-get-market-intel",
               "api-reference/endpoint/get-market-snapshot",
-              "api-reference/endpoint/get-sports-edge-signals"
+              "api-reference/endpoint/get-market-candles",
+              "api-reference/endpoint/get-sports-edge-signals",
+              "api-reference/endpoint/get-sports-edge-observations"
             ]
           },
           {
@@ -146,12 +154,14 @@
             "group": "Webhooks",
             "pages": [
               "api-reference/endpoint/list-webhooks",
+              "api-reference/endpoint/list-webhook-events",
               "api-reference/endpoint/create-webhook",
               "api-reference/endpoint/get-webhook",
               "api-reference/endpoint/update-webhook",
               "api-reference/endpoint/delete-webhook",
               "api-reference/endpoint/verify-webhook",
-              "api-reference/endpoint/rotate-webhook-secret"
+              "api-reference/endpoint/rotate-webhook-secret",
+              "api-reference/endpoint/list-webhook-deliveries"
             ]
           },
           {

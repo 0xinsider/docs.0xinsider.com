@@ -7,14 +7,24 @@ rss: true
 
 This changelog tracks externally visible REST API changes only. Documentation-only edits are intentionally excluded.
 
-<Update label="July 13, 2026" description="Sports Edge Signals now cover Golf, Formula 1, NBA Summer League, CFL, table tennis and pickleball">
-  [`GET /api/v1/sports-edge-signals`](/api-reference/endpoint/get-sports-edge-signals) and [`GET /api/v1/pick-of-the-day`](/api-reference/endpoint/get-pick-of-the-day) now return signals for six sports that were previously absent: **Golf**, **Formula 1** (and NASCAR), **NBA Summer League**, **CFL**, **table tennis** and **pickleball**.
+<Update label="July 14, 2026" description="Observation-only wider-holder and in-play sports cohorts">
+  Added [`GET /api/v1/sports-edge-observations`](/api-reference/endpoint/get-sports-edge-observations), an Insider-tier evidence endpoint for sports opportunities that do not enter the funded Sports Edge slate.
 
-  These markets were never surfaced. Polymarket sends no specific category for them - only the generic `Sports` - and no event-level league or series metadata, so they were classified as `Sports`, which is not one of the sport buckets the signal slate is built from. They were therefore filtered out before any ranking ran. Nothing errored and nothing was logged; the sports simply did not exist as far as the API was concerned. Across the 30 days to July 13 that was 218 markets and roughly $11.9M of traded volume, the largest slices being golf majors (~$6.3M) and Formula 1 (~$4.0M).
+  Choose one required `cohort`: `wider_holder` measures pre-game markets with current graded-holder consensus even when no recent graded whale flow exists, while `in_play` measures only provider-confirmed live games with fresh holder and directional evidence. Every row has `observation_only: true`, provider and holder freshness fields, and an explicit directional status. The response also includes a per-sport funnel that accounts for every input as an emitted observation or a terminal exclusion reason.
 
-  Markets are now classified from the provider tags Polymarket actually ships (for example `pga` / `pga-tour`, `formula1`, `nba-summer-league`, `cfl`), and each rolls up to a sport bucket the slate reads. `Racing`, `Table Tennis` and `Pickleball` are new buckets; table tennis is deliberately **not** folded into `Tennis`, so the two keep separate track records.
+  Omit `category` to evaluate all 14 observation sports. That registry includes **Table Tennis** and **Pickleball**, classified from provider-confirmed tags and kept separate from Tennis. Those two sports remain outside the 12-sport funded projection.
 
-  **What this changes for you:** the `category` field on affected signals moves from `"Sports"` to the real sport, and signal volume increases as these markets become eligible. No request or response shape changed, and no existing category was renamed - so this is additive and non-breaking. Existing rows reclassify on their next provider sync.
+  This endpoint has its own `seo_` cursor, cache, and response contract. It does not change or feed [`GET /api/v1/sports-edge-signals`](/api-reference/endpoint/get-sports-edge-signals), Pick of the Day, or any order executor. Promotion remains closed until a separately reviewed cohort meets the published sample-size, event-coverage, fee-inclusive return, and uncertainty gates.
+</Update>
+
+<Update label="July 13, 2026" description="Sports Edge can surface Golf, Formula 1, NBA Summer League, CFL and Boxing">
+  [`GET /api/v1/sports-edge-signals`](/api-reference/endpoint/get-sports-edge-signals) and [`GET /api/v1/pick-of-the-day`](/api-reference/endpoint/get-pick-of-the-day) can now surface eligible markets for **Golf**, **Formula 1** and NASCAR, **NBA Summer League**, **CFL**, and **Boxing**.
+
+  Polymarket sends only generic sports metadata for some of these markets. 0xinsider now classifies the provider tags it actually receives - including `pga`, `pga-tour`, `formula1`, `nba-summer-league`, and `cfl` - before applying the existing smart-money, calibration, liquidity, and kickoff gates. `Racing` and `Boxing` are now admitted canonical buckets. The four newly classified tag families represented 207 recent markets and about $11.81M of traded volume when measured on July 13.
+
+  **Correction:** the earlier version of this entry also named Table Tennis and Pickleball. The final funded release did not admit either sport. They are available only through the observation-only endpoint added July 14, and do not feed funded signals or Pick of the Day.
+
+  No request or response shape changed, and no existing category was renamed. Open markets can adopt the corrected category on a provider refresh; historical rows require a controlled refold and are not implied to have reclassified automatically.
 </Update>
 
 <Update label="July 6, 2026" description="Sports Edge Signals: ranked pre-game sports markets where graded smart money is piled">
