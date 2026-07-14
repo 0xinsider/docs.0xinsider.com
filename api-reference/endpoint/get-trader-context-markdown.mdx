@@ -1,0 +1,15 @@
+---
+title: "Get Trader Context as Markdown"
+openapi: "GET /api/v1/trader/{address}/context.md"
+---
+
+Returns the trader context as a human- and LLM-readable Markdown briefing with identity, grade, P&L, position coverage, and freshness.
+
+The path accepts a wallet address, known username, or `trd_...` trader ID. Unknown traders still return a degraded `200` document instead of `404`.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/trader/swisstony/context.md"
+```
+
+This Markdown variant does not emit an `ETag` and ignores `If-None-Match`. Use the [JSON context endpoint](/api-reference/endpoint/get-trader-context) for conditional reads.

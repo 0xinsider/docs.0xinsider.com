@@ -3,7 +3,9 @@ title: "Errors"
 description: "How errors come back, what each code means, and how to recover."
 ---
 
-Errors come back with a non-2xx HTTP status and the same JSON envelope every time:
+Handler and middleware errors use the JSON envelope below. The transport-level
+`408 Request Timeout` is the exception: the server's 30-second timeout returns
+an empty body, so check the HTTP status before parsing JSON.
 
 ```json
 {
@@ -20,20 +22,22 @@ Errors come back with a non-2xx HTTP status and the same JSON envelope every tim
 }
 ```
 
-Two fields matter in production: `error.code` (machine-readable) and `meta.request_id` (the ID you give us when you contact support).
+For JSON errors, two fields matter in production: `error.code` (machine-readable) and `meta.request_id` (the ID you give us when you contact support).
 
 ## Error codes
 
 | HTTP | `error.code` | What happened | What to do |
 |---|---|---|---|
-| `400` | `bad_request` | A parameter was invalid. Check `error.param`. | Fix the input. |
+| `400` | `bad_request` | A parameter was invalid. Check `error.param` when present; otherwise use `error.message`. | Fix the input. |
 | `401` | `invalid_api_key` | Key missing, malformed, or revoked. | Re-check the `Authorization` header. |
 | `402` | `subscription_required` | Key is valid, but no active Insider sub. | Subscribe at [pricing](https://0xinsider.com/pricing). |
 | `403` | `forbidden` | The account was deleted. | Contact support. |
 | `404` | `not_found` | The trader / market / resource does not exist. | Verify the ID. |
+| `408` | - | The public API request exceeded the 30-second transport timeout. The body is empty. | Retry once. Do not attempt to parse JSON. |
 | `423` | `account_locked` | Account is suspended. | Contact support. |
 | `429` | `rate_limited` | Over 100 req/min (or 100 batch item units/min). | Sleep `Retry-After` seconds and retry. See [Rate Limits](/rate-limits). |
 | `500` | `internal_error` | Bug on our side. | Retry. Include `meta.request_id` if you contact us. |
+| `503` | `rate_limit_unavailable` | With `error.reason="read_model_warming"`, this endpoint cannot serve its read model yet. The exact cause is endpoint-specific. Without a reason, the authenticated rate limiter is unavailable and has failed closed. | Branch on `error.reason`. For read-model unavailability, retry only this route after `Retry-After` and consult its endpoint contract. Do not infer dependency health or apply a shared rate-limit backoff. |
 
 ## Handling errors in code
 
@@ -44,6 +48,9 @@ async function call(path, opts = {}) {
     headers: { Authorization: `Bearer ${process.env.OXINSIDER_API_KEY}` },
     ...opts,
   });
+  if (res.status === 408) {
+    throw new Error("0xinsider request exceeded the 30-second transport timeout");
+  }
   const body = await res.json();
 
   if (!res.ok) {
@@ -71,6 +78,8 @@ H = {"Authorization": f"Bearer {os.environ['OXINSIDER_API_KEY']}"}
 
 def call(path, **params):
     r = requests.get(f"{BASE}{path}", headers=H, params=params)
+    if r.status_code == 408:
+        raise TimeoutError("0xinsider request exceeded the 30-second transport timeout")
     body = r.json()
     if r.ok:
         return body

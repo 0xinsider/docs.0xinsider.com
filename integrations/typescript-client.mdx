@@ -17,7 +17,8 @@ It's **not** on npm yet. Use it as source or as a reference implementation.
 - Path parameter interpolation (`/trader/{address}`, `/market/{condition_id}/intel`).
 - Repeated query parameters like `expand=strategy&expand=categories`. The API also accepts the legacy `expand[]` form.
 - JSON request bodies for batch and webhook endpoints.
-- V1 error envelopes as typed exceptions (`code`, `message`, `param`, `request_id`).
+- V1 error envelopes as typed exceptions with the HTTP `status`, parsed `error`, and raw response `body`.
+- Conditional reads: successful response `ETag` headers are copied to `meta.etag`, and `304` responses return a typed `not_modified` envelope instead of attempting to parse an empty body.
 
 ## Example
 
@@ -39,21 +40,58 @@ const markets = await client.searchMarkets("NBA", {
 });
 ```
 
-## Handling errors
-
-The client throws typed exceptions instead of a generic error object, so you match on `error.code` directly:
+## Conditional reads
 
 ```ts
-import { OxinsiderApiError } from "./api-client";
+import {
+  OxinsiderApiClient,
+  isApiNotModifiedResponse,
+} from "./api-client";
+
+const client = new OxinsiderApiClient({
+  baseUrl: "https://api.0xinsider.com",
+  apiKey: process.env.OXINSIDER_API_KEY,
+});
+
+const first = await client.call("listSportsEdgeObservations", {
+  query: { cohort: "wider_holder", category: "Tennis", limit: 20 },
+});
+
+if (!isApiNotModifiedResponse(first) && first.meta?.etag) {
+  const next = await client.call("listSportsEdgeObservations", {
+    query: { cohort: "wider_holder", category: "Tennis", limit: 20 },
+    headers: { "If-None-Match": first.meta.etag },
+  });
+
+  if (isApiNotModifiedResponse(next)) {
+    console.log("snapshot unchanged");
+  }
+}
+```
+
+The `304` envelope has `object: "not_modified"`, `data: null`, and metadata copied from response headers. The packaged SDK also exposes a route-specific conditional Sports Edge method; see its README for that API.
+
+## Handling errors
+
+The client throws typed exceptions instead of a generic error object. Match on the parsed `error` field:
+
+```ts
+import { OxinsiderApiClient, OxinsiderApiError } from "./api-client";
+
+const client = new OxinsiderApiClient({
+  baseUrl: "https://api.0xinsider.com",
+  apiKey: process.env.OXINSIDER_API_KEY,
+});
 
 try {
   const trader = await client.getTrader("not-a-real-trader");
 } catch (err) {
   if (err instanceof OxinsiderApiError) {
-    if (err.code === "not_found") {
+    const code = err.error?.code;
+    if (code === "not_found") {
       // expected: unknown trader
-    } else if (err.code === "rate_limited") {
-      await new Promise(r => setTimeout(r, err.retryAfterMs ?? 1000));
+    } else if (code === "subscription_required") {
+      throw new Error("Insider subscription required");
     } else {
       throw err;
     }

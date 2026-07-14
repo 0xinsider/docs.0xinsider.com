@@ -1,0 +1,15 @@
+---
+title: "Sharp Money Flows"
+openapi: "GET /api/v1/markets/sharp-money-flows"
+---
+
+Canonical endpoint for discovering where S, A, and B grade whale flow is concentrated before you know a market's `condition_id`.
+
+Filter by timeframe, category, platform, minimum grade, or direction. Results are ranked by absolute net flow. The opaque cursor preserves the first page's `as_of` timestamp, so new trades do not reorder later pages.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/markets/sharp-money-flows?timeframe=24h&min_grade=B&limit=10"
+```
+
+[`GET /api/v1/markets/smart-money-flows`](/api-reference/endpoint/smart-money-flows) remains available as a deprecated byte-identical alias. New integrations should use this canonical route.

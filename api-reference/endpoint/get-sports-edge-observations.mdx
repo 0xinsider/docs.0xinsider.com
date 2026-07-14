@@ -1,0 +1,44 @@
+---
+title: "Get Sports Edge Observations"
+openapi: "GET /api/v1/sports-edge-observations"
+---
+
+Measures sports opportunities that are deliberately excluded from the funded Sports Edge slate. Use this endpoint to collect point-in-time evidence for wider-holder pre-game markets or provider-confirmed in-play markets without changing the funded algorithm.
+
+Pass one required `cohort`:
+
+- `wider_holder` measures current graded-holder consensus without requiring recent graded whale flow.
+- `in_play` measures only provider-confirmed live games. Stale or unavailable live-board, holder, or directional evidence fails closed and emits no observation.
+
+Every returned row has `observation_only: true`. Never route these rows to an order executor. This endpoint does not feed [Sports Edge Signals](/api-reference/endpoint/get-sports-edge-signals) or Pick of the Day.
+
+Omit `category` to evaluate all 14 observation sports. The observation registry includes Table Tennis and Pickleball, but both remain outside the 12-sport funded projection. `category=table-tennis`, `category=table tennis`, and `category=pickleball` resolve through the same canonical taxonomy as their title-cased bucket names; a non-sport category returns an empty list.
+
+For an all-sports request, board reads run in bounded fair waves so one slow source cannot block every later sport. Cold holder admission gives each represented canonical sport a first-candidate attempt before any sport repeats. This preserves evaluation breadth; it does not guarantee an emitted row when that sport's candidates fail a terminal gate.
+
+All category and all-sports cache scopes share one global observation provider-work admission. Independent scope keys cannot multiply concurrent holder and price fan-out against funded provider traffic.
+
+For `in_play`, provider `event_status` is authoritative when present: `Live` and `Paused` count as in progress, while `Ended` does not. The legacy score overlay is consulted only when `event_status` is absent.
+
+```bash
+curl -H "Authorization: Bearer $OXINSIDER_API_KEY" \
+  "https://api.0xinsider.com/api/v1/sports-edge-observations?cohort=wider_holder&category=Tennis&limit=20"
+```
+
+Every `200` response includes a required top-level `degraded` boolean. It is `true` when an operational failure or unknown completeness state made the snapshot partial. Treat it as the snapshot-wide verdict: it can remain `true` even when the per-sport funnel cannot show the same failure because each input receives exactly one terminal reason.
+
+The response also includes that per-sport `funnel`. For each evaluated sport, `input` must equal `terminal_total`; sparse terminal reason counts explain why candidates were emitted or excluded. `capacity_limited` is intentional bounded admission: it remains fully accounted in the funnel and does not by itself set `degraded: true`. `board_upcoming_configured` distinguishes a sport with no applicable upcoming-board source from a configured source that is unavailable.
+
+A healthy `wider_holder` request can reuse a snapshot for about 180 seconds. An `in_play` request never serves a cached observation snapshot older than about 30 seconds. Degraded snapshots use the shorter, about-30-second lifetime for both cohorts.
+
+Directional degradation is cohort-specific. A `wider_holder` candidate can remain emitted with `directional_status: "unavailable"` and terminal reason `wider_holder_emitted`. An `in_play` candidate fails closed instead and is counted under `in_play_directional_unavailable`.
+
+The route reserves about 25 seconds for one compute attempt. Single-flight refresh or global provider-work admission contention, or the deadline elapsing before a usable cache, universe, or exact raw funded-slate membership result exists, returns JSON `503 rate_limit_unavailable` with `error.reason: "read_model_warming"`. Category-resolution SQL errors, Redis coordination failures, observation-universe SQL errors, and primary-slate membership SQL errors return JSON `500 internal_error`. Once a usable universe exists, later unfinished board, holder, price, or metadata work is represented in a degraded `200` funnel instead of becoming a route-wide error.
+
+Pagination uses the endpoint-specific `seo_` cursor. Cursors are pinned to `snapshot_as_of` and the selected cohort, so you cannot reuse one across cohorts or after its snapshot refreshes.
+
+Successful responses return a weak semantic `ETag`. It covers the stable page payload, including `next_cursor`, but excludes request-specific `meta`. Send it back as `If-None-Match` with the same query to receive `304 Not Modified` with an empty body when that stable payload is unchanged.
+
+Malformed typed query values, such as `limit=abc`, return the standard JSON `400 bad_request` envelope. Read `error.param` when it is present; otherwise use `error.message`.
+
+Like other public API routes, this endpoint is also subject to the 30-second transport timeout. If that outer timeout is reached, it returns `408 Request Timeout` with an empty body. Check the status before parsing JSON.
