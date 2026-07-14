@@ -710,7 +710,7 @@ One explicitly observation-only holder-pile measurement. It is evidence for coho
 | `graded_holders` | integer | Yes | Piled-side S/A/B holder count. |
 | `top_grade` | `S` \| `A` \| `B` | Yes |  |
 | `smart_score` | number | Yes | Canonical signed holder-pile score. |
-| `volume` | number | Yes | Stored market volume in USD; zero when the provider mirror has no value. |
+| `volume` | number | Yes | Strictly positive stored market volume in USD. Missing, zero, or non-finite volume terminates as invalid_market and is never emitted as an observation. |
 | `conviction_score` | number | Yes | Grade-weighted holder-pile score before directional enrichment. |
 | `provider_read_source` | `cached` \| `live` | Yes | Whether the provider holder page came from the shared cache or a live provider read. |
 | `holder_scan_complete` | boolean | Yes | True only when neither provider outcome holder page hit the top-100 scan bound. False means the pile is a positive lower bound and cannot satisfy a future capital-promotion gate. |

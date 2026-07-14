@@ -11742,8 +11742,8 @@
           },
           "volume": {
             "type": "number",
-            "minimum": 0,
-            "description": "Stored market volume in USD; zero when the provider mirror has no value."
+            "exclusiveMinimum": 0,
+            "description": "Strictly positive stored market volume in USD. Missing, zero, or non-finite volume terminates as invalid_market and is never emitted as an observation."
           },
           "conviction_score": {
             "type": "number",
