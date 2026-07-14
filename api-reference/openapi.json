@@ -10123,6 +10123,10 @@
             ],
             "description": "Settlement outcome of the backed side; 'pending' until the market resolves."
           },
+          "outcome_display": {
+            "type": "string",
+            "description": "Pre-formatted SETTLEMENT STATUS for display: \"Win\" / \"Loss\" / \"Void\" / \"Pending\" -- the outcome enum above as a label. Convenience only; outcome is the source value. NOTE: this is the win/loss STATUS, not the backed side. The backed side is pick_outcome_label (\"Belgium (-2.5)\") -- a different field answering a different question."
+          },
           "pick_outcome_label": {
             "type": "string",
             "description": "The backed side phrased as a bet: a team for a moneyline (e.g. \"Portugal\"), the handicap line for a spread (e.g. \"Belgium (-2.5)\"), or \"{team} to advance\" for a knockout advancement market (e.g. \"Spain to advance\")."
@@ -10169,10 +10173,25 @@
             "nullable": true,
             "description": "Pre-game snapshot probability (0..1) for the backed side."
           },
+          "odds_display": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pre-formatted backed_price as cents-on-the-dollar odds, to ONE decimal: \"62.0c\" / \"99.9c\". Never rounded to a whole cent -- a 99.9c favorite is not a 100c certainty. Convenience only; backed_price is the source value. Omitted when backed_price is."
+          },
           "return_per_100": {
             "type": "number",
             "nullable": true,
             "description": "Gross return on a $100 stake at the snapshotted price (100 / backed_price)."
+          },
+          "payout_display": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pre-formatted return_per_100 as USD with cents and thousands separators: \"$161.29\" / \"$1,250.00\". The GROSS return (the $100 stake included), so it carries no sign. Convenience only; return_per_100 is the source value. Omitted when return_per_100 is."
+          },
+          "profit_display": {
+            "type": "string",
+            "nullable": true,
+            "description": "Pre-formatted PROFIT on the $100 stake -- return_per_100 minus the 100 stake, i.e. the payout net of what you put in -- as a signed USD string: \"+$61.29\". Distinct from payout_display, which is gross. Omitted when return_per_100 is."
           },
           "sharp_pct": {
             "type": "number",
@@ -10442,9 +10461,17 @@
             ],
             "description": "Settlement outcome of the backed side; 'pending' until the market resolves."
           },
+          "outcome_display": {
+            "type": "string",
+            "description": "Pre-formatted settlement status for display: \"Win\" / \"Loss\" / \"Void\" / \"Pending\" -- the outcome enum above as a label, from the same formatter the pick payload's outcome_display uses. Convenience only; outcome is the source value."
+          },
           "return_per_100": {
             "type": "number",
             "description": "Gross return on a $100 stake on this resolved pick: a win returns 100 / backed_price, a loss returns 0, a void refunds 100. A loss always returns 0 (the whole stake is lost regardless of price). Omitted (not null) only for a still-pending pick or a resolved WIN with no frozen price (a win's payout needs the price); mirrors the backend skip-when-absent behavior and the route-client optional (non-nullable) schema."
+          },
+          "payout_display": {
+            "type": "string",
+            "description": "Pre-formatted return_per_100 as USD with cents: \"$200.00\". Present exactly when return_per_100 is -- it is formatted from that already-gated value -- so it is omitted for a still-pending pick, an unpriced win, and any pick whose backed side is withheld. Convenience only; return_per_100 is the source value."
           }
         }
       },
@@ -11601,7 +11628,9 @@
               "Golf",
               "Tennis",
               "Esports",
-              "Racing"
+              "Racing",
+              "Table Tennis",
+              "Pickleball"
             ],
             "description": "Canonical sport bucket."
           },
@@ -11825,7 +11854,9 @@
               "Golf",
               "Tennis",
               "Esports",
-              "Racing"
+              "Racing",
+              "Table Tennis",
+              "Pickleball"
             ]
           },
           "board_input": {

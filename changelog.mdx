@@ -20,7 +20,7 @@ This changelog tracks externally visible REST API changes only. Documentation-on
 <Update label="July 13, 2026" description="Sports Edge can surface Golf, Formula 1, NBA Summer League, CFL and Boxing">
   [`GET /api/v1/sports-edge-signals`](/api-reference/endpoint/get-sports-edge-signals) and [`GET /api/v1/pick-of-the-day`](/api-reference/endpoint/get-pick-of-the-day) can now surface eligible markets for **Golf**, **Formula 1** and NASCAR, **NBA Summer League**, **CFL**, and **Boxing**.
 
-  Polymarket sends only generic sports metadata for some of these markets. 0xinsider now classifies the provider tags it actually receives - including `pga`, `pga-tour`, `formula1`, `nba-summer-league`, and `cfl` - before applying the existing smart-money, calibration, liquidity, and kickoff gates. `Racing` and `Boxing` are now admitted canonical buckets. The four newly classified tag families represented 207 recent markets and about $11.81M of traded volume when measured on July 13.
+  Polymarket sends only generic sports metadata for some of these markets. 0xinsider now classifies the provider tags it actually receives - including `pga`, `pga-tour`, `formula1`, `nba-summer-league`, and `cfl` - before applying the existing smart-money, calibration, liquidity, and kickoff gates. `Racing` and `Boxing` are now admitted canonical buckets.
 
   **Correction:** the earlier version of this entry also named Table Tennis and Pickleball. The final funded release did not admit either sport. They are available only through the observation-only endpoint added July 14, and do not feed funded signals or Pick of the Day.
 

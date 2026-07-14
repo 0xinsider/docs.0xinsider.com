@@ -19,24 +19,26 @@ type, whether it is always present, and what it means.
 | `openapi_url` | string | Yes | Canonical web-origin OpenAPI JSON document. |
 | `health_url` | string | Yes | Unauthenticated API health endpoint. |
 | `authentication` | string | Yes |  |
-| `authenticated_routes` | array of string | Yes | Representative authenticated data routes. Full route coverage lives in OpenAPI and llms-full.txt. |
+| `authenticated_routes` | array of string | Yes | The complete authenticated route index: one entry per authenticated route this spec documents, in "&lt;METHOD&gt; &lt;path&gt;" form, not a representative subset. GET /api/v1 is the unauthenticated entrypoint an agent hits first, so it hands back the whole authenticated surface rather than a sample the caller would have to guess around. The example on GET /api/v1 is abridged for readability -- the live response returns all of them. Kept in lockstep with this spec by backend/src/api_v1/discovery.rs::authenticated_routes_match_the_published_spec, which fails in both directions. |
 
 ## ApiError
 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `object` | string | Yes |  |
-| `error` | object (`code`, `message`, `doc_url`, `param`) | Yes |  |
+| `error` | object (`code`, `message`, `doc_url`, `param`, `retry_at`, `reason`) | Yes |  |
 | `meta` | `ResponseMeta` | Yes |  |
 
 ## ApiErrorBody
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `code` | string | Yes |  |
+| `code` | `bad_request` \| `invalid_api_key` \| `subscription_required` \| `forbidden` \| `not_found` \| `account_locked` \| `rate_limited` \| `rate_limit_unavailable` \| `internal_error` | Yes |  |
 | `message` | string | Yes |  |
 | `doc_url` | string | No |  |
 | `param` | string | No |  |
+| `retry_at` | string | No | The earliest instant at which retrying is worth doing (RFC3339). Present on every retryable error (reason=pick_not_released, code=rate_limited, code=rate_limit_unavailable, reason=read_model_warming) and omitted otherwise. ALWAYS in the future. Two regimes for pick_not_released, and the value itself tells you which you are in. (1) EXACT FLOOR -- the 12-14h daily publication gap before the fixed release instant, and any day the pick is SKIPPED (a terminal day: the release loop is idle for it and nothing can publish, so retry_at is tomorrow's release slot). Nothing can publish before this instant: sleep until it and make exactly ONE request. This is the state for essentially all of the traffic. (2) BOUNDED CADENCE (~60s) -- a short interval, not a promise, returned when no floor is knowable. Two states land here: a publish is imminent (a pick is scheduled and overdue, so the release loop will publish it on its very next tick), or the release instant has passed with NO eligible candidate yet and the selector is still hunting (it re-runs every ~15 minutes until the kickoff-eligibility window closes late in the evening, and publishes within seconds of finding one -- so a pick genuinely can appear at any moment and we will not pretend to know when). You are then never more than about a minute late. Note the no-candidate case is regime 2, NOT regime 1: such a day is not over, and telling you to sleep until tomorrow would sleep you past a pick that dropped at 14:00 ET. Either way: schedule against it, do not poll. For the sleep DURATION prefer the Retry-After header, which is immune to client clock skew. |
+| `reason` | `cursor_expired` \| `unknown_endpoint` \| `pick_not_released` \| `trader_not_tracked` \| `read_model_warming` | No | ADDITIVE (#7209). The specific, actionable cause behind `code`, when there is one more specific than the code itself. `code` keeps its published values, so existing clients are unaffected; new clients branch on `reason`. Omitted when the code already says everything we know. pick_not_released: no Pick of the Day is published for the current product day -- this is EXPECTED for 12-14h daily and 24h on a skipped day; do not poll, schedule against retry_at. unknown_endpoint: the PATH is not a route on this API -- read GET /api/v1, do not retry. trader_not_tracked: the wallet is real and the URL is right, but the trader is outside the HOT/WARM sync tiers -- stop asking for this wallet. cursor_expired: pagination went stale mid-walk -- re-request the first page and continue. read_model_warming: a read model is still warming; nothing is rate-limited and nothing is down -- retry after the interval. |
 
 ## BatchMarketIntelItem
 
@@ -79,6 +81,18 @@ type, whether it is always present, and what it means.
 | `data` | `Trader` | No |  |
 | `error` | `ApiErrorBody` | No |  |
 
+## Candle
+
+One bucketed OHLC price candle. Prices are in provider [0, 1] units, truncated to 4 decimals at the rendering edge.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `t` | integer | Yes | Bucket-start unix epoch (seconds): UTC midnight for 1d, the ISO-week Monday's UTC midnight for 1w. |
+| `o` | number | Yes | Open price in provider [0, 1] units (first observed point in the bucket). |
+| `h` | number | Yes | High price in provider [0, 1] units (max observed in the bucket). |
+| `l` | number | Yes | Low price in provider [0, 1] units (min observed in the bucket). |
+| `c` | number | Yes | Close price in provider [0, 1] units (last observed point in the bucket). |
+
 ## CreateWebhookRequest
 
 | Field | Type | Required | Description |
@@ -114,6 +128,7 @@ type, whether it is always present, and what it means.
 | `request_id` | string | Yes | Unique request ID (req_ prefix). |
 | `cached` | boolean | Yes |  |
 | `cache_age_s` | integer | No |  |
+| `cost` | integer | Yes | Advisory request weight (relative compute cost). 1 for simple reads; higher for heavier endpoints. Not a credit/price. |
 | `replay` | object (`from_cursor`, `to_cursor`, `from_sequence`, `to_sequence`, `ordering`) | Yes |  |
 | `retention` | object (`status`, `retained_events`, `cursor_expired`) | Yes |  |
 | `completeness` | object (`status`, `reason`) | Yes |  |
@@ -256,6 +271,7 @@ One of: `ExploreGroup`, `ExploreStandalone`. Discriminated by `type`.
 |---|---|---|---|
 | `mode` | string | Yes |  |
 | `current_internal_route` | string | Yes |  |
+| `v1_async` | object (`submit_route`, `status_route`, `download_route`, `formats`, `status_values`, `retention`) | Yes | Programmatic API-key-gated export routes (submit/status/download) and supported formats (json, ndjson, csv). |
 | `direct_streaming` | object | Yes |  |
 | `async_job` | object | Yes |  |
 | `rate_limit` | object | Yes |  |
@@ -264,10 +280,10 @@ One of: `ExploreGroup`, `ExploreStandalone`. Discriminated by `type`.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `id` | string | Yes | Composite prefixed ID `pos_<wallet>:<condition_id>:<outcome_index>`. |
+| `id` | string | Yes | Composite prefixed ID `pos_&lt;wallet&gt;:&lt;condition_id&gt;:&lt;outcome_index&gt;`. |
 | `platform` | `polymarket` \| `kalshi` | Yes | Provider discriminator. Always polymarket today (scanner is Polymarket-only); kept in the shape so Kalshi can land without a breaking change. |
 | `total_size_usd` | number | No | Aggregate provider currentValue for this position leg in USD. |
-| `position_unrealized_pnl` | number | No | Provider per-position unrealized P&L (trader_markets.unrealized_pnl_num, from Polymarket cashPnl). |
+| `position_unrealized_pnl` | number | No | Provider per-position unrealized P&amp;L (trader_markets.unrealized_pnl_num, from Polymarket cashPnl). |
 | `share_count` | number | Yes | Live share count for this position. |
 | `avg_entry_price` | number | No | Volume-weighted entry price. |
 | `current_price` | number | No | Latest provider mark price for the position's token. |
@@ -290,7 +306,8 @@ One of: `ExploreGroup`, `ExploreStandalone`. Discriminated by `type`.
 | `grade` | string | No |  |
 | `streak_tier` | `hot` \| `rising` \| `neutral` \| `cooling` \| `cold` | No | Hot-streak tier (trailing-7d cross-sectional percentile); a separate axis from the all-time grade. Null when no recent activity. |
 | `score` | number | No |  |
-| `pnl` | number | No |  |
+| `pnl` | number | No | All-time P&amp;L in USD (total_pnl), including unrealized open positions. Kept for back-compat; prefer realized_pnl for the banked figure. |
+| `realized_pnl` | number | No | All-time banked realized P&amp;L in USD (total_pnl - open_pnl), excluding unrealized open positions. Matches the realized-P&amp;L-dominant grade/board. |
 | `volume` | number | No |  |
 | `markets_traded` | integer | No |  |
 | `win_rate` | number | No |  |
@@ -298,12 +315,23 @@ One of: `ExploreGroup`, `ExploreStandalone`. Discriminated by `type`.
 | `platform` | string | Yes |  |
 | `last_active` | string | No |  |
 
+## MarketCandles
+
+Provider-first bucketed OHLC price candles for a market's outcome tokens, derived from the stored token_price_snapshots series (covers open and resolved markets).
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `condition_id` | string | Yes | Market condition id the candles were read for. |
+| `resolution` | `1d` \| `1w` | Yes | Bucketing granularity that produced these candles. |
+| `outcomes` | array of `OutcomeCandles` | Yes | One entry per present provider token (YES first, then NO); empty when no tokens have been fetched yet. |
+
 ## MarketIntel
 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `market` | object (`id`, `condition_id`, `title`, `slug`, `category`, `platform`) | Yes |  |
-| `smart_money` | object (`net_flow_usd`, `direction`, `token_id`, `whale_trade_count`, `buy_volume_usd`, `sell_volume_usd`, `top_positions`) | Yes |  |
+| `sharp_money` | object (`net_flow_usd`, `direction`, `token_id`, `whale_trade_count`, `buy_volume_usd`, `sell_volume_usd`, `top_positions`) | Yes | Sharp-money flow aggregate for the market (canonical; smart_money is a deprecated byte-identical alias). |
+| `smart_money` | object (`net_flow_usd`, `direction`, `token_id`, `whale_trade_count`, `buy_volume_usd`, `sell_volume_usd`, `top_positions`) | Yes | Deprecated alias of sharp_money; byte-identical and retained for backward compatibility. |
 | `timeframe` | string | Yes |  |
 
 ## MarketSearchResult
@@ -354,12 +382,148 @@ One of: `ExploreGroup`, `ExploreStandalone`. Discriminated by `type`.
 
 ## MarketSnapshotTrust
 
-Price and spread trust metadata returned only when GET /api/v1/market/{condition_id}/snapshot includes expand=trust.
+Price and spread trust metadata returned only when GET /api/v1/market/&#123;condition_id&#125;/snapshot includes expand=trust.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `current_price` | `TrustMetadata` | Yes |  |
 | `spread_bps` | `TrustMetadata` | Yes |  |
+
+## OutcomeCandles
+
+One outcome token's bucketed candle series.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `token_id` | string | Yes | Provider CLOB token id the candles were read for. |
+| `outcome` | `YES` \| `NO` | Yes | Canonical side label. |
+| `candles` | array of `Candle` | Yes | OHLC candles for this outcome token, ascending by bucket start. |
+
+## PickHolder
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `address` | string | Yes |  |
+| `name` | string | No |  |
+| `grade` | string | No | All-time trader grade (S, A, B, C, D, F). |
+| `shares` | number | Yes |  |
+
+## PickOfTheDay
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `state` | `full` | Yes | Always 'full' for an authenticated Insider key. |
+| `pick_date` | string | Yes | The pick's local publication date (YYYY-MM-DD). |
+| `matchup` | string | Yes | Human-readable matchup (e.g. "Portugal vs. Uzbekistan"). |
+| `category` | string | Yes | Market category (e.g. "Soccer"). |
+| `platform` | string | Yes | Provider platform (e.g. "polymarket"). |
+| `release_at` | string | Yes | The pick's nominal daily release slot (fixed 19:00 Europe/Berlin -- CEST/CET). The actual publish instant can trail it by minutes to hours when no candidate qualified at the slot and the selector kept retrying (retries stop when the day's kickoff-eligibility window closes, ~23:45 US/Eastern -- the selection ceiling minus the pre-game buffer). |
+| `is_locked` | boolean | Yes | True only before the pick's daily release slot (a pre-release embargo flag); effectively always false on a served, already-published pick. To detect that the backed game has kicked off, use `game_started`. |
+| `game_started` | boolean | No | True once the backed game's kickoff has passed (kickoff &lt;= now). When true the snapshotted pre-game price is no longer actionable. Absent for a legacy pick with no stored kickoff (treat as not-started). |
+| `outcome` | `pending` \| `win` \| `loss` \| `void` | Yes | Settlement outcome of the backed side; 'pending' until the market resolves. |
+| `outcome_display` | string | No | Pre-formatted SETTLEMENT STATUS for display: "Win" / "Loss" / "Void" / "Pending" -- the outcome enum above as a label. Convenience only; outcome is the source value. NOTE: this is the win/loss STATUS, not the backed side. The backed side is pick_outcome_label ("Belgium (-2.5)") -- a different field answering a different question. |
+| `pick_outcome_label` | string | Yes | The backed side phrased as a bet: a team for a moneyline (e.g. "Portugal"), the handicap line for a spread (e.g. "Belgium (-2.5)"), or "&#123;team&#125; to advance" for a knockout advancement market (e.g. "Spain to advance"). |
+| `token_id` | string | No | The Polymarket CLOB token id (ERC1155 asset id, decimal string) for the backed outcome; null when unavailable (e.g. Kalshi markets, unsynced markets). |
+| `position` | string | Yes | The backed side phrased as a bet (e.g. "Portugal to win"). |
+| `side_summary` | string | Yes | One-line summary of which side smart money is backing. |
+| `smart_wallet_count` | integer | Yes | Number of proven smart-money wallets on the backed side. |
+| `top_grade` | string | No | Highest trader grade among the backed-side holders (S, A, B, C, D, F). |
+| `category_edge_pct` | number | No | Deprecated (#7170): no longer populated for picks selected on/after the calibration-edge change; omitted (absent) for new picks (the field uses skip_serializing_if, so a null value is dropped from the JSON rather than serialized as null). Permanently frozen-legacy -- retained for historical picks, with no removal or replacement planned, so no v2 is implied. Historical picks may still carry a value. Legacy meaning: category win-rate edge as a fraction (the backed-side cohort's win rate in this category minus the non-market-maker category baseline, e.g. 0.09 = +9 points), paired with category_edge_sample. |
+| `category_edge_sample` | integer | No | Deprecated (#7170): no longer populated for picks selected on/after the calibration-edge change; omitted (absent) for new picks (the field uses skip_serializing_if, so a null value is dropped from the JSON rather than serialized as null). Permanently frozen-legacy -- retained for historical picks, with no removal or replacement planned, so no v2 is implied. Historical picks may still carry a value. Legacy meaning: pooled count of resolved markets behind category_edge_pct (the headline's n). |
+| `smart_usd` | number | No | Recency-weighted graded-flow magnitude in USD; omitted when &lt;= 0. |
+| `backed_price` | number | No | Pre-game snapshot probability (0..1) for the backed side. |
+| `odds_display` | string | No | Pre-formatted backed_price as cents-on-the-dollar odds, to ONE decimal: "62.0c" / "99.9c". Never rounded to a whole cent -- a 99.9c favorite is not a 100c certainty. Convenience only; backed_price is the source value. Omitted when backed_price is. |
+| `return_per_100` | number | No | Gross return on a $100 stake at the snapshotted price (100 / backed_price). |
+| `payout_display` | string | No | Pre-formatted return_per_100 as USD with cents and thousands separators: "$161.29" / "$1,250.00". The GROSS return (the $100 stake included), so it carries no sign. Convenience only; return_per_100 is the source value. Omitted when return_per_100 is. |
+| `profit_display` | string | No | Pre-formatted PROFIT on the $100 stake -- return_per_100 minus the 100 stake, i.e. the payout net of what you put in -- as a signed USD string: "+$61.29". Distinct from payout_display, which is gross. Omitted when return_per_100 is. |
+| `sharp_pct` | number | No | Backed-side smart-money dollar consensus as a fraction 0..1: the share of the sharp dollars on the backed side. A conviction signal, NOT a probability or expected-value claim. Frozen at generation. |
+| `market_pct` | number | No | Market-implied probability of the backed side as a fraction 0..1 (equals backed_price), re-exposed alongside sharp_pct for the WHY breakdown. |
+| `consensus_edge_pct` | number | No | Consensus edge = sharp_pct - market_pct, the conviction-vs-price gap (how much more of the smart money sits on this side than the price implies). This is NOT an expected-value or guaranteed edge. Null when either input is null. |
+| `directional_confidence` | number | No | Team-directional commitment read at selection time: the fraction (0..1) of the backed side's graded smart-money DOLLARS held by wallets that are genuinely one-way on this game, rather than hedged across its markets. A high value means the graded pile is really committed to this side; a low one means much of it is hedged or unreadable. Omitted when the read was not computed (a pick selected before the field existed, an ungroupable game, or an empty graded pile) -- which is NOT the same as 0.0, a computed reading that nothing was confidently one-way. |
+| `one_way_holder_count` | integer | No | Graded backed-side holders read as one-way-committed on this game. |
+| `hedged_holder_count` | integer | No | Graded backed-side holders read as HEDGED across the game's markets. |
+| `one_way_graded_usd` | number | No | The one-way holders' share of the backed-side graded dollars (the confidence's numerator). |
+| `total_graded_usd` | number | No | Backed-side graded dollars the confidence is measured against (its denominator). |
+| `traders` | integer | No | Count of proven smart-money wallets on the backed side (equals smart_wallet_count). |
+| `backed_sharp_usd` | number | No | Raw backed-side smart-money USD frozen at generation (the 'Sharp $'), NOT the recency-weighted smart_usd which decays. |
+| `holders` | array of `PickHolder` | No | Proven smart-money holders on the backed side. |
+| `holder_count` | integer | No | True total of proven holders on the backed side (may exceed the holders array length). |
+| `editorial_note` | string | No | Optional editorial note attached to the pick. |
+| `thesis` | string | Yes | The reasoning behind the pick. |
+| `market_url` | string | No | Canonical web market URL. |
+| `event_slug` | string | No | The canonical /event game-page slug (one neutral page per game), null when the game has no neutral event page. |
+| `sports_context` | object | No | Provider-first sports context for the pick's market (team logos, league branding, live score). Full-state only; omitted when the pick is not a team-sports market. |
+| `disclaimer` | string | Yes | Risk disclaimer shown with every pick. |
+
+## PickOfTheDayArchive
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `picks` | array of `PickOfTheDayArchiveEntry` | Yes | Every published Pick of the Day, most recent last. |
+| `hit_rate` | `PickOfTheDayHitRate` | Yes |  |
+
+## PickOfTheDayArchiveEntry
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `pick_date` | string | Yes | The pick's local publication date (YYYY-MM-DD). |
+| `matchup` | string | Yes | Human-readable matchup (e.g. "Portugal vs. Uzbekistan"). |
+| `category` | string | Yes | Market category (e.g. "Soccer"). |
+| `image_url` | string | No | Provider (Polymarket Gamma) market thumbnail URL (markets.image); omitted (not null) when the market has no image. Public regardless of the backed-side gate, so present for pending rows too. |
+| `pick_outcome_label` | string | No | The backed side's outcome label. Omitted for a still-pending pick when the request is not from an authenticated Insider key. |
+| `top_grade` | string | No | Best grade among the proven smart-money holders on the backed side (S, A, B, C, D, F). |
+| `outcome` | `pending` \| `win` \| `loss` \| `void` | Yes | Settlement outcome of the backed side; 'pending' until the market resolves. |
+| `outcome_display` | string | No | Pre-formatted settlement status for display: "Win" / "Loss" / "Void" / "Pending" -- the outcome enum above as a label, from the same formatter the pick payload's outcome_display uses. Convenience only; outcome is the source value. |
+| `return_per_100` | number | No | Gross return on a $100 stake on this resolved pick: a win returns 100 / backed_price, a loss returns 0, a void refunds 100. A loss always returns 0 (the whole stake is lost regardless of price). Omitted (not null) only for a still-pending pick or a resolved WIN with no frozen price (a win's payout needs the price); mirrors the backend skip-when-absent behavior and the route-client optional (non-nullable) schema. |
+| `payout_display` | string | No | Pre-formatted return_per_100 as USD with cents: "$200.00". Present exactly when return_per_100 is -- it is formatted from that already-gated value -- so it is omitted for a still-pending pick, an unpriced win, and any pick whose backed side is withheld. Convenience only; return_per_100 is the source value. |
+
+## PickOfTheDayHitRate
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `wins` | integer | Yes | Number of decided picks that won. |
+| `losses` | integer | Yes | Number of decided picks that lost. |
+| `decided` | integer | Yes | Number of decided picks (wins + losses); excludes void and pending. |
+| `pct` | number | Yes | Rolling hit rate as a percentage (wins / decided * 100, to 1 decimal); 0 when none are decided. |
+| `void` | integer | Yes | Number of picks that resolved void (excluded from the hit rate). |
+| `pending` | integer | Yes | Number of picks still pending resolution (excluded from the hit rate). |
+| `net_profit_usd` | number | Yes | Cumulative profit (USD) of a $100/pick strategy over decided picks with a valuation: a win pays 100/backed_price - 100, a loss pays -100 (always, price-independent), a void pays 0. Only a resolved WIN with no frozen price is excluded (its payout is unknowable); a priceless loss still books -100. |
+| `staked_usd` | number | Yes | Total staked (USD) = 100 * count of decided picks with a valuation: every loss (always) plus every priced win. Void (refunds the stake) and a priceless win (unknowable payout) are excluded. |
+| `roi_pct` | number | Yes | Return on the staked amount as a percentage (net_profit_usd / staked_usd * 100, to 1 decimal); 0 when nothing is staked. |
+| `net_profit_display` | string | Yes | Pre-formatted net profit for display, e.g. "+$100" / "-$40". Whole dollars, signed, round-then-signed so a rounds-to-zero record reads "+$0" (never "-$0"). Convenience only; net_profit_usd is the source value. |
+| `roi_display` | string | Yes | Pre-formatted ROI for display, e.g. "+8.3%" / "-20.0%". One decimal, signed, round-then-signed so a rounds-to-zero record reads "+0.0%" (never "-0.0%"). Convenience only; roi_pct is the source value. |
+| `win_rate_display` | string | Yes | Pre-formatted win rate for display, e.g. "92.3%". One decimal, unsigned. Convenience only; pct is the source value. |
+| `series` | array of object (`date`, `net_profit_usd`, `hit_rate_pct`) | No | Cumulative track-record series, one point per decided (win/loss) pick in ascending pick_date order (void and pending add no point). The last point's net_profit_usd and hit_rate_pct equal the headline net_profit_usd and pct by construction. Empty when nothing is decided. |
+
+## PickSportsContext
+
+Provider-first sports context for a Pick of the Day market: team crests, league branding, and live score. Team logos and league logo are provider-owned (Polymarket /teams crests for clubs, country flags for national teams and tennis players); no local derivation.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `league_name` | string | No | League or competition display name (e.g. "Premier League"). |
+| `league_logo` | string | No | League logo URL (provider-owned). |
+| `yes_team` | object | No | The team mapped to the market's YES outcome, or the parent-event home/first team when event_matchup is true. |
+| `no_team` | object | No | The team mapped to the market's NO outcome, or the parent-event away/second team when event_matchup is true. |
+| `game_id` | integer | No | Provider game identifier (Polymarket Gamma gameId); omitted when null. |
+| `event_matchup` | boolean | Yes | Always present. True when the two teams are the parent-event match identity for a teamless binary leg (e.g. a draw, totals, or prop market), not the market's own outcomes. |
+| `event_subject_team` | object | No | Present only alongside event_matchup: the event team the binary leg is about (provider group_item_title matched to a matchup team, e.g. Belgium for "Will Belgium win?"), i.e. the winner on a Yes resolution. Omitted for teamless legs (draw, totals, prop). |
+| `matchup_title` | string | No | The two teams as a single whole-game label, joined "&lt;home&gt; – &lt;away&gt;" (en-dash) in provider display order (e.g. "Portugal – Uzbekistan"). Composed server-side from the provider team names (no title/slug parsing). Present when both teams resolve a name; omitted for single-subject, teamless, or non-two-team contexts. |
+
+## PickSportsTeam
+
+A single sports team or competitor in a Pick of the Day market's sports context. Every field is provider-owned and nullable.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `label` | string | No | Team display label as it appears on the market outcome (e.g. "Portugal"). |
+| `short_label` | string | No | Abbreviated team label (e.g. "POR"). |
+| `full_name` | string | No | Full team or competitor name (e.g. "Portugal national football team"). |
+| `provider_id` | integer | No | Provider team identifier (Polymarket /teams id). |
+| `logo` | string | No | Team crest or flag URL (provider-owned: Polymarket /teams crest for clubs, country flag for national teams and tennis players). |
+| `color` | string | No | Team brand color as a hex string (provider-owned). |
+| `record` | string | No | Win-loss record as a display string (e.g. "12-4"). |
+| `score` | string | No | Live or final score as a display string when the game is in play or settled. |
 
 ## PlatformCapabilities
 
@@ -387,7 +551,7 @@ String enum: `supported`, `partial`, `unsupported`.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
-| `id` | string | Yes | Composite prefixed ID `pos_<wallet>:<condition_id>:<outcome_index>`. |
+| `id` | string | Yes | Composite prefixed ID `pos_&lt;wallet&gt;:&lt;condition_id&gt;:&lt;outcome_index&gt;`. |
 | `platform` | `polymarket` \| `kalshi` | Yes | Provider discriminator. Slice 5 ships Polymarket only; the field stays in the response shape so Kalshi positions can land without a breaking change. |
 | `wallet` | string | Yes | Lowercased proxy wallet address. |
 | `side` | `YES` \| `NO` | Yes | Binary outcome side. Non-binary positions are not surfaced on V1. |
@@ -396,8 +560,8 @@ String enum: `supported`, `partial`, `unsupported`.
 | `avg_price` | number | No | Volume-weighted entry price for this leg. |
 | `current_value_usd` | number | Yes | Current mark-to-market value in USD (always non-null on V1 — pre-reconcile rows are excluded). |
 | `initial_value_usd` | number | No |  |
-| `cash_pnl` | number | No | Unrealized P&L for the open position (Polymarket `cashPnl`). |
-| `realized_pnl` | number | No | Closed-leg P&L rolled up (Polymarket `realizedPnl`). |
+| `cash_pnl` | number | No | Unrealized P&amp;L for the open position (Polymarket `cashPnl`). |
+| `realized_pnl` | number | No | Closed-leg P&amp;L rolled up (Polymarket `realizedPnl`). |
 | `last_reconciled_at` | string | No | Max updated_at across mirror legs for this pair. |
 | `freshness` | `fresh` \| `refreshing` \| `stale` \| `unknown` | Yes | Backend-computed staleness bucket derived from last_reconciled_at. |
 | `trader` | object (`id`, `address`, `username`, `grade`, `win_rate`, `pnl`, `markets`, `wallet_age_days`, `is_new_wallet`) | Yes |  |
@@ -479,13 +643,17 @@ String enum: `supported`, `partial`, `unsupported`.
 | `request_id` | string | Yes | Unique request ID (req_ prefix). |
 | `cached` | boolean | Yes |  |
 | `cache_age_s` | integer | No | Cache age in seconds, null if not cached. |
+| `cost` | integer | Yes | Advisory request weight (relative compute cost). 1 for simple reads; higher for heavier endpoints. Not a credit/price. |
+| `directional_source` | `live` \| `degraded` | No | Which path produced the team-directional read on this response. Only present on endpoints that compute one (today: GET /api/v1/sports-edge-signals). "live" means the read RAN. "degraded" means it FAILED, so nothing was measured and the ranking fell back to raw conviction. The flag describes the READ, not its consequence: a read that ran and found nothing groupable also leaves the directional fields null, and that is honestly "live" -- the per-signal nulls already say "nothing to enrich here", so this snapshot-level flag carries only what they cannot, namely whether the read ran at all. A degraded response is cached on the shorter degraded TTL so it self-heals. Reported SEPARATELY from ranking_source because the two degradations are independent -- a smart-money DB miss weakens the ranking DATA, a directional failure removes a ranking WEIGHT -- and a consumer down-weighting a degraded response needs to know which input it lost. Omitted on endpoints that compute no directional read. |
+| `ranking_source` | `live` \| `db_only` | No | Which ranking-data path produced this response. Only present on endpoints that can degrade a ranking (today: GET /api/v1/sports-edge-signals). "live" is the normal path (the current holder pile from the provider batch); "db_only" is the degraded fallback (a truthful but weaker trader_markets ranking) served when the live sharp-money ranking batch is unavailable (a smart-money DB read failure, not a Polymarket outage) and cached on a shorter TTL, so a consumer can down-weight or skip it. Omitted on endpoints that never degrade. |
 
 ## SmartMoneyFlowMarket
 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `market` | object (`id`, `condition_id`, `title`, `slug`, `category`, `platform`) | Yes |  |
-| `smart_money` | object (`net_flow_usd`, `direction`, `token_id`, `whale_trade_count`, `buy_volume_usd`, `sell_volume_usd`) | Yes |  |
+| `sharp_money` | object (`net_flow_usd`, `direction`, `token_id`, `whale_trade_count`, `buy_volume_usd`, `sell_volume_usd`) | Yes | Sharp-money flow aggregate for the market (canonical; smart_money is a deprecated byte-identical alias). |
+| `smart_money` | object (`net_flow_usd`, `direction`, `token_id`, `whale_trade_count`, `buy_volume_usd`, `sell_volume_usd`) | Yes | Deprecated alias of sharp_money; byte-identical and retained for backward compatibility. |
 | `timeframe` | string | Yes |  |
 
 ## SnapshotCompleteness
@@ -505,6 +673,110 @@ String enum: `supported`, `partial`, `unsupported`.
 | `generated_at` | string | Yes |  |
 | `mutable_until` | string | No |  |
 
+## SportsEdgeFunnelReport
+
+Per-sport accountable funnel for the full observation snapshot, returned on every page.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `sports` | array of `SportsEdgeSportFunnelReport` | Yes |  |
+
+## SportsEdgeObservation
+
+One explicitly observation-only holder-pile measurement. It is evidence for cohort evaluation, not an execution instruction, and is isolated from the funded sports-edge-signals route.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `condition_id` | string | Yes | Raw Polymarket condition id. |
+| `token_id` | string | Yes | Provider-backed Polymarket CLOB token id for the piled outcome. Rows without a verified token terminate before emission. |
+| `category` | `Basketball` \| `Football` \| `Baseball` \| `Hockey` \| `MMA` \| `Boxing` \| `Soccer` \| `Cricket` \| `Golf` \| `Tennis` \| `Esports` \| `Racing` \| `Table Tennis` \| `Pickleball` | Yes | Canonical sport bucket. |
+| `raw_category` | string | Yes | Raw provider category as stored. |
+| `title` | string | Yes | Provider-backed market title. |
+| `event_slug` | string | Yes |  |
+| `event_id` | string | Yes | Provider event id when available. |
+| `parent_event_id` | string | Yes | Provider parent-event id used as the first event-cap identity when available. |
+| `game_start_time` | string | Yes | Provider-backed kickoff time in UTC. |
+| `observed_at` | string | Yes | UTC instant when this row finished provider/holder evaluation. |
+| `cohort` | `wider_holder` \| `in_play` | Yes |  |
+| `observation_only` | boolean | Yes | Always true. This row must not be routed to an order executor. |
+| `piled_side` | string | Yes | Human provider-backed label for the piled outcome. |
+| `piled_outcome_index` | `0` \| `1` | Yes | 0 = first outcome (yes/home); 1 = second outcome (no/away). |
+| `backed_price` | number | Yes | Provider-backed implied price for the piled outcome at observation time. |
+| `sharp_pct` | number | Yes | Piled-side graded-holder dollar concentration. |
+| `backed_sharp_usd` | number | Yes | Raw graded-holder USD on the piled outcome. |
+| `s_count` | integer | Yes |  |
+| `a_count` | integer | Yes |  |
+| `b_count` | integer | Yes |  |
+| `graded_holders` | integer | Yes | Piled-side S/A/B holder count. |
+| `top_grade` | `S` \| `A` \| `B` | Yes |  |
+| `smart_score` | number | Yes | Canonical signed holder-pile score. |
+| `volume` | number | Yes | Stored market volume in USD; zero when the provider mirror has no value. |
+| `conviction_score` | number | Yes | Grade-weighted holder-pile score before directional enrichment. |
+| `provider_read_source` | `cached` \| `live` | Yes | Whether the provider holder page came from the shared cache or a live provider read. |
+| `holder_scan_complete` | boolean | Yes | True only when neither provider outcome holder page hit the top-100 scan bound. False means the pile is a positive lower bound and cannot satisfy a future capital-promotion gate. |
+| `holder_snapshot_at` | string | Yes | Proven provider holder observation time. A warm cache hit uses only the original provider completion time from its companion metadata, never cache-read time. Null, malformed, future, or stale holder time fails in-play closed. |
+| `directional_status` | `available` \| `unknown_ungrouped` \| `unknown_stale` \| `unavailable` | Yes | Truthful state of the cross-market directional read. |
+| `one_way_holder_count` | integer | Yes |  |
+| `hedged_holder_count` | integer | Yes |  |
+| `one_way_graded_usd` | number | Yes |  |
+| `directional_confidence` | number | Yes |  |
+| `directional_rank_score` | number | Yes | Default cohort ordering key: conviction_score * (1 + 0.25 * directional_confidence), or conviction_score when confidence is null. |
+| `rank` | integer | Yes | 1-based rank within this observation cohort and snapshot. |
+
+## SportsEdgeObservationTerminalReason
+
+Closed terminal-reason vocabulary for the accountable sports-edge observation funnel.
+
+String enum: `outside_horizon`, `resolved`, `provider_closed`, `provider_excluded`, `invalid_market`, `missing_token`, `missing_stored_market`, `not_provider_live`, `primary_flow_candidate`, `zero_indexed_holder_research`, `capacity_limited`, `provider_unavailable`, `holder_computation_unavailable`, `holder_scan_incomplete`, `no_current_graded_holder`, `split_holder_pile`, `price_unavailable`, `wider_holder_emitted`, `in_play_emitted`, `in_play_stale_observed`, `in_play_directional_unavailable`, `internal_unclassified`.
+
+## SportsEdgeSignal
+
+One ranked pre-game sports market where graded smart money is piled on one side, with the grade distribution, kickoff, and piled-side CLOB token id.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `condition_id` | string | Yes | Polymarket condition id. |
+| `token_id` | string | No | Polymarket CLOB token id (ERC1155 asset id, decimal string) for the PILED outcome; null when unavailable. |
+| `category` | string | No | Canonical sport bucket (e.g. Basketball, Tennis); null when the raw category has no canonical mapping. |
+| `raw_category` | string | No | Raw provider category as stored (e.g. NBA, EPL). |
+| `title` | string | No |  |
+| `event_slug` | string | No |  |
+| `game_start_time` | string | No | Kickoff (UTC). In the future at SNAPSHOT time and within the requested horizon; because the response is served from a shared snapshot cached up to the ~180s TTL, a served kickoff can be up to ~180s in the past relative to the response time. Not a live guarantee that the game has not yet started. |
+| `piled_side` | string | No | Human piled-side label (never a bare Yes/Over); null when the provider outcome label is missing. |
+| `piled_outcome_index` | integer | Yes | 0 = first outcome (yes/home), 1 = second outcome (no/away). |
+| `sharp_pct` | number | No | Piled-side dollar concentration backed_usd / (yes_usd + no_usd), in (0.5, 1] for a real pile; null when there is no sharp USD. |
+| `backed_sharp_usd` | number | Yes | Raw piled-side smart-money USD. |
+| `s_count` | integer | Yes | S-grade graded holders on the piled side. |
+| `a_count` | integer | Yes | A-grade graded holders on the piled side. |
+| `b_count` | integer | Yes | B-grade graded holders on the piled side. |
+| `graded_holders` | integer | Yes | Piled-side graded holder count (s_count + a_count + b_count). |
+| `top_grade` | `S` \| `A` \| `B` | No | Best grade present on the piled side; null when none. |
+| `smart_score` | number | No | Canonical sharp-money score (yes_usd - no_usd)/(yes_usd + no_usd) in [-1, 1] (piled-yes positive, piled-no negative); a lower-order ranking tiebreak (after directional_rank_score and conviction_score). |
+| `volume` | number | No | Market volume (USD). |
+| `net_side` | `BUY` \| `SELL` | No | Aggregate recent flow direction on the market; null when unavailable. |
+| `conviction_score` | number | Yes | Grade-weighted pile score (5*s + 4*a + 3*b) * sharp_pct; the raw conviction input to the ranking (see directional_rank_score). |
+| `one_way_holder_count` | integer | No | Piled-side graded holders whose open legs across the signal game's markets (cross-market within the one game; moneyline+spread family only) all back the same team; counted only when the wallet's leg set is fresh and groupable. Null when the directional read was not computed (no groupable game, no holder-level data on this ranking path, or the enrichment read failed). |
+| `hedged_holder_count` | integer | No | Piled-side graded holders classified HEDGED across the game (they back two or more distinct teams). Null when the directional read was not computed. |
+| `one_way_graded_usd` | number | No | Piled-side graded USD held by genuinely one-way wallets (share-weighted allocation of backed_sharp_usd). Null when the directional read was not computed. |
+| `directional_confidence` | number | No | One-way fraction of the piled graded dollars, in [0, 1] -- the metric orthogonal to sharp_pct. Stale/unknown/hedged dollars dilute it toward zero (conservative). Null when the directional read was not computed. |
+| `directional_rank_score` | number | Yes | The ranking key, descending: conviction_score * (1 + 0.25 * directional_confidence). Equals conviction_score when the directional read is null/zero, so signals without the read rank exactly as before. |
+| `rank` | integer | Yes | 1-based rank within the (min_grade-filtered) ranked result. |
+
+## SportsEdgeSportFunnelReport
+
+Independent sports-board supply plus stored-universe terminal accounting for one canonical sport.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `sport` | `Basketball` \| `Football` \| `Baseball` \| `Hockey` \| `MMA` \| `Boxing` \| `Soccer` \| `Cricket` \| `Golf` \| `Tennis` \| `Esports` \| `Racing` \| `Table Tennis` \| `Pickleball` | Yes |  |
+| `board_input` | integer | Yes | Unique condition ids independently visible on the provider-first sports board. |
+| `board_live_available` | boolean | Yes | Whether the live-board provider source was available. |
+| `board_upcoming_available` | boolean | Yes | Whether the upcoming-board provider source was available. |
+| `input` | integer | Yes | Stored-universe rows plus provider-board rows missing from storage. |
+| `terminals` | map of integer | Yes | Sparse terminal counts. Keys are outside_horizon, resolved, provider_closed, provider_excluded, invalid_market, missing_token, missing_stored_market, not_provider_live, primary_flow_candidate, zero_indexed_holder_research, capacity_limited, provider_unavailable, holder_computation_unavailable, holder_scan_incomplete, no_current_graded_holder, split_holder_pile, price_unavailable, wider_holder_emitted, in_play_emitted, in_play_stale_observed, in_play_directional_unavailable, or internal_unclassified. |
+| `terminal_total` | integer | Yes | Sum of every sparse terminal count. |
+| `reconciled` | boolean | Yes | True exactly when input equals terminal_total. |
+
 ## Trader
 
 | Field | Type | Required | Description |
@@ -519,12 +791,29 @@ String enum: `supported`, `partial`, `unsupported`.
 | `pnl` | object (`total`, `realized`, `unrealized`, `last_7d`, `last_30d`) | Yes |  |
 | `stats` | object (`markets_traded`, `win_rate`, `daily_win_rate`, `total_volume`) | Yes |  |
 | `strategy` | object (`strategy_type`, `description`, `confidence`) | No |  |
-| `category_strengths` | object | No | Per-category performance breakdown (expand=categories or expand[]=categories). Null unless expanded. Object keyed by category name; each value is the precomputed trader_rankings.category_ranks payload (rank, total_in_category, total_pnl, scaled_total_pnl, n_markets, wins, losses, win_rate; scaled_total_pnl is a legacy alias that currently equals total_pnl). Pass-through DB JSON: keys and value shape are DB-owned, so the inner shape is intentionally unconstrained and may carry additional compatibility fields. |
+| `category_strengths` | object | No | Per-category performance breakdown (expand=categories or expand[]=categories). Omitted unless expanded. Object keyed by category name; each value is the precomputed trader_rankings.category_ranks payload (rank, total_in_category, total_pnl, scaled_total_pnl, n_markets, wins, losses, win_rate; scaled_total_pnl is a legacy alias that currently equals total_pnl). Pass-through DB JSON: keys and value shape are DB-owned, so the inner shape is intentionally unconstrained and may carry additional compatibility fields. |
 | `quant_metrics` | object (`smart_score`, `copy_score`, `sharpe_30d`, `sharpe_7d`, `profit_factor`, `edge_consistency`, `sharpe_percentile`, `pf_percentile`, `consistency_percentile`) | No | Curated advanced risk/performance metrics (expand=quant_metrics or expand[]=quant_metrics). Omitted unless expanded and the trader has computed metrics; when present, all listed fields are present (each is a number or null). null means insufficient trade history and must not be treated as 0. This is a fixed, documented field set, refreshed periodically by the cross-sectional ranking job. |
 | `last_active` | string | No |  |
 | `synced_at` | string | No |  |
 | `sync_status` | string | No | synced, unknown, or pending. |
 | `trust` | `TraderTrust` | No | Field-level trust metadata. Present only when expand=trust or expand[]=trust is requested. |
+
+## TraderContext
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `trader` | `Trader` | Yes |  |
+| `position_summary` | object (`markets_total`, `markets_synced`, `markets_resolved`, `markets_open`, `sync_coverage`, `synced_realized_pnl`, `total_realized_pnl`, `unrealized_mtm`, `cost_basis_locked`, `resolved_win_rate`, `as_of`) | No | Aggregate position and P&amp;L coverage for the trader. Omitted entirely (key absent, never null) when the trader is not in the local database. |
+| `data_as_of` | string | Yes | RFC3339 freshness of the OPEN-position-level data: when a position_summary is present this mirrors its as_of byte-for-byte (latest /positions snapshot, else last completed sync) -- the open-position freshness clock, since the snapshot advances only open positions; otherwise the trader's last completed sync. null only when the trader has neither a snapshot nor a sync. |
+| `freshness_note` | string | Yes | Human-readable statement of the point-in-time snapshot semantics (data_as_of is the open-position clock -- the latest /positions snapshot, else the last completed sync; the snapshot advances only open positions, so resolved/closed aggregates date to the last full sync -- not a live feed; re-fetch for fresher data). |
+
+## TraderExportJob
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `object` | string | Yes |  |
+| `data` | object (`job_id`, `status`, `format`, `total_trades`, `processed_trades`, `file_size`, `error`) | Yes |  |
+| `meta` | `ResponseMeta` | Yes |  |
 
 ## TraderExportSnapshot
 
@@ -543,15 +832,16 @@ String enum: `supported`, `partial`, `unsupported`.
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `id` | string | Yes | Prefixed trader ID (`trd_...`). |
-| `entries` | array of object (`date`, `markets_traded`, `total_volume`, `cumulative_profit`, `total_pnl`, `daily_change`) | Yes | Daily cumulative-P&L series (oldest-first). |
+| `freshness_at` | string | No | RFC3339 served-freshness clock for this trader's PnL history = traders.daily_pnl_recomputed_at, when the daily_pnl read model this response is served from was last rebuilt; null when it has never been recomputed for the trader. Additive optional (not in `required`). |
+| `entries` | array of object (`date`, `markets_traded`, `total_volume`, `cumulative_profit`, `total_pnl`, `daily_change`) | Yes | Daily cumulative-P&amp;L series (oldest-first). |
 | `stats` | object (`all`, `d90`, `d30`, `d7`) | Yes |  |
-| `monthly` | array of object (`year`, `month`, `pnl`, `markets_traded`) | Yes | Per-month P&L aggregation. |
-| `year_totals` | array of object (`year`, `pnl`) | Yes | Per-year P&L totals (ascending by year). |
+| `monthly` | array of object (`year`, `month`, `pnl`, `markets_traded`) | Yes | Per-month P&amp;L aggregation. |
+| `year_totals` | array of object (`year`, `pnl`) | Yes | Per-year P&amp;L totals (ascending by year). |
 | `drawdown` | array of object (`date`, `cumulative_profit`, `drawdown`) | Yes | Underwater (drawdown) series. |
 
 ## TraderTrust
 
-Field-level trust metadata returned only when GET /api/v1/trader/{address} includes expand=trust.
+Field-level trust metadata returned only when GET /api/v1/trader/&#123;address&#125; includes expand=trust.
 
 | Field | Type | Required | Description |
 |---|---|---|---|
@@ -583,16 +873,16 @@ Field-level trust metadata returned only when GET /api/v1/trader/{address} inclu
 | `username` | string | No |  |
 | `profile_image_url` | string | No | Official Polymarket avatar URL (profileImage). |
 | `platform` | `polymarket` \| `kalshi` | Yes | Real provider platform; surfaced, never coerced. Polymarket-only today. |
-| `trending_pnl_usd` | number | Yes | Realized P&L over the trailing window in USD (ranking axis). |
+| `trending_pnl_usd` | number | Yes | Polymarket weekly/monthly P&amp;L for the wallet in USD, taken from Polymarket's canonical leaderboard (data-api.polymarket.com/v1/leaderboard?timePeriod=week\|month&amp;orderBy=PNL). This is the ranking axis and the rows are returned in Polymarket's by-PNL order; it is the provider's number, not a locally summed realized-leaf total. |
 | `window_volume_usd` | number | Yes |  |
 | `window_markets_traded` | integer | Yes |  |
-| `window_trade_days` | integer | Yes |  |
-| `grade` | `S` \| `A` \| `B` \| `C` \| `D` \| `F` | No | All-time cohort-relative skill grade (forecasting calibration, risk-adjusted returns, consistency); a separate axis from streak_tier. Not a profit ranking, and relative, so it drifts as the cohort moves. Omitted when the trader is Unranked (fewer than 5 markets, insufficient track record to cohort-rank). |
+| `window_trade_days` | integer | Yes | Distinct in-window UTC trade days from our trades (0 if the winner is not in our DB). |
+| `grade` | `S` \| `A` \| `B` \| `C` \| `D` \| `F` | No | All-time trader grade; a separate axis from streak_tier. Led by realized profit (the money actually banked, about 95 percent of the grade), with forecasting calibration, risk-adjusted returns, and consistency as the tie-breaker and proven-trader guardrails: any grade above C requires verified net-positive realized profit, and the top grades also require a real resolved-market track record plus a survivable drawdown. Relative, so it drifts as the cohort moves. Omitted when the trader is Unranked (fewer than 5 markets, insufficient track record to cohort-rank). |
 | `streak_tier` | `hot` \| `rising` \| `neutral` \| `cooling` \| `cold` | No | Hot-streak tier (trailing-7d cross-sectional percentile). Null when no recent activity. |
 | `all_time_pnl_usd` | number | No |  |
 | `all_time_score` | number | No |  |
 | `last_synced` | string | No |  |
-| `daily_pnl_series` | array of object (`date`, `pnl_usd`) | Yes | Zero-filled daily P&L series across the window. |
+| `daily_pnl_series` | array of object (`date`, `pnl_usd`) | Yes | Shape-only daily P&amp;L sparkline across the window, derived from Polymarket's user-pnl cumulative curve (user-pnl-api.polymarket.com) converted to per-day deltas. It conveys the trend of the curve only and is NOT guaranteed to sum to trending_pnl_usd, which is the canonical leaderboard total. |
 
 ## TrustCompleteness
 
@@ -666,6 +956,23 @@ Source metadata for a trust-critical value. Providers and DB/read models own bus
 |---|---|---|---|
 | `verification_token` | string | Yes |  |
 
+## WebhookDelivery
+
+Owner-scoped view of one webhook delivery attempt. Deliberately omits the request body and the endpoint signing secret: a delivery log never re-exposes the payload or any secret material.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | integer | Yes |  |
+| `object` | string | Yes |  |
+| `event_id` | string | Yes | Stable event id for this delivery; identical across retries of the same logical event. |
+| `event_type` | `WebhookEventType` | Yes |  |
+| `status` | string | Yes | Delivery lifecycle state (e.g. pending, delivered, dead_letter). |
+| `attempt_count` | integer | Yes | Number of delivery attempts made so far. |
+| `last_response_status` | integer | No | HTTP status code of the most recent delivery attempt. Omitted until a response (or transport error) has been recorded. |
+| `last_error` | string | No | Short description of the most recent delivery failure. Omitted when the last attempt succeeded or none has failed. |
+| `delivered_at` | string | No | When the delivery was first accepted by the destination. Omitted until a delivery succeeds. |
+| `created_at` | string | Yes |  |
+
 ## WebhookEndpoint
 
 | Field | Type | Required | Description |
@@ -685,9 +992,20 @@ Source metadata for a trust-critical value. Providers and DB/read models own bus
 | `signing_secret` | string | No | Returned only on create or rotate-secret. |
 | `verification` | `WebhookVerification` | No |  |
 
+## WebhookEventDescriptor
+
+Self-describing entry in the webhook event catalog: the event type a subscriber lists in event_types, when it fires, the data payload shape, and whether it currently fires (active) or is reserved (dormant, subscribable but not yet delivered). Insider-only event types (wallet_grade_changed, insider_radar_flag_raised, smart_money_flow_detected) only deliver to API keys on an active Insider subscription.
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `id` | `WebhookEventType` | Yes |  |
+| `description` | string | Yes | One-line description of when the event fires. |
+| `payload_shape` | string | Yes | Short description of the data payload object's shape. |
+| `status` | `active` \| `dormant` | Yes | active: the event has a firing producer callsite. dormant: advertised and subscribable, but does not yet enqueue any delivery. |
+
 ## WebhookEventType
 
-String enum: `whale_trades_inserted`, `live_sports_updated`, `whale_trader_synced`, `large_positions_updated`.
+String enum: `whale_trades_inserted`, `live_sports_updated`, `whale_trader_synced`, `large_positions_updated`, `wallet_grade_changed`, `insider_radar_flag_raised`, `smart_money_flow_detected`.
 
 ## WebhookRetryPolicy
 
@@ -715,6 +1033,8 @@ String enum: `pending_verification`, `active`, `disabled`.
 | `traded_at` | string | Yes |  |
 | `size_usd` | number | Yes |  |
 | `side` | `BUY` \| `SELL` | Yes |  |
+| `outcome` | string | No | Traded outcome label (e.g. "Yes"/"No"/team name), resolved provider-first from the trade's outcome_index against market_canonical (index 0 -&gt; yes, 1 -&gt; no). Distinct axis from side (BUY/SELL): side is the trade direction, outcome is which leg was traded. null for multi-outcome (outcome_index &gt;= 2) or unsynced markets; a Kalshi row carries its provider label here (only token_id is null for Kalshi, since there is no CLOB token). |
+| `token_id` | string | No | The Polymarket CLOB token id (ERC1155 asset id, decimal string) for the traded outcome; null when unavailable (e.g. Kalshi markets, unsynced markets). |
 | `price` | number | Yes |  |
 | `signal_score` | number | Yes | 0.0–1.0 normalized signal score. |
 | `trader` | object (`id`, `address`, `username`, `grade`) | Yes |  |

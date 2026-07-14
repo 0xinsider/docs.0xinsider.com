@@ -66,7 +66,21 @@ def type_label(node):
 
 
 def escape(text):
-    return (text or "").replace("|", "\\|").replace("\n", " ").strip()
+    # OpenAPI descriptions are prose, not MDX. Encode characters that MDX
+    # would otherwise interpret as JSX (`<`/`>`) or expressions (`{`/`}`),
+    # then escape the Markdown table delimiter. Ampersand goes first so the
+    # entities introduced below are not double-escaped.
+    return (
+        (text or "")
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("{", "&#123;")
+        .replace("}", "&#125;")
+        .replace("|", "\\|")
+        .replace("\n", " ")
+        .strip()
+    )
 
 
 def render_schema(name, schema):
