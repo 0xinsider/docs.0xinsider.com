@@ -2537,7 +2537,7 @@
       "get": {
         "operationId": "getPickOfTheDay",
         "summary": "Get today's Pick of the Day",
-        "description": "One sourced sharp-money call a day (Insider-tier). Returns the published pick for the CURRENT product day: the backed side, the pre-game odds and $100 return, the proven smart-money holders on that side, the grade, and the thesis. The price is snapshotted before kickoff so it does not drift. It never serves a prior day's finished pick as today's, so an automated consumer never acts on a stale, already-settled game (a prior pick stays available through the archive endpoint). When no pick is published for the current product day it returns 404 with error.code=\"not_found\" and error.reason=\"pick_not_released\" -- branch on the reason, because error.code is a frozen contract and stays \"not_found\". That 404 is a schedule, not an outage: the product day rolls at midnight America/New_York while the pick publishes at 19:00 Europe/Berlin, so it is expected for 12-14 hours every day and for a full day when a day is skipped. DO NOT POLL. error.retry_at (RFC3339, always in the future) and the Retry-After header are a LOWER bound on when a pick could appear -- schedule the next request against them and make it once. Retry-After can be many hours, so schedule it rather than sleeping a worker thread on it.",
+        "description": "One sourced sharp-money call a day (Insider-tier). Returns the published pick for the CURRENT product day: the backed side, the pre-game odds and $100 return, the proven smart-money holders on that side, the grade, and the thesis. The price is snapshotted before kickoff so it does not drift. It never serves a prior day's finished pick as today's, so an automated consumer never acts on a stale, already-settled game (a prior pick stays available through the archive endpoint). When no pick is published for the current product day it returns 404 with error.code=\"not_found\" and error.reason=\"pick_not_released\" -- branch on the reason, because error.code is a frozen contract and stays \"not_found\". That 404 is a schedule, not an outage: each selected pick normally releases one hour before its provider kickoff, within the 11:00-19:00 UTC operating window; a skipped day has no release. DO NOT POLL. error.retry_at (RFC3339, always in the future) and Retry-After give the recommended next attempt: an exact floor before a scheduled release, or a bounded cadence while the selector is hunting. Schedule one request rather than sleeping a worker thread.",
         "tags": [
           "Pick of the Day"
         ],
@@ -4273,7 +4273,7 @@
       "get": {
         "operationId": "listSportsEdgeObservations",
         "summary": "List observation-only sports-edge cohorts",
-        "description": "Insider-tier. Measures two explicitly observation-only Polymarket sports cohorts without changing or feeding GET /api/v1/sports-edge-signals: wider_holder expands pre-game eligibility beyond recent graded flow, while in_play admits only provider-confirmed live games and fails closed on stale or unavailable holder/directional evidence. Every row carries observation_only=true, provider/holder freshness and completeness fields, and the response carries an accountable per-sport terminal-reason funnel. Omitted or blank category selects all 14 registered observation sport buckets, including Table Tennis and Pickleball; those two remain outside the funded sports projection. Healthy snapshots use a separate ~180s cache; provider, holder, directional, or reconciliation degradation shortens it to ~30s.",
+        "description": "Insider-tier. Measures two explicitly observation-only Polymarket sports cohorts without changing or feeding GET /api/v1/sports-edge-signals: wider_holder measures pre-game holder piles outside the funded route's exact raw slate admission, including recent-flow rows rejected by its event, bucket, or total caps; in_play admits only provider-confirmed live games and fails closed when the provider live-board snapshot is stale or unavailable or holder/directional evidence is stale or unavailable. Every row carries observation_only=true, provider/holder freshness and completeness fields, and the response carries a required snapshot-wide operational/unknown-completeness degraded boolean plus an accountable per-sport funnel over a closed 25-value terminal-reason vocabulary. Omitted or blank category selects all 14 registered observation sport buckets, including Table Tennis and Pickleball; those two remain outside the funded sports projection. All category and all-sports cache scopes share one global observation provider-work admission, so distinct scope keys cannot multiply concurrent provider fanout. One absolute ~25s compute deadline covers cache coordination, board/universe and primary-slate membership reads, holder cache/provider work, price/metadata evaluation, and directional reads, leaving ~5s below the public router timeout for funnel reconciliation, cleanup, and response transport. A shared pre-holder stage deadline jointly bounds those database reads and board reconciliation to the smaller of 12s or half of the absolute budget remaining when that stage starts, preserving holder/post-holder opportunity; board reads use bounded fair waves and cold holder admission gives each represented canonical sport one row before any sport repeats. Single-flight refresh contention, global provider-work admission contention, absolute deadline exhaustion before a usable cache, or pre-holder stage expiry before a usable stored universe or primary-slate membership result returns 503 with error.reason=read_model_warming. Category-resolution SQL errors, Redis coordination failures, observation-universe SQL errors, and primary-slate membership query failures return 500 internal_error instead. Once a usable universe exists, later operational or unknown-completeness board, holder, or price/metadata failures are retained as explicit terminal reasons in a degraded 200 response with degraded=true: board_source_unavailable is a completed board-source failure, board_deadline_unavailable is fair-wave deadline exhaustion, provider_unavailable is an attempted holder-provider failure, and holder_deadline_unavailable is holder-stage deadline exhaustion. Directional incompleteness is cohort-specific: a wider_holder row remains emitted with terminal wider_holder_emitted and directional_status=unavailable, while an in_play row fails closed with terminal in_play_directional_unavailable. capacity_limited records intentional bounded provider-work admission in the funnel and does not by itself set degraded=true. Healthy wider_holder requests may reuse a snapshot for ~180s; in_play never serves a cached observation snapshot older than ~30s, and degraded snapshots use ~30s. The ETag is a weak semantic validator over the stable page payload, including next_cursor, with request-specific meta excluded.",
         "tags": [
           "Markets"
         ],
@@ -4282,7 +4282,7 @@
             "name": "cohort",
             "in": "query",
             "required": true,
-            "description": "Observation cohort. wider_holder measures pre-game holder piles even without recent graded flow. in_play admits only provider-confirmed live games and excludes stale or unavailable holder/directional evidence.",
+            "description": "Observation cohort. wider_holder measures pre-game holder piles outside the funded route's exact raw slate admission. in_play admits only provider-confirmed live games and excludes stale or unavailable provider live-board, holder, or directional evidence.",
             "schema": {
               "type": "string",
               "enum": [
@@ -4294,7 +4294,7 @@
           {
             "name": "category",
             "in": "query",
-            "description": "Optional canonical sport bucket. Omitted or blank selects all registered sports. A raw provider category resolves through the canonical taxonomy; a non-sport category returns an empty list.",
+            "description": "Optional canonical sport bucket. Omitted or blank selects all registered sports. Raw provider categories resolve through the canonical taxonomy, including table-tennis or table tennis to Table Tennis and pickleball to Pickleball; a non-sport category returns an empty list.",
             "schema": {
               "type": "string"
             }
@@ -4322,7 +4322,7 @@
             "name": "If-None-Match",
             "in": "header",
             "required": false,
-            "description": "Conditional GET validator from a previous ETag. Matching values return 304 Not Modified with an empty body.",
+            "description": "Conditional GET using a previous weak semantic ETag. Matching stable payloads return 304 Not Modified with an empty body; request-specific meta is excluded from validation.",
             "schema": {
               "type": "string"
             }
@@ -4330,7 +4330,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Observation-only sports cohort and accountable funnel",
+            "description": "Observation-only sports cohort with a snapshot-wide operational/unknown-completeness degraded verdict and accountable funnel",
             "headers": {
               "X-RateLimit-Limit": {
                 "$ref": "#/components/headers/X-RateLimit-Limit"
@@ -4358,6 +4358,7 @@
                     "has_more",
                     "next_cursor",
                     "snapshot_as_of",
+                    "degraded",
                     "funnel",
                     "meta"
                   ],
@@ -4383,6 +4384,10 @@
                       "type": "string",
                       "format": "date-time",
                       "description": "Completion time of the shared observation snapshot pinned by the cursor."
+                    },
+                    "degraded": {
+                      "type": "boolean",
+                      "description": "True when an operational failure or unknown provider-board, holder, directional, reconciliation, or internal completeness state made this snapshot partial. This is snapshot-wide and can retain degradation that the funnel's one-terminal-per-input accounting cannot represent. Intentional bounded capacity_limited rows remain fully accounted in the funnel and do not by themselves set this field."
                     },
                     "funnel": {
                       "$ref": "#/components/schemas/SportsEdgeFunnelReport"
@@ -10103,11 +10108,11 @@
           "release_at": {
             "type": "string",
             "format": "date-time",
-            "description": "The pick's nominal daily release slot (fixed 19:00 Europe/Berlin -- CEST/CET). The actual publish instant can trail it by minutes to hours when no candidate qualified at the slot and the selector kept retrying (retries stop when the day's kickoff-eligibility window closes, ~23:45 US/Eastern -- the selection ceiling minus the pre-game buffer)."
+            "description": "The pick's stored release instant. Normally the current provider kickoff minus one hour; an operator may override it. The actual publish instant can trail it because of worker or claim delay."
           },
           "is_locked": {
             "type": "boolean",
-            "description": "True only before the pick's daily release slot (a pre-release embargo flag); effectively always false on a served, already-published pick. To detect that the backed game has kicked off, use `game_started`."
+            "description": "True only before the pick's stored release instant (a pre-release embargo flag); effectively always false on a served, already-published pick. To detect that the backed game has kicked off, use `game_started`."
           },
           "game_started": {
             "type": "boolean",
@@ -11447,7 +11452,7 @@
           },
           "piled_outcome_index": {
             "type": "integer",
-            "description": "0 = first outcome (yes/home), 1 = second outcome (no/away)."
+            "description": "Provider binary-column selector: 0 selects outcome_yes/token_id_yes; 1 selects outcome_no/token_id_no. It does not identify home/away or a participant; use piled_side for participant identity."
           },
           "sharp_pct": {
             "type": "number",
@@ -11539,7 +11544,7 @@
       },
       "SportsEdgeObservationTerminalReason": {
         "type": "string",
-        "description": "Closed terminal-reason vocabulary for the accountable sports-edge observation funnel.",
+        "description": "Closed 25-value terminal-reason vocabulary for the accountable sports-edge observation funnel. capacity_limited is intentional bounded provider-work admission and does not itself set the snapshot degraded. board_source_unavailable is a completed board-source failure; board_deadline_unavailable is fair-wave deadline exhaustion; provider_unavailable is reserved for an attempted holder-provider failure; holder_deadline_unavailable is holder cache/provider absolute-deadline exhaustion.",
         "enum": [
           "outside_horizon",
           "resolved",
@@ -11549,10 +11554,13 @@
           "missing_token",
           "missing_stored_market",
           "not_provider_live",
-          "primary_flow_candidate",
+          "board_source_unavailable",
+          "board_deadline_unavailable",
+          "primary_slate_candidate",
           "zero_indexed_holder_research",
           "capacity_limited",
           "provider_unavailable",
+          "holder_deadline_unavailable",
           "holder_computation_unavailable",
           "holder_scan_incomplete",
           "no_current_graded_holder",
@@ -11690,7 +11698,7 @@
               0,
               1
             ],
-            "description": "0 = first outcome (yes/home); 1 = second outcome (no/away)."
+            "description": "Provider binary-column selector: 0 selects outcome_yes/token_id_yes; 1 selects outcome_no/token_id_no. It does not identify home/away or a participant; use piled_side for participant identity."
           },
           "backed_price": {
             "type": "number",
@@ -11776,7 +11784,7 @@
               "unknown_stale",
               "unavailable"
             ],
-            "description": "Truthful state of the cross-market directional read."
+            "description": "Truthful state of the cross-market directional read. A wider_holder row can remain emitted with unavailable and terminal wider_holder_emitted; in_play fails closed instead and terminates as in_play_directional_unavailable."
           },
           "one_way_holder_count": {
             "type": "integer",
@@ -11833,6 +11841,7 @@
           "sport",
           "board_input",
           "board_live_available",
+          "board_upcoming_configured",
           "board_upcoming_available",
           "input",
           "terminals",
@@ -11866,11 +11875,15 @@
           },
           "board_live_available": {
             "type": "boolean",
-            "description": "Whether the live-board provider source was available."
+            "description": "Whether the always-applicable live-board source completed as available. False can mean a completed source failure (board_source_unavailable) or fair-wave deadline exhaustion (board_deadline_unavailable); inspect terminals to distinguish them."
+          },
+          "board_upcoming_configured": {
+            "type": "boolean",
+            "description": "Whether a provider-backed upcoming-board source is configured and applicable for this sport. False means not applicable, not provider failure."
           },
           "board_upcoming_available": {
             "type": "boolean",
-            "description": "Whether the upcoming-board provider source was available."
+            "description": "Whether the configured upcoming-board source completed as available. False with board_upcoming_configured=false means not applicable; false with it true can mean a completed source failure or fair-wave deadline exhaustion, distinguished by board_source_unavailable versus board_deadline_unavailable terminals."
           },
           "input": {
             "type": "integer",
@@ -11879,7 +11892,7 @@
           },
           "terminals": {
             "type": "object",
-            "description": "Sparse terminal counts. Keys are outside_horizon, resolved, provider_closed, provider_excluded, invalid_market, missing_token, missing_stored_market, not_provider_live, primary_flow_candidate, zero_indexed_holder_research, capacity_limited, provider_unavailable, holder_computation_unavailable, holder_scan_incomplete, no_current_graded_holder, split_holder_pile, price_unavailable, wider_holder_emitted, in_play_emitted, in_play_stale_observed, in_play_directional_unavailable, or internal_unclassified.",
+            "description": "Sparse counts over the closed 25-value terminal vocabulary: outside_horizon, resolved, provider_closed, provider_excluded, invalid_market, missing_token, missing_stored_market, not_provider_live, board_source_unavailable, board_deadline_unavailable, primary_slate_candidate, zero_indexed_holder_research, capacity_limited, provider_unavailable, holder_deadline_unavailable, holder_computation_unavailable, holder_scan_incomplete, no_current_graded_holder, split_holder_pile, price_unavailable, wider_holder_emitted, in_play_emitted, in_play_stale_observed, in_play_directional_unavailable, or internal_unclassified. primary_slate_candidate means exact admission by the funded route's raw shared slate query before provider/holder enrichment; recent-flow rows rejected by its event, bucket, or total caps remain eligible for wider_holder measurement. capacity_limited is intentional bounded provider-work admission, is fully accounted here, and does not itself set degraded=true. board_source_unavailable means a completed board source was unavailable; board_deadline_unavailable means its fair wave missed the bounded deadline inside the shared pre-holder stage; provider_unavailable means an attempted holder-provider read failed; holder_deadline_unavailable means holder cache/provider work missed the absolute request deadline; holder_computation_unavailable means post-holder provider or DB-backed price/metadata evaluation was unavailable.",
             "propertyNames": {
               "$ref": "#/components/schemas/SportsEdgeObservationTerminalReason"
             },
@@ -12343,7 +12356,7 @@
             "type": "string",
             "format": "date-time",
             "nullable": true,
-            "description": "The earliest instant at which retrying is worth doing (RFC3339). Present on every retryable error (reason=pick_not_released, code=rate_limited, code=rate_limit_unavailable, reason=read_model_warming) and omitted otherwise. ALWAYS in the future. Two regimes for pick_not_released, and the value itself tells you which you are in. (1) EXACT FLOOR -- the 12-14h daily publication gap before the fixed release instant, and any day the pick is SKIPPED (a terminal day: the release loop is idle for it and nothing can publish, so retry_at is tomorrow's release slot). Nothing can publish before this instant: sleep until it and make exactly ONE request. This is the state for essentially all of the traffic. (2) BOUNDED CADENCE (~60s) -- a short interval, not a promise, returned when no floor is knowable. Two states land here: a publish is imminent (a pick is scheduled and overdue, so the release loop will publish it on its very next tick), or the release instant has passed with NO eligible candidate yet and the selector is still hunting (it re-runs every ~15 minutes until the kickoff-eligibility window closes late in the evening, and publishes within seconds of finding one -- so a pick genuinely can appear at any moment and we will not pretend to know when). You are then never more than about a minute late. Note the no-candidate case is regime 2, NOT regime 1: such a day is not over, and telling you to sleep until tomorrow would sleep you past a pick that dropped at 14:00 ET. Either way: schedule against it, do not poll. For the sleep DURATION prefer the Retry-After header, which is immune to client clock skew."
+            "description": "The recommended next retry instant (RFC3339). Present on every retryable error (reason=pick_not_released, code=rate_limited, code=rate_limit_unavailable, reason=read_model_warming) and omitted otherwise. Always in the future. For pick_not_released it has two regimes: before the 11:00 UTC operating-window start, before a selected pick's stored release, or after a terminal skipped day, it is an exact floor and nothing can publish first. When a publish is overdue or the selector is still hunting inside the operating window, it is a bounded cadence (~60s), not a lower-bound promise; a pick may publish before it. Schedule one request and do not poll. Prefer Retry-After for the duration because it is immune to client clock skew."
           },
           "reason": {
             "type": "string",
@@ -12355,7 +12368,7 @@
               "read_model_warming"
             ],
             "nullable": true,
-            "description": "ADDITIVE (#7209). The specific, actionable cause behind `code`, when there is one more specific than the code itself. `code` keeps its published values, so existing clients are unaffected; new clients branch on `reason`. Omitted when the code already says everything we know. pick_not_released: no Pick of the Day is published for the current product day -- this is EXPECTED for 12-14h daily and 24h on a skipped day; do not poll, schedule against retry_at. unknown_endpoint: the PATH is not a route on this API -- read GET /api/v1, do not retry. trader_not_tracked: the wallet is real and the URL is right, but the trader is outside the HOT/WARM sync tiers -- stop asking for this wallet. cursor_expired: pagination went stale mid-walk -- re-request the first page and continue. read_model_warming: a read model is still warming; nothing is rate-limited and nothing is down -- retry after the interval."
+            "description": "ADDITIVE (#7209). The specific, actionable cause behind `code`, when there is one more specific than the code itself. `code` keeps its published values, so existing clients are unaffected; new clients branch on `reason`. Omitted when the code already says everything we know. pick_not_released: no Pick of the Day is published for the current product day; schedule one request against retry_at instead of polling. unknown_endpoint: the PATH is not a route on this API -- read GET /api/v1, do not retry. trader_not_tracked: the wallet is real and the URL is right, but the trader is outside the HOT/WARM sync tiers -- stop asking for this wallet. cursor_expired: pagination went stale mid-walk -- re-request the first page and continue. read_model_warming: the requested endpoint cannot serve its read model yet; exact causes are endpoint-specific and can include a cold or contended refresh or a dependency that prevented refresh. Consult that endpoint's contract, retry only this route after the interval, and do not infer dependency health from this reason."
           }
         }
       },
@@ -12528,7 +12541,7 @@
                 "type": "string",
                 "format": "date-time",
                 "nullable": true,
-                "description": "The earliest instant at which retrying is worth doing (RFC3339). Present on every retryable error (reason=pick_not_released, code=rate_limited, code=rate_limit_unavailable, reason=read_model_warming) and omitted otherwise. ALWAYS in the future. Two regimes for pick_not_released, and the value itself tells you which you are in. (1) EXACT FLOOR -- the 12-14h daily publication gap before the fixed release instant, and any day the pick is SKIPPED (a terminal day: the release loop is idle for it and nothing can publish, so retry_at is tomorrow's release slot). Nothing can publish before this instant: sleep until it and make exactly ONE request. This is the state for essentially all of the traffic. (2) BOUNDED CADENCE (~60s) -- a short interval, not a promise, returned when no floor is knowable. Two states land here: a publish is imminent (a pick is scheduled and overdue, so the release loop will publish it on its very next tick), or the release instant has passed with NO eligible candidate yet and the selector is still hunting (it re-runs every ~15 minutes until the kickoff-eligibility window closes late in the evening, and publishes within seconds of finding one -- so a pick genuinely can appear at any moment and we will not pretend to know when). You are then never more than about a minute late. Note the no-candidate case is regime 2, NOT regime 1: such a day is not over, and telling you to sleep until tomorrow would sleep you past a pick that dropped at 14:00 ET. Either way: schedule against it, do not poll. For the sleep DURATION prefer the Retry-After header, which is immune to client clock skew."
+                "description": "The recommended next retry instant (RFC3339). Present on every retryable error (reason=pick_not_released, code=rate_limited, code=rate_limit_unavailable, reason=read_model_warming) and omitted otherwise. Always in the future. For pick_not_released it has two regimes: before the 11:00 UTC operating-window start, before a selected pick's stored release, or after a terminal skipped day, it is an exact floor and nothing can publish first. When a publish is overdue or the selector is still hunting inside the operating window, it is a bounded cadence (~60s), not a lower-bound promise; a pick may publish before it. Schedule one request and do not poll. Prefer Retry-After for the duration because it is immune to client clock skew."
               },
               "reason": {
                 "type": "string",
@@ -12540,7 +12553,7 @@
                   "read_model_warming"
                 ],
                 "nullable": true,
-                "description": "ADDITIVE (#7209). The specific, actionable cause behind `code`, when there is one more specific than the code itself. `code` keeps its published values, so existing clients are unaffected; new clients branch on `reason`. Omitted when the code already says everything we know. pick_not_released: no Pick of the Day is published for the current product day -- this is EXPECTED for 12-14h daily and 24h on a skipped day; do not poll, schedule against retry_at. unknown_endpoint: the PATH is not a route on this API -- read GET /api/v1, do not retry. trader_not_tracked: the wallet is real and the URL is right, but the trader is outside the HOT/WARM sync tiers -- stop asking for this wallet. cursor_expired: pagination went stale mid-walk -- re-request the first page and continue. read_model_warming: a read model is still warming; nothing is rate-limited and nothing is down -- retry after the interval."
+                "description": "ADDITIVE (#7209). The specific, actionable cause behind `code`, when there is one more specific than the code itself. `code` keeps its published values, so existing clients are unaffected; new clients branch on `reason`. Omitted when the code already says everything we know. pick_not_released: no Pick of the Day is published for the current product day; schedule one request against retry_at instead of polling. unknown_endpoint: the PATH is not a route on this API -- read GET /api/v1, do not retry. trader_not_tracked: the wallet is real and the URL is right, but the trader is outside the HOT/WARM sync tiers -- stop asking for this wallet. cursor_expired: pagination went stale mid-walk -- re-request the first page and continue. read_model_warming: the requested endpoint cannot serve its read model yet; exact causes are endpoint-specific and can include a cold or contended refresh or a dependency that prevented refresh. Consult that endpoint's contract, retry only this route after the interval, and do not infer dependency health from this reason."
               }
             }
           },
@@ -14057,10 +14070,10 @@
         }
       },
       "PickNotReleased": {
-        "description": "No Pick of the Day is published for the current product day. This is EXPECTED for 12-14 hours daily: the product day rolls at midnight America/New_York while the pick publishes at 19:00 Europe/Berlin, and on a skipped day no pick is published at all. The body carries error.code=\"not_found\" with error.reason=\"pick_not_released\" (branch on the reason -- the code stays \"not_found\" because error.code is a frozen contract) plus error.retry_at (RFC3339, always in the future), and the response sets Retry-After. Schedule against those instead of polling -- polling this window is what makes a schedule look like an outage.",
+        "description": "No Pick of the Day is published for the current product day. This is expected before the selected pick's kickoff-relative release; each selected pick normally releases one hour before kickoff within the 11:00-19:00 UTC operating window, and on a skipped day no pick is published at all. The body carries error.code=\"not_found\" with error.reason=\"pick_not_released\" (branch on the reason -- the code stays \"not_found\" because error.code is a frozen contract) plus error.retry_at (RFC3339, always in the future), and the response sets Retry-After. Schedule against those instead of polling -- polling this window is what makes a schedule look like an outage.",
         "headers": {
           "Retry-After": {
-            "description": "Seconds to wait before a retry can succeed -- a LOWER bound (\"retry no earlier than\"), NOT a time the pick is due. Nothing can publish before it; the pick may land well after it, or not at all on a skipped day. Always >= 1, and routinely LARGE: taken right after the product day rolls at midnight America/New_York it spans the whole gap to the 19:00 Europe/Berlin release (about 13-14 hours, roughly 47000-50400 seconds), and on a skipped day it points at the NEXT day's release slot. Do not block a worker thread on this value -- schedule the retry (error.retry_at is its absolute RFC3339 twin) and make one request then.",
+            "description": "Seconds until the recommended next retry. It is an exact floor before the operating-window start, before a selected pick's stored release, or after a terminal skipped day. While a publish is overdue or the selector is hunting, it is a bounded cadence and a pick may publish before it. Always >= 1. Schedule one request (error.retry_at is its absolute RFC3339 twin); do not poll or block a worker thread.",
             "schema": {
               "type": "integer"
             }
@@ -14075,10 +14088,10 @@
         }
       },
       "ReadModelWarming": {
-        "description": "Service unavailable. On this route a 503 has TWO distinct causes; branch on error.reason. (1) error.reason=\"read_model_warming\": a read model backing this route is still warming, so the answer is not computed yet. Nothing is rate-limited and nothing is down -- do NOT treat it as an outage, and do NOT feed it into a rate-limit backoff shared with other endpoints. Retry-After (and error.retry_at) is the interval after which the read model is expected to serve; it comes from the read model, not from the rate limiter. (2) no error.reason: the Redis-backed authenticated rate limiter is unavailable and the middleware failed closed; Retry-After is the seconds until it probes Redis again. Both carry error.code=\"rate_limit_unavailable\" (a FROZEN contract value, so it cannot be split per cause) and X-Request-Id -- which is why error.reason, not error.code, is the discriminator.",
+        "description": "Service unavailable. On this route a 503 has TWO distinct causes; branch on error.reason. (1) error.reason=\"read_model_warming\": the requested endpoint cannot serve its read model yet. Exact causes are endpoint-specific and can include a cold or contended refresh or a dependency that prevented refresh; consult that endpoint's contract and do not infer dependency health from this shared reason. This is endpoint-local unavailability, not rate limiting: retry only this route after Retry-After (or error.retry_at), and do not feed it into a rate-limit backoff shared with other endpoints. (2) no error.reason: the Redis-backed authenticated rate limiter is unavailable and the middleware failed closed; Retry-After is the seconds until it probes Redis again. Both carry error.code=\"rate_limit_unavailable\" (a FROZEN contract value, so it cannot be split per cause) and X-Request-Id -- which is why error.reason, not error.code, is the discriminator.",
         "headers": {
           "Retry-After": {
-            "description": "Seconds until retrying is worth doing. With error.reason=\"read_model_warming\" this is the read model's expected warm-up interval; without a reason it is the rate-limiter outage cooldown. Always >= 1.",
+            "description": "Seconds until retrying is worth doing. With error.reason=\"read_model_warming\" this is the endpoint-local read-model retry interval; without a reason it is the rate-limiter outage cooldown. Always >= 1.",
             "schema": {
               "type": "integer"
             }
@@ -14098,7 +14111,7 @@
         }
       },
       "CursorExpired": {
-        "description": "Bad request. On this cursor-paginated route a 400 has TWO distinct causes; branch on error.reason. (1) error.reason=\"cursor_expired\" (with error.param=\"cursor\"): the pagination cursor was invalidated by an upstream data change mid-walk (e.g. the ranking snapshot behind the page refreshed). It is NOT a malformed parameter and NOT a reason to stop: recovery is mechanical -- re-request the first page and walk forward again. There is deliberately no Retry-After and no error.retry_at, because waiting changes nothing. (2) no error.reason: an ordinary invalid request parameter -- check error.param. Both carry error.code=\"bad_request\" (a FROZEN contract value), so error.reason is the discriminator.",
+        "description": "Bad request. On this cursor-paginated route a 400 has TWO distinct causes; branch on error.reason. (1) error.reason=\"cursor_expired\" (with error.param=\"cursor\"): the pagination cursor was invalidated by an upstream data change mid-walk (e.g. the ranking snapshot behind the page refreshed). It is NOT a malformed parameter and NOT a reason to stop: recovery is mechanical -- re-request the first page and walk forward again. There is deliberately no Retry-After and no error.retry_at, because waiting changes nothing. (2) no error.reason: an ordinary invalid request parameter -- check error.param when present, otherwise error.message. Both carry error.code=\"bad_request\" (a FROZEN contract value), so error.reason is the discriminator.",
         "content": {
           "application/json": {
             "schema": {
@@ -14148,10 +14161,10 @@
         }
       },
       "ETag": {
-        "description": "Strong validator for conditional GET. Send as If-None-Match to receive 304 when unchanged.",
+        "description": "Weak semantic validator for conditional GET. Request-specific response metadata is excluded; send as If-None-Match to receive 304 when the stable payload is unchanged.",
         "schema": {
           "type": "string",
-          "example": "\"8f14e45fceea167a5a36dedd4bea2543\""
+          "example": "W/\"8f14e45fceea167a5a36dedd4bea2543\""
         }
       }
     }

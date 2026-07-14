@@ -40,29 +40,40 @@ def type_label(node):
     """Render a property's type as a short markdown string."""
     if node is None:
         return "any"
+    nullable = node.get("nullable") is True
     if "$ref" in node:
-        return f"`{ref_name(node['$ref'])}`"
-    if "oneOf" in node:
-        return " or ".join(type_label(n) for n in node["oneOf"])
-    if "enum" in node:
+        label = f"`{ref_name(node['$ref'])}`"
+    elif "allOf" in node:
+        members = [type_label(member) for member in node["allOf"]]
+        label = " and ".join(members) if members else "object"
+    elif "oneOf" in node:
+        label = " or ".join(type_label(n) for n in node["oneOf"])
+    elif "enum" in node:
         vals = " \\| ".join(f"`{v}`" for v in node["enum"])
-        return vals
-    t = node.get("type")
-    if t == "array":
-        return f"array of {type_label(node.get('items'))}"
-    if t == "object":
+        label = vals
+    elif node.get("type") == "array":
+        label = f"array of {type_label(node.get('items'))}"
+    elif node.get("type") == "object":
         ap = node.get("additionalProperties")
         if isinstance(ap, dict):
-            return f"map of {type_label(ap)}"
-        inner = node.get("properties")
-        if inner:
+            label = f"map of {type_label(ap)}"
+        elif inner := node.get("properties"):
             # Enumerate an inline object's sub-fields so the reference names
             # them (e.g. quant_metrics) instead of showing a bare `object`.
-            return "object (" + ", ".join(f"`{k}`" for k in inner) + ")"
-        return "object"
-    if isinstance(t, list):
-        return " \\| ".join(t)
-    return t or "object"
+            label = "object (" + ", ".join(f"`{k}`" for k in inner) + ")"
+        else:
+            label = "object"
+    elif isinstance(node.get("type"), list):
+        label = " \\| ".join(node["type"])
+    else:
+        label = node.get("type") or "object"
+
+    # OpenAPI 3.0 represents nullability separately from `type`. Required and
+    # nullable are independent: a field can always be present while its value
+    # is explicitly null, so the generated type must preserve both facts.
+    if nullable and "null" not in label.split(" \\| "):
+        label += " \\| null"
+    return label
 
 
 def escape(text):

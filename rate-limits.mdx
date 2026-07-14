@@ -126,4 +126,4 @@ body = get_with_backoff(
 
 Deterministic read endpoints return an `ETag` header. Send it back as `If-None-Match` to get `304 Not Modified` with an empty body when nothing changed.
 
-This covers trader, positions, whale-trades, whale-trades/history, leaderboard, markets/explore, market intel, market snapshot, insider-radar, position-timeline, and health responses. Report snapshots aren't conditional yet because their body includes a request-time `generated_at`.
+Examples include trader and position reads, whale-trade and leaderboard lists, market exploration and intelligence, Sports Edge signals and observations, position timelines, and health responses. Check each endpoint's OpenAPI response table for authoritative `304` support. Report snapshots aren't conditional yet because their body includes a request-time `generated_at`.
